@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   UserPlus,
   Send,
@@ -19,7 +20,10 @@ import '../../App.css';
 import { assessmentAPI } from '../../utils/api';
 import { BASE_URL } from '../../config/api.config';
 
+const ASSESSMENT_SETUP_STORAGE_KEY = 'recruiterAssessmentSetup';
+
 const AssignAssessments = () => {
+  const location = useLocation();
   const [assessments, setAssessments] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -33,6 +37,22 @@ const AssignAssessments = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [loadedPreselectedCount, setLoadedPreselectedCount] = useState(0);
+
+  const applyAssessmentSetup = (setup) => {
+    if (!setup || typeof setup !== 'object') return;
+
+    if (setup.preselectedAssessmentId) {
+      setSelectedAssessment(String(setup.preselectedAssessmentId));
+    }
+
+    if (setup.prefilledDueDate) {
+      setDueDate(setup.prefilledDueDate);
+    }
+
+    if (typeof setup.prefilledSendEmail === 'boolean') {
+      setSendEmail(setup.prefilledSendEmail);
+    }
+  };
 
   // Fetch data
   const fetchData = async () => {
@@ -89,6 +109,31 @@ const AssignAssessments = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const stateSetup = location.state;
+    const hasSetupState = stateSetup && (
+      stateSetup.preselectedAssessmentId ||
+      stateSetup.prefilledDueDate ||
+      typeof stateSetup.prefilledSendEmail === 'boolean'
+    );
+
+    if (hasSetupState) {
+      sessionStorage.setItem(ASSESSMENT_SETUP_STORAGE_KEY, JSON.stringify(stateSetup));
+      applyAssessmentSetup(stateSetup);
+      return;
+    }
+
+    const storedSetup = sessionStorage.getItem(ASSESSMENT_SETUP_STORAGE_KEY);
+    if (storedSetup) {
+      try {
+        applyAssessmentSetup(JSON.parse(storedSetup));
+      } catch (error) {
+        console.error('Failed to parse stored assessment setup:', error);
+        sessionStorage.removeItem(ASSESSMENT_SETUP_STORAGE_KEY);
+      }
+    }
+  }, [location.state]);
 
   // Filter candidates by search and status
   const filteredCandidates = candidates.filter(candidate => {
@@ -159,6 +204,7 @@ const AssignAssessments = () => {
       setShowModal(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
+      sessionStorage.removeItem(ASSESSMENT_SETUP_STORAGE_KEY);
       await assessmentAPI.clearPreselectedCandidates().catch(() => null);
       setLoadedPreselectedCount(0);
       resetForm();

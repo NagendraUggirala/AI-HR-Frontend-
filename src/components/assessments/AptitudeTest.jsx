@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Clock, CheckCircle, XCircle, AlertCircle, Send, RefreshCw } from 'lucide-react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { Clock, CheckCircle, XCircle, AlertCircle, Send, RefreshCw, ClipboardList, ArrowRight } from 'lucide-react';
 import { assessmentAPI } from '../../utils/api';
 
 const AptitudeTest = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRecruiterMode = searchParams.get('mode') === 'recruiter' || location.state?.mode === 'recruiter';
   
   const [step, setStep] = useState('otp'); // otp, instructions, exam, result
   const [candidateData, setCandidateData] = useState({
@@ -17,6 +19,14 @@ const AptitudeTest = () => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [recruiterSetup, setRecruiterSetup] = useState({
+    name: 'Aptitude Assessment',
+    role: '',
+    difficulty: 'medium',
+    question_count: 25,
+    dueDate: '',
+    sendEmail: true
+  });
   
   // Exam state
   const [instructions, setInstructions] = useState(null);
@@ -150,6 +160,163 @@ const AptitudeTest = () => {
       [questionNo]: option
     }));
   };
+
+  const handleRecruiterInputChange = (field, value) => {
+    setRecruiterSetup((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleContinueToAssign = async () => {
+    if (!recruiterSetup.name.trim()) {
+      setError('Assessment name is required');
+      return;
+    }
+
+    if (!recruiterSetup.role.trim()) {
+      setError('Target role is required');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId'), 10) : null;
+      const createdAssessment = await assessmentAPI.create({
+        name: recruiterSetup.name.trim(),
+        type: 'aptitude',
+        role: recruiterSetup.role.trim(),
+        difficulty: recruiterSetup.difficulty,
+        question_count: recruiterSetup.question_count,
+        created_by: userId
+      });
+
+      navigate('/recruiter/assign-assessment', {
+        state: {
+          source: 'assessment-library',
+          preselectedAssessmentId: createdAssessment?.id ? String(createdAssessment.id) : '',
+          prefilledDueDate: recruiterSetup.dueDate || '',
+          prefilledSendEmail: recruiterSetup.sendEmail,
+          selectedTestType: 'aptitude'
+        }
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to create assessment setup');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (isRecruiterMode) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-8">
+            <div className="card shadow-none border">
+              <div className="card-header bg-transparent">
+                <h5 className="mb-0 d-flex align-items-center gap-2">
+                  <ClipboardList size={18} />
+                  Configure Aptitude Assessment
+                </h5>
+              </div>
+              <div className="card-body">
+                {error && (
+                  <div className="alert alert-danger d-flex align-items-center">
+                    <AlertCircle size={16} className="me-2" />
+                    {error}
+                  </div>
+                )}
+
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Assessment Name *</label>
+                    <input
+                      className="form-control"
+                      value={recruiterSetup.name}
+                      onChange={(e) => handleRecruiterInputChange('name', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Target Role *</label>
+                    <input
+                      className="form-control"
+                      value={recruiterSetup.role}
+                      onChange={(e) => handleRecruiterInputChange('role', e.target.value)}
+                      placeholder="e.g., Data Analyst"
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Difficulty</label>
+                    <select
+                      className="form-select"
+                      value={recruiterSetup.difficulty}
+                      onChange={(e) => handleRecruiterInputChange('difficulty', e.target.value)}
+                    >
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Question Count</label>
+                    <input
+                      type="number"
+                      min={1}
+                      className="form-control"
+                      value={recruiterSetup.question_count}
+                      onChange={(e) => handleRecruiterInputChange('question_count', Math.max(1, Number(e.target.value) || 1))}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Due Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={recruiterSetup.dueDate}
+                      onChange={(e) => handleRecruiterInputChange('dueDate', e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div className="col-12">
+                    <div className="form-check">
+                      <input
+                        id="aptitudeRecruiterEmail"
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={recruiterSetup.sendEmail}
+                        onChange={(e) => handleRecruiterInputChange('sendEmail', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="aptitudeRecruiterEmail">
+                        Send email notifications after assignment
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="card-footer bg-transparent d-flex justify-content-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => navigate('/recruiter/assessment-library')}
+                  disabled={loading}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary d-inline-flex align-items-center"
+                  onClick={handleContinueToAssign}
+                  disabled={loading}
+                >
+                  {loading ? <RefreshCw size={16} className="spin me-2" /> : <ArrowRight size={16} className="me-2" />}
+                  Continue to Assign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // OTP Step
   if (step === 'otp') {

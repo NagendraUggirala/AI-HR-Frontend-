@@ -17,12 +17,64 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import '../../App.css';
 import { assessmentAPI } from '../../utils/api';
 
+const TEST_TYPE_OPTIONS = [
+  {
+    key: 'aptitude',
+    label: 'Aptitude Test',
+    description: 'Reasoning and analytical ability assessment',
+    icon: Brain,
+    route: '/assessment/aptitude',
+    badgeClass: 'bg-purple-100 text-purple-700 border border-purple-300'
+  },
+  {
+    key: 'coding',
+    label: 'Coding Test',
+    description: 'Hands-on coding and problem-solving tasks',
+    icon: Code,
+    route: '/assessment/coding',
+    badgeClass: 'bg-blue-100 text-blue-700 border border-blue-300'
+  },
+  {
+    key: 'communication',
+    label: 'Communication Test',
+    description: 'Written, listening, and language proficiency check',
+    icon: MessageSquare,
+    route: '/assessment/communication',
+    badgeClass: 'bg-green-100 text-green-700 border border-green-300'
+  }
+];
+
+const TYPE_DEFAULTS = {
+  aptitude: {
+    name: 'Aptitude Test Assessment',
+    difficulty: 'medium',
+    role: 'Analyst',
+    skill: 'Logical Reasoning',
+    question_count: 25
+  },
+  coding: {
+    name: 'Coding Test Assessment',
+    difficulty: 'medium',
+    role: 'Software Developer',
+    skill: 'Problem Solving',
+    question_count: 2
+  },
+  communication: {
+    name: 'Communication Test Assessment',
+    difficulty: 'medium',
+    role: 'Customer Support',
+    skill: 'Verbal Communication',
+    question_count: 10
+  }
+};
+
 const AssessmentLibrary = () => {
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [selectedTestType, setSelectedTestType] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
@@ -30,7 +82,6 @@ const AssessmentLibrary = () => {
   
   const [formData, setFormData] = useState({
     name: '',
-    type: 'aptitude',
     skill: '',
     difficulty: 'medium',
     role: '',
@@ -57,11 +108,8 @@ const AssessmentLibrary = () => {
     fetchAssessments();
   }, []);
 
-  // Filter assessments - ONLY show aptitude assessments
+  // Filter assessments
   const filteredAssessments = assessments.filter(assessment => {
-    // Only show aptitude assessments
-    if (assessment.type !== 'aptitude') return false;
-    
     const matchesSearch = assessment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (assessment.role && assessment.role.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = filterType === 'all' || assessment.type === filterType;
@@ -71,10 +119,6 @@ const AssessmentLibrary = () => {
 
   // Handle form input changes
   const handleInputChange = (field, value) => {
-    // Prevent changing type - always keep it as aptitude
-    if (field === 'type' && value !== 'aptitude') {
-      return;
-    }
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
@@ -84,12 +128,24 @@ const AssessmentLibrary = () => {
   // Validate form
   const validateForm = () => {
     const newErrors = {};
+    if (!selectedTestType) newErrors.type = 'Please select an assignment type';
     if (!formData.name.trim()) newErrors.name = 'Assessment name is required';
-    if (!formData.type) newErrors.type = 'Type is required';
     if (!formData.role.trim()) newErrors.role = 'Role is required';
     if (formData.question_count < 1) newErrors.question_count = 'Must have at least 1 question';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSelectAssignmentType = (type) => {
+    const defaults = TYPE_DEFAULTS[type];
+    if (!defaults) return;
+
+    setSelectedTestType(type);
+    setFormData((prev) => ({
+      ...prev,
+      ...defaults
+    }));
+    setErrors((prev) => ({ ...prev, type: null }));
   };
 
   // Create assessment
@@ -101,7 +157,7 @@ const AssessmentLibrary = () => {
       const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null;
       const assessmentData = {
         ...formData,
-        type: 'aptitude', // Always ensure aptitude type
+        type: selectedTestType,
         created_by: userId
       };
       
@@ -123,7 +179,7 @@ const AssessmentLibrary = () => {
     try {
       const updateData = {
         ...formData,
-        type: 'aptitude' // Always ensure aptitude type
+        type: selectedTestType
       };
       await assessmentAPI.update(selectedAssessment.id, updateData);
       setShowModal(false);
@@ -186,22 +242,31 @@ const AssessmentLibrary = () => {
     setSelectedAssessment(assessment);
     setFormData({
       name: assessment.name,
-      type: 'aptitude', // Always force aptitude type
       skill: assessment.skill || '',
       difficulty: assessment.difficulty || 'medium',
       role: assessment.role || '',
       question_count: assessment.question_count || 25,
       created_by: assessment.created_by
     });
+    setSelectedTestType(assessment.type || 'aptitude');
     setEditMode(true);
     setShowModal(true);
+  };
+
+  const handleOpenCreateModal = () => {
+    resetForm();
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    resetForm();
   };
 
   // Reset form
   const resetForm = () => {
       setFormData({
         name: '',
-        type: 'aptitude',
         skill: '',
         difficulty: 'medium',
         role: '',
@@ -209,6 +274,7 @@ const AssessmentLibrary = () => {
         created_by: null
       });
     setErrors({});
+    setSelectedTestType('');
     setSelectedAssessment(null);
     setEditMode(false);
   };
@@ -286,10 +352,10 @@ const AssessmentLibrary = () => {
             </button>
             <button
               className="create-assessment-btn"
-              onClick={() => setShowModal(true)}
+              onClick={handleOpenCreateModal}
             >
               <Plus />
-              <span>Create Assessment</span>
+              <span>Add Assignment</span>
             </button>
           </div>
         </div>
@@ -300,32 +366,32 @@ const AssessmentLibrary = () => {
         {[
           {
             title: 'Total Templates',
-            value: assessments.filter(a => a.type === 'aptitude').length,
-            sub: 'Aptitude only',
+            value: assessments.length,
+            sub: 'All test types',
             icon: 'heroicons:rectangle-group',
             bg: 'kpi-primary',
             color: 'kpi-primary-text'
           },
           {
             title: 'Easy',
-            value: assessments.filter(a => a.type === 'aptitude' && (a.difficulty || '').toLowerCase() === 'easy').length,
-            sub: 'Aptitude',
+            value: assessments.filter(a => (a.difficulty || '').toLowerCase() === 'easy').length,
+            sub: 'Across all types',
             icon: 'heroicons:face-smile',
             bg: 'kpi-success',
             color: 'kpi-success-text'
           },
           {
             title: 'Medium',
-            value: assessments.filter(a => a.type === 'aptitude' && (a.difficulty || '').toLowerCase() === 'medium').length,
-            sub: 'Aptitude',
+            value: assessments.filter(a => (a.difficulty || '').toLowerCase() === 'medium').length,
+            sub: 'Across all types',
             icon: 'heroicons:adjustments-horizontal',
             bg: 'kpi-info',
             color: 'kpi-info-text'
           },
           {
             title: 'Hard',
-            value: assessments.filter(a => a.type === 'aptitude' && (a.difficulty || '').toLowerCase() === 'hard').length,
-            sub: 'Aptitude',
+            value: assessments.filter(a => (a.difficulty || '').toLowerCase() === 'hard').length,
+            sub: 'Across all types',
             icon: 'heroicons:bolt',
             bg: 'kpi-warning',
             color: 'kpi-warning-text'
@@ -377,9 +443,11 @@ const AssessmentLibrary = () => {
                 className="form-select"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                disabled
               >
-                <option value="aptitude">Aptitude Only</option>
+                <option value="all">All</option>
+                <option value="aptitude">Aptitude</option>
+                <option value="coding">Coding</option>
+                <option value="communication">Communication</option>
               </select>
             </div>
             <div className="col-6 col-md-3 col-lg-2">
@@ -565,16 +633,57 @@ const AssessmentLibrary = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {editMode ? 'Edit Assessment' : 'Create New Assessment'}
+                  {editMode ? 'Edit Assessment' : 'Add Assignment'}
                 </h5>
                 <button
                   type="button"
                   className="btn-close"
-                  onClick={() => { setShowModal(false); resetForm(); }}
+                  onClick={closeModal}
                 ></button>
               </div>
               <div className="modal-body">
                 <div className="row g-3">
+                  {!editMode && (
+                    <div className="col-12">
+                      <label className="form-label">Select Assignment Type *</label>
+                      <div className="dropdown w-100">
+                        <button
+                          type="button"
+                          className={`btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between ${
+                            errors.type ? 'is-invalid' : ''
+                          }`}
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                        >
+                          <span>
+                            {TEST_TYPE_OPTIONS.find((option) => option.key === selectedTestType)?.label || 'Choose assignment type'}
+                          </span>
+                        </button>
+                        <ul className="dropdown-menu w-100">
+                          {TEST_TYPE_OPTIONS.map((option) => {
+                            const OptionIcon = option.icon;
+                            const selected = selectedTestType === option.key;
+                            return (
+                              <li key={option.key}>
+                                <button
+                                  type="button"
+                                  className={`dropdown-item d-flex align-items-start gap-2 ${selected ? 'active' : ''}`}
+                                  onClick={() => handleSelectAssignmentType(option.key)}
+                                >
+                                  <span className={`p-1 rounded ${option.badgeClass}`}>
+                                    <OptionIcon size={14} />
+                                  </span>
+                                  <span>{option.label}</span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                      {errors.type && <div className="invalid-feedback d-block">{errors.type}</div>}
+                    </div>
+                  )}
+
                   {/* Assessment Name */}
                   <div className="col-12">
                     <label className="form-label">Assessment Name *</label>
@@ -586,21 +695,6 @@ const AssessmentLibrary = () => {
                       onChange={(e) => handleInputChange('name', e.target.value)}
                     />
                     {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-                  </div>
-
-                  {/* Type - Fixed to Aptitude Only */}
-                  <div className="col-md-6">
-                    <label className="form-label">Type *</label>
-                    <select
-                      className={`form-select ${errors.type ? 'is-invalid' : ''}`}
-                      value="aptitude"
-                      disabled
-                      style={{ backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
-                    >
-                      <option value="aptitude">Aptitude/Reasoning</option>
-                    </select>
-                    <small className="text-secondary-light">Only Aptitude assessments can be created in Assessment Library</small>
-                    {errors.type && <div className="invalid-feedback">{errors.type}</div>}
                   </div>
 
                   {/* Difficulty */}
@@ -654,7 +748,7 @@ const AssessmentLibrary = () => {
                     />
                     {errors.question_count && <div className="invalid-feedback">{errors.question_count}</div>}
                     <small className="text-secondary-light">
-                      Number of aptitude questions for this assessment (default: 25)
+                      Number of questions for this assessment (default: 25)
                     </small>
                   </div>
                 </div>
@@ -663,7 +757,7 @@ const AssessmentLibrary = () => {
                 <button
                   type="button"
                   className="btn btn-secondary d-inline-flex align-items-center"
-                  onClick={() => { setShowModal(false); resetForm(); }}
+                  onClick={closeModal}
                 >
                   <X size={18} className="me-2" />
                   <span>Cancel</span>
@@ -691,6 +785,21 @@ const AssessmentLibrary = () => {
         }
         .transition {
           transition: all 0.3s ease;
+        }
+        .test-type-card {
+          border: 1px solid #dee2e6;
+          background: #ffffff;
+          transition: all 0.2s ease;
+        }
+        .test-type-card:hover {
+          border-color: #0d6efd;
+          box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+          transform: translateY(-1px);
+        }
+        .test-type-card.active {
+          border-color: #0d6efd;
+          background: #e7f1ff;
+          box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
         }
         .spinner {
           animation: spin 1s linear infinite;

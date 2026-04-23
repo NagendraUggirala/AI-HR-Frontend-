@@ -192,9 +192,11 @@ export const buildUrl = (endpoint) => {
   return `${BASE_URL}${endpoint}`;
 };
 
-export default {
+const apiConfig = {
   BASE_URL,
   API_ENDPOINTS,
   buildUrl,
 };
+
+export default apiConfig;
 

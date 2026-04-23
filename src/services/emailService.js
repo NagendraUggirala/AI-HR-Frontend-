@@ -154,10 +154,12 @@ export const generateMailtoLink = (to, subject, body) => {
   return `mailto:${to}?${params.toString()}`;
 };
 
-export default {
+const emailService = {
   sendEmail,
   sendBulkEmails,
   copyEmailToClipboard,
   generateMailtoLink
 };
+
+export default emailService;
 

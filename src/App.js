@@ -6,7 +6,6 @@ import Login from './components/auth/Login';
 import ForgotPassword from './components/auth/ForgotPassword';
 import PricingPage from './components/auth/PricingPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import AdminPanel from './components/recruiterDashboard/AdminPanel';
 import SuperAdminPanel from './components/superAdmin/SuperAdminPanel';
 import SuperAdminLayout from './components/superAdmin/SuperAdminLayout';
 import MultiTenantSetup from './components/superAdmin/MultiTenantSetup';
@@ -21,7 +20,6 @@ import RecruiterDashboardLayout from './components/recruiterDashboard/RecruiterD
 import ResumeScreening from './components/recruiterDashboard/ResumeScreening';
 import CreateJob from './components/CreateJob';
 import JobList from './components/JobList';
-import PipelineView from './components/pipeline/PipelineView';
 import Stages from './components/pipeline/Stages';
 import DragDrop from './components/pipeline/DragDrop';
 import CollaborationTools from './components/pipeline/CollaborationTools';

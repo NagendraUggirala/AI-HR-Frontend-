@@ -1,5 +1,5 @@
 // API Utility for Backend Communication
-import { BASE_URL, API_ENDPOINTS } from '../config/api.config';
+import { BASE_URL } from '../config/api.config';
 
 // Get JWT token from localStorage
 const getToken = () => localStorage.getItem('token');
@@ -1147,7 +1147,7 @@ export const adminAPI = {
 };
 
 // Export default for convenience
-export default {
+const apiServices = {
   authAPI,
   jobAPI,
   candidateAPI,
@@ -1164,4 +1164,6 @@ export default {
   crmPipelinesAPI,
   adminAPI
 };
+
+export default apiServices;
 

@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Award,
-  TrendingUp,
   Users,
   Search,
   Download,
   Calendar,
-  Clock,
-  Target,
-  Eye,
-  CheckCircle,
-  XCircle,
   RefreshCw
 } from 'lucide-react';
 import { Icon } from '@iconify/react/dist/iconify.js';

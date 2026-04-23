@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  UserPlus,
   Send,
   Calendar,
   Search,
   RefreshCw,
-  CheckCircle,
-  XCircle,
-  Clock,
   Mail,
   Filter,
-  X,
   Users,
   ClipboardList
 } from 'lucide-react';
@@ -26,9 +21,7 @@ const AssignAssessments = () => {
   const location = useLocation();
   const [assessments, setAssessments] = useState([]);
   const [candidates, setCandidates] = useState([]);
-  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
   const [searchCandidate, setSearchCandidate] = useState('');
   const [selectedCandidates, setSelectedCandidates] = useState([]);
   const [selectedAssessment, setSelectedAssessment] = useState('');
@@ -59,7 +52,7 @@ const AssignAssessments = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const [assessmentsData, candidatesResponse, assignmentsData, preselectedData] = await Promise.all([
+      const [assessmentsData, candidatesResponse, preselectedData] = await Promise.all([
         assessmentAPI.list(),
         fetch(`${BASE_URL}/api/resume/candidates`, {
           method: 'GET',
@@ -86,7 +79,7 @@ const AssignAssessments = () => {
       const allCandidates = candidatesData || [];
       console.log(`📋 Loaded ${allCandidates.length} candidates (including rejected)`);
       setCandidates(allCandidates);
-      setAssignments(assignmentsData || []);
+  
 
       const preselectedIds = new Set((preselectedData?.candidate_ids || []).map((id) => Number(id)));
       if (preselectedIds.size > 0) {
@@ -201,7 +194,7 @@ const AssignAssessments = () => {
         }
       }
 
-      setShowModal(false);
+      
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
       sessionStorage.removeItem(ASSESSMENT_SETUP_STORAGE_KEY);
@@ -281,33 +274,8 @@ Recruitment Team
   };
 
   // Get assignment status badge
-  const getStatusBadge = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'badge bg-success-subtle text-success';
-      case 'in progress':
-        return 'badge bg-info-subtle text-info';
-      case 'assigned':
-        return 'badge bg-warning-subtle text-warning';
-      case 'expired':
-        return 'badge bg-danger-subtle text-danger';
-      default:
-        return 'badge bg-secondary-subtle text-secondary';
-    }
-  };
-
+  
   // Get candidate by ID
-  const getCandidateName = (candidateId) => {
-    const candidate = candidates.find(c => c.id === candidateId);
-    return candidate?.candidate_name || 'Unknown';
-  };
-
-  // Get assessment by ID
-  const getAssessmentName = (assessmentId) => {
-    const assessment = assessments.find(a => a.id === assessmentId);
-    return assessment?.name || 'Unknown';
-  };
-
   // Get selected assessment details
   const selectedAssessmentDetails = selectedAssessment 
     ? assessments.find(a => a.id === parseInt(selectedAssessment))

@@ -1,7 +1,7 @@
 // EmployeeLifecycleManagement.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import RecruiterDashboardLayout from '../../recruiterDashboard/RecruiterDashboardLayout';
+
 
 /*
   - Kept all original data & sections from your file.
@@ -13,7 +13,7 @@ import RecruiterDashboardLayout from '../../recruiterDashboard/RecruiterDashboar
 const EmployeeLifecycle = () => {
   // ----- core UI state -----
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isLoading, setIsLoading] = useState(true);
+  
 
   // search / filter / pagination shared state
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,11 +24,9 @@ const EmployeeLifecycle = () => {
   // selected item for modals/details
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null);
 
   // ----- original mock data (kept unchanged) -----
-  const [employees, setEmployees] = useState([
+  const employees = [
     {
       id: 'EMP001',
       name: 'John Smith',
@@ -89,7 +87,7 @@ const EmployeeLifecycle = () => {
       nextReviewDate: '2024-05-30',
       manager: 'Thomas Wilson'
     }
-  ]);
+  ];
 
   // Joining checklist
   const [onboardingChecklist, setOnboardingChecklist] = useState([
@@ -122,11 +120,11 @@ const EmployeeLifecycle = () => {
   ]);
 
   // Contracts
-  const [contractRenewals, setContractRenewals] = useState([
+  const contractRenewals = [
     { id: 'CR001', employeeId: 'EMP005', employeeName: 'Alex Turner', contractType: 'Fixed Term', endDate: '2024-06-15', renewalStatus: 'pending', daysRemaining: 45 },
     { id: 'CR002', employeeId: 'EMP012', employeeName: 'Kevin Brown', contractType: 'Project Based', endDate: '2024-05-30', renewalStatus: 'in-progress', daysRemaining: 30 },
     { id: 'CR003', employeeId: 'EMP013', employeeName: 'Olivia Davis', contractType: 'Fixed Term', endDate: '2024-07-31', renewalStatus: 'pending', daysRemaining: 90 }
-  ]);
+  ];
 
   // Sidebar menu (kept)
   const menuItems = [
@@ -180,20 +178,7 @@ const EmployeeLifecycle = () => {
     return <span className={`badge ${styles[status] || 'bg-secondary-subtle text-secondary'}`}>{typeof status === 'string' ? status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ') : status}</span>;
   };
 
-  // ----- computed KPIs (small) -----
-  const kpis = useMemo(() => {
-    return {
-      pendingOnboarding: onboardingChecklist.filter(t => t.status === 'pending').length,
-      pendingTransfers: transferRequests.filter(t => t.status === 'pending').length,
-      activeExits: exitProcesses.filter(e => e.status === 'in-process').length,
-    };
-  }, [onboardingChecklist, transferRequests, exitProcesses]);
 
-  // ----- initial load -----
-  useEffect(() => {
-    // simulate initial load
-    setTimeout(() => setIsLoading(false), 250);
-  }, []);
 
   // ----- generic utilities: filter + paginate -----
   const getFilteredList = (list, keyFields = []) => {
@@ -252,23 +237,25 @@ const EmployeeLifecycle = () => {
   const initiateExit = (employeeId) => {
     const emp = employees.find(e => e.id === employeeId);
     if (!emp) return;
-    const newExit = {
-      id: `EX${String(exitProcesses.length + 1).padStart(3,'0')}`,
-      employeeId: emp.id,
-      employeeName: emp.name,
-      noticePeriodStart: new Date().toISOString().split('T')[0],
-      lastWorkingDay: '',
-      status: 'initiated',
-      clearancePending: 3
-    };
-    setExitProcesses([newExit, ...exitProcesses]);
+    setExitProcesses(prev => {
+      const newExit = {
+        id: `EX${String(prev.length + 1).padStart(3, '0')}`,
+        employeeId: emp.id,
+        employeeName: emp.name,
+        noticePeriodStart: new Date().toISOString().split('T')[0],
+        lastWorkingDay: '',
+        status: 'initiated',
+        clearancePending: 3
+      };
+      return [newExit, ...prev];
+    });
     alert('Exit initiated for ' + emp.name);
   };
 
   const refreshData = () => {
-    setIsLoading(true);
+    
     setTimeout(() => {
-      setIsLoading(false);
+     
       setSearchTerm('');
       setFilterStatus('All');
       setCurrentPage(1);
@@ -1035,9 +1022,12 @@ const EmployeeLifecycle = () => {
                             <td>{getStageBadge(emp.stage)}</td>
                             <td>{emp.nextReviewDate || '-'}</td>
                             <td>
-                              <div className="d-flex gap-2">
+                              <div className="d-flex gap-2 flex-wrap">
                                 <button className="btn btn-sm btn-outline-primary" onClick={() => { setSelectedItem(emp); setShowDetailModal(true); }}>View</button>
                                 <button className="btn btn-sm btn-outline-warning" onClick={() => alert('Update employee (demo)')}>Update</button>
+                                {emp.stage !== 'exit-process' && (
+                                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => initiateExit(emp.id)}>Initiate exit</button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1056,6 +1046,61 @@ const EmployeeLifecycle = () => {
                     </div>
                   )}
 
+                </div>
+              </div>
+            </div>
+
+            <div className="col-12">
+              <div className="card border">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="mb-0">Probation reviews</h6>
+                  </div>
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Employee</th>
+                          <th>Review date</th>
+                          <th>Manager</th>
+                          <th>Status</th>
+                          <th style={{ width: 220 }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {probationReviews.map(r => (
+                          <tr key={r.id}>
+                            <td>
+                              <div className="fw-semibold">{r.employeeName}</div>
+                              <div className="text-muted small">{r.employeeId}</div>
+                            </td>
+                            <td>{r.reviewDate}</td>
+                            <td>{r.manager || '—'}</td>
+                            <td>{getStatusBadge(r.status)}</td>
+                            <td>
+                              <div className="d-flex gap-2 flex-wrap">
+                                {r.status === 'pending' && (
+                                  <button type="button" className="btn btn-sm btn-primary" onClick={() => startProbationReview(r.id)}>Start</button>
+                                )}
+                                {r.status === 'in-progress' && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-success"
+                                    onClick={() => {
+                                      const rating = window.prompt('Rating (e.g. Meets Expectations)', 'Meets Expectations');
+                                      if (rating) completeProbationReview(r.id, rating);
+                                    }}
+                                  >
+                                    Complete
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1100,10 +1145,16 @@ const EmployeeLifecycle = () => {
         <div className="card border shadow-none mt-4">
           <div className="card-body">
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-              <div className="d-flex gap-3">
-                <a href="#" className="text-decoration-none d-flex align-items-center gap-2"><Icon icon="heroicons:document-arrow-down" /> <span>Export All Data</span></a>
-                <a href="#" className="text-decoration-none d-flex align-items-center gap-2"><Icon icon="heroicons:bell-alert" /> <span>Set Notifications</span></a>
-                <a href="#" className="text-decoration-none d-flex align-items-center gap-2"><Icon icon="heroicons:cog-6-tooth" /> <span>Workflow Settings</span></a>
+              <div className="d-flex gap-3 flex-wrap">
+                <button type="button" className="btn btn-link text-decoration-none p-0 d-inline-flex align-items-center gap-2" onClick={() => alert('Export all data (demo)')}>
+                  <Icon icon="heroicons:document-arrow-down" /> <span>Export All Data</span>
+                </button>
+                <button type="button" className="btn btn-link text-decoration-none p-0 d-inline-flex align-items-center gap-2" onClick={() => alert('Notification preferences (demo)')}>
+                  <Icon icon="heroicons:bell-alert" /> <span>Set Notifications</span>
+                </button>
+                <button type="button" className="btn btn-link text-decoration-none p-0 d-inline-flex align-items-center gap-2" onClick={() => alert('Workflow settings (demo)')}>
+                  <Icon icon="heroicons:cog-6-tooth" /> <span>Workflow Settings</span>
+                </button>
               </div>
               <div className="text-muted small">Employee Lifecycle Management v2.0 • Based on HRMS 1.0 Specifications</div>
             </div>

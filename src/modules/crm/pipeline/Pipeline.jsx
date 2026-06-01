@@ -9,7 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { crmPipelinesAPI } from "../../utils/api";
+import { crmPipelinesAPI } from "../../../shared/utils/api";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { Icon } from '@iconify/react/dist/iconify.js';

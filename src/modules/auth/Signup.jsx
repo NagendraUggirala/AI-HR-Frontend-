@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { Link, useNavigate } from 'react-router-dom';
-import { BASE_URL, API_ENDPOINTS } from '../../config/api.config';
+import { BASE_URL, API_ENDPOINTS } from "../../shared/constants/api.config";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -116,7 +116,7 @@ const Signup = () => {
             <p className='lead' style={{ opacity: 0.9 }}>Create your account and start your journey with AI Recruitment</p>
           </div>
           <img 
-            src='/assets/images/WhatsApp Image 2025-11-14 at 09.56.23.jpeg' 
+            src='/assets/images/leviticalogo.png' 
             alt='Signup' 
             className='img-fluid login-image rounded-4 shadow-lg' 
             style={{ 
@@ -157,7 +157,7 @@ const Signup = () => {
           <div className='mb-4 mb-md-5'>
             <div className='d-flex align-items-center gap-3 mb-3'>
               <img 
-                src='/assets/images/168X40.jpeg' 
+                src='/assets/images/leviticalogo.png' 
                 alt='Logo' 
                 className='img-fluid' 
                 style={{ height: '40px', width: 'auto' }}

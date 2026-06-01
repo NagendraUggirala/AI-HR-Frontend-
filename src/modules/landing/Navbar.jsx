@@ -84,7 +84,7 @@ const Navbar = () => {
             onClick={() => setIsOpen(false)}
           >
             <img
-              src="/assets/images/WhatsApp Image 2025-11-14 at 09.56.23.jpeg"
+              src="/assets/images/leviticalogo.png"
               alt="Logo"
               className="h-8 w-auto"
             />

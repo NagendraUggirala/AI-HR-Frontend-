@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import Breadcrump from "../../Layout/Breadcrump";
+import Breadcrump from "../../../shared/components/Breadcrump";
 
 function LeaveCorrection() {
   const [employees, setEmployees] = useState([]);

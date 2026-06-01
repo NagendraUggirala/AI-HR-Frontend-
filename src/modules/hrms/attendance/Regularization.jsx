@@ -20,8 +20,6 @@ import {
   Settings,
   User,
   Building,
-  ClockIn,
-  ClockOut,
   Home,
   Briefcase,
   Mail,

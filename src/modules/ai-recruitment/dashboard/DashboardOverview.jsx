@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Icon } from '@iconify/react/dist/iconify.js';
-import CandidateProfilePage from './CandidateProfilePage';
-import { BASE_URL } from '../../config/api.config';
-import '../../App.css';
+import { Icon } from '@iconify/react';
+import Modal from '../../../shared/components/Modal';
+import CandidateDetailsView from './components/CandidateDetailsView';
+import { BASE_URL } from '../../../shared/constants/api.config';
 
 const DashboardOverview = () => {
   const navigate = useNavigate();
@@ -110,28 +110,28 @@ const DashboardOverview = () => {
     fetchDashboardData();
   }, []);
 
-  const stageColorDot = (stage) => {
+  const stageColor = (stage) => {
     const map = {
-      Applied: 'bg-primary',
-      Screening: 'bg-warning',
-      Interview: 'bg-info',
-      Offer: 'bg-primary',
-      Hired: 'bg-success',
-      Rejected: 'bg-danger'
+      Applied: 'primary',
+      Screening: 'amber-500',
+      Interview: 'indigo-500',
+      Offer: 'primary',
+      Hired: 'emerald-500',
+      Rejected: 'rose-500'
     };
-    return map[stage] || 'bg-secondary';
+    return map[stage] || 'gray-400';
   };
 
   const stageBadgeClass = (stage) => {
     const map = {
-      Applied: 'bg-primary',
-      Screening: 'bg-warning text-dark',
-      Interview: 'bg-info',
-      Offer: 'bg-primary',
-      Hired: 'bg-success',
-      Rejected: 'bg-danger'
+      Applied: 'bg-primary/10 text-primary',
+      Screening: 'bg-amber-50 text-amber-700',
+      Interview: 'bg-indigo-50 text-indigo-700',
+      Offer: 'bg-primary/10 text-primary',
+      Hired: 'bg-emerald-50 text-emerald-700',
+      Rejected: 'bg-rose-50 text-rose-700'
     };
-    return map[stage] || 'bg-secondary';
+    return map[stage] || 'bg-gray-50 text-gray-600';
   };
 
   const handleViewCandidate = (application) => {
@@ -170,31 +170,23 @@ const DashboardOverview = () => {
 
   if (dashboardData.loading) {
     return (
-      <div className="container-fluid py-4">
-        <div className="card border shadow-none">
-          <div className="card-body text-center py-5">
-            <div className="spinner-border text-primary mb-3" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="text-secondary mb-0">Loading dashboard...</p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center h-[500px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+        <p className="text-gray-500">Loading dashboard...</p>
       </div>
     );
   }
 
   if (dashboardData.error) {
     return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger d-flex align-items-center mb-0" role="alert">
-          <Icon icon="heroicons:exclamation-circle" className="me-2" style={{ fontSize: 20 }} />
-          <div className="flex-grow-1">{dashboardData.error}</div>
+      <div className="p-4">
+        <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-lg p-4 text-rose-700">
+          <Icon icon="heroicons:exclamation-circle" className="h-5 w-5 text-rose-500" />
+          <div className="flex-1 text-sm">{dashboardData.error}</div>
           <button
-            type="button"
-            className="btn refresh-btn d-flex align-items-center gap-2"
             onClick={fetchDashboardData}
+            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium transition-all"
           >
-            <Icon icon="heroicons:arrow-path" style={{ width: 16, height: 16 }} />
             Retry
           </button>
         </div>
@@ -206,253 +198,239 @@ const DashboardOverview = () => {
   const totalCandidatesForPct = stats.totalCandidates || 1;
 
   return (
-    <div className="container-fluid py-4">
-      {/* Page Header: title left, last updated + refresh right */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:home" className="text-black" style={{ fontSize: 28 }} />
-            Dashboard
-          </h4>
-          <p className="text-secondary mb-0 mt-1">Here&apos;s what&apos;s happening with your recruitment pipeline.</p>
+          <h1 className="text-xl font-bold text-midnight_text">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Recruitment overview</p>
         </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated: <span className="fw-medium text-body">{new Date().toLocaleDateString()}</span>
-          </span>
+        <button
+          onClick={fetchDashboardData}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+        >
+          <Icon icon="heroicons:arrow-path" className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-deatail_shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold">Total Jobs</p>
+              <p className="text-2xl font-bold text-midnight_text mt-1">{stats.totalJobs}</p>
+              <p className="text-xs text-gray-400 mt-1">{stats.activeJobs} active</p>
+            </div>
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Icon icon="heroicons:briefcase" className="h-5 w-5 text-primary" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-deatail_shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold">Total Candidates</p>
+              <p className="text-2xl font-bold text-midnight_text mt-1">{stats.totalCandidates}</p>
+              <p className="text-xs text-gray-400 mt-1">{stats.pendingApplications} pending</p>
+            </div>
+            <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+              <Icon icon="heroicons:user-group" className="h-5 w-5 text-emerald-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-deatail_shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold">Applications</p>
+              <p className="text-2xl font-bold text-midnight_text mt-1">{stats.totalApplications}</p>
+              <p className="text-xs text-gray-400 mt-1">All time</p>
+            </div>
+            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+              <Icon icon="heroicons:document-text" className="h-5 w-5 text-indigo-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-deatail_shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold">Hired</p>
+              <p className="text-2xl font-bold text-midnight_text mt-1">{stats.hiredCandidates}</p>
+              <p className="text-xs text-gray-400 mt-1">This month</p>
+            </div>
+            <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+              <Icon icon="heroicons:check-badge" className="h-5 w-5 text-amber-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Pipeline & Quick Actions */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Pipeline */}
+          <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-deatail_shadow">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-midnight_text">Pipeline Overview</h2>
+              <Icon icon="heroicons:chart-bar" className="h-4 w-4 text-gray-400" />
+            </div>
+            <div className="space-y-3">
+              {Object.entries(stageDistribution).map(([stage, count]) => {
+                const color = stageColor(stage);
+                return (
+                  <div key={stage}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-gray-600">{stage}</span>
+                      <span className="font-semibold text-midnight_text">{count}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`bg-${color} h-full rounded-full`}
+                        style={{ width: `${(count / totalCandidatesForPct) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              {Object.keys(stageDistribution).length === 0 && (
+                <p className="text-gray-400 text-sm text-center py-4">No pipeline data available</p>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-deatail_shadow">
+            <h2 className="text-base font-semibold text-midnight_text mb-3">Quick Actions</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Create Job', path: '/jobs/new', icon: 'heroicons:plus' },
+                { label: 'View Candidates', path: '/candidates', icon: 'heroicons:eye' },
+                { label: 'AI Screening', path: '/resume-screening', icon: 'heroicons:arrow-up-tray' },
+                { label: 'Job Listings', path: '/jobslist', icon: 'heroicons:briefcase' },
+              ].map((action, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => navigate(action.path)}
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-primary/10 rounded-lg text-sm text-gray-700 hover:text-primary transition-all"
+                >
+                  <Icon icon={action.icon} className="h-4 w-4" />
+                  <span>{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Sourcing Metrics */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-deatail_shadow">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Icon icon="heroicons:calendar" className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-midnight_text">Weekly Metrics</h2>
+              </div>
+              <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded">Active</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-500">Screening Accuracy</p>
+                  <p className="text-sm font-medium text-midnight_text">Match Rate</p>
+                </div>
+                <span className="text-lg font-bold text-emerald-600">100%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-500">Avg. Match Rating</p>
+                  <p className="text-sm font-medium text-midnight_text">Candidate Grade</p>
+                </div>
+                <span className="text-lg font-bold text-primary">84%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-500">Time to Hire</p>
+                  <p className="text-sm font-medium text-midnight_text">Avg. Duration</p>
+                </div>
+                <span className="text-sm font-bold text-midnight_text">4.8 days</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Applications */}
+      <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-midnight_text">Recent Applications</h2>
+            <p className="text-xs text-gray-500">Latest candidates</p>
+          </div>
           <button
-            type="button"
-            className="btn refresh-btn d-flex align-items-center gap-2"
-            onClick={fetchDashboardData}
-            disabled={refreshing}
+            onClick={() => navigate('/candidates')}
+            className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
           >
-            <Icon icon="heroicons:arrow-path" className={refreshing ? 'spin' : ''} style={{ width: 16, height: 16 }} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            View All
+            <Icon icon="heroicons:chevron-right" className="h-3 w-3" />
           </button>
         </div>
-      </div>
-
-      {/* KPI Row - App.css kpi-card style */}
-      <div className="kpi-row mb-4">
-        {[
-          { title: 'Total Jobs', value: stats.totalJobs, sub: `${stats.activeJobs} active`, icon: 'heroicons:briefcase', bg: 'kpi-primary', color: 'kpi-primary-text' },
-          { title: 'Total Candidates', value: stats.totalCandidates, sub: `${stats.pendingApplications} pending`, icon: 'heroicons:user-group', bg: 'kpi-success', color: 'kpi-success-text' },
-          { title: 'Applications', value: stats.totalApplications, sub: 'All time', icon: 'heroicons:document-text', bg: 'kpi-info', color: 'kpi-info-text' },
-          { title: 'Hired', value: stats.hiredCandidates, sub: 'This month', icon: 'heroicons:check-badge', bg: 'kpi-warning', color: 'kpi-warning-text' }
-        ].map((item, index) => (
-          <div className="kpi-col" key={index}>
-            <div className="kpi-card">
-              <div className="kpi-card-body">
-                <div className={`kpi-icon ${item.bg}`}>
-                  <Icon icon={item.icon} className={`kpi-icon-style ${item.color}`} />
+        <div className="divide-y divide-gray-100">
+          {recentApplications.map((application) => (
+            <div
+              key={application.id}
+              className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <span className="text-primary font-semibold text-sm">
+                    {application.name.charAt(0).toUpperCase()}
+                  </span>
                 </div>
-                <div className="kpi-content">
-                  <div className="kpi-title">{item.title}</div>
-                  <div className="kpi-value">{item.value}</div>
-                  {item.sub && <div className="kpi-sub text-muted">{item.sub}</div>}
+                <div>
+                  <p className="text-sm font-medium text-midnight_text">{application.name}</p>
+                  <p className="text-xs text-gray-500">{application.role}</p>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main content: Pipeline Overview + Quick Actions */}
-      <div className="row g-3 mb-4">
-        {/* Pipeline Overview */}
-        <div className="col-12 col-lg-6">
-          <div className="card border shadow-none h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <h5 className="fw-semibold mb-0">Pipeline Overview</h5>
-                <Icon icon="heroicons:chart-bar" className="text-muted" style={{ fontSize: 22 }} />
-              </div>
-              <div className="d-flex flex-column gap-3">
-                {Object.entries(stageDistribution).map(([stage, count]) => (
-                  <div key={stage} className="d-flex align-items-center justify-content-between">
-                    <div className="d-flex align-items-center gap-2">
-                      <span className={`rounded-circle ${stageColorDot(stage)}`} style={{ width: 10, height: 10 }} />
-                      <span className="small fw-medium">{stage}</span>
-                    </div>
-                    <div className="d-flex align-items-center gap-2">
-                      <span className="small text-muted">{count}</span>
-                      <div className="rounded-pill bg-light" style={{ width: 80, height: 8 }}>
-                        <div
-                          className={`h-100 rounded-pill ${stageColorDot(stage)}`}
-                          style={{ width: `${(count / totalCandidatesForPct) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {Object.keys(stageDistribution).length === 0 && (
-                  <p className="text-muted small mb-0">No pipeline data yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="col-12 col-lg-6">
-          <div className="card border shadow-none h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <h5 className="fw-semibold mb-0">Quick Actions</h5>
-                <span className="small text-muted">Need to move fast? Use these actions.</span>
-              </div>
-              <div className="d-flex flex-wrap gap-2 justify-content-center">
-                <button type="button" className="btn create-job-btn d-inline-flex align-items-center gap-2" onClick={() => navigate('/jobs/new')}>
-                  <Icon icon="heroicons:plus" style={{ width: 16, height: 16 }} />
-                  Create Job
-                </button>
-                <button type="button" className="btn job-listings-btn d-inline-flex align-items-center gap-2" onClick={() => navigate('/candidates')}>
-                  <Icon icon="heroicons:eye" style={{ width: 16, height: 16 }} />
-                  View Candidates
-                </button>
-                <button type="button" className="btn job-listings-btn d-inline-flex align-items-center gap-2" onClick={() => navigate('/resume-screening')}>
-                  <Icon icon="heroicons:arrow-up-tray" style={{ width: 16, height: 16 }} />
-                  AI Resume Screening
-                </button>
-                <button type="button" className="btn job-listings-btn d-inline-flex align-items-center gap-2" onClick={() => navigate('/jobslist')}>
-                  <Icon icon="heroicons:briefcase" style={{ width: 16, height: 16 }} />
-                  Job Listings
-                </button>
-                <button type="button" className="btn job-listings-btn d-inline-flex align-items-center gap-2" onClick={() => navigate('/pipeline/view')}>
-                  <Icon icon="heroicons:squares-2x2" style={{ width: 16, height: 16 }} />
-                  Pipeline View
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Applications + Activity Summary */}
-      <div className="row g-3">
-        {/* Recent Applications */}
-        <div className="col-12 col-lg-7">
-          <div className="card border shadow-none h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <h5 className="fw-semibold mb-0">Recent Applications</h5>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-1 rounded-md font-medium ${stageBadgeClass(application.stage)}`}>
+                  {application.stage}
+                </span>
                 <button
-                  type="button"
-                  className="btn btn-link p-0 text-primary text-decoration-none fw-medium"
-                  onClick={() => navigate('/candidates')}
+                  onClick={() => handleViewCandidate(application)}
+                  className="p-1.5 text-gray-400 hover:text-primary rounded-lg hover:bg-primary/10 transition-all"
                 >
-                  View All
+                  <Icon icon="heroicons:eye" className="h-4 w-4" />
                 </button>
               </div>
-              <div className="d-flex flex-column gap-2">
-                {recentApplications.map((application) => (
-                  <div
-                    key={application.id}
-                    className="d-flex align-items-center justify-content-between p-3 bg-light rounded-3"
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      <div
-                        className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
-                        style={{ width: 40, height: 40 }}
-                      >
-                        <span className="small fw-semibold text-primary">
-                          {application.name.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="fw-medium">{application.name}</div>
-                        <div className="small text-muted">{application.role}</div>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-2">
-                      <span className={`badge ${stageBadgeClass(application.stage)}`}>
-                        {application.stage}
-                      </span>
-                      <button
-                        type="button"
-                        className="btn job-listings-btn p-2"
-                        onClick={() => handleViewCandidate(application)}
-                        title="Quick View"
-                      >
-                        <Icon icon="heroicons:eye" style={{ width: 16, height: 16 }} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {recentApplications.length === 0 && (
-                  <p className="text-muted small mb-0 py-3">No recent applications.</p>
-                )}
-              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Activity Summary: This Week + Performance */}
-        <div className="col-12 col-lg-5">
-          <div className="d-flex flex-column gap-3 h-100">
-            <div className="card border shadow-none">
-              <div className="card-body">
-                <h5 className="fw-semibold mb-3">This Week</h5>
-                <div className="d-flex flex-column gap-2">
-                  <div className="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
-                    <span className="text-muted small">New Applications</span>
-                    <span className="fw-medium">{stats.pendingApplications}</span>
-                  </div>
-                  <div className="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
-                    <span className="text-muted small">Interviews Scheduled</span>
-                    <span className="fw-medium">0</span>
-                  </div>
-                  <div className="d-flex justify-content-between align-items-center py-2">
-                    <span className="text-muted small">Offers Extended</span>
-                    <span className="fw-medium">0</span>
-                  </div>
-                </div>
-              </div>
+          ))}
+          {recentApplications.length === 0 && (
+            <div className="px-4 py-8 text-center text-gray-400 text-sm">
+              No recent applications
             </div>
-            <div className="card border shadow-none">
-              <div className="card-body">
-                <h5 className="fw-semibold mb-3">Performance</h5>
-                <div className="d-flex flex-column gap-2">
-                  <div className="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
-                    <span className="text-muted small">Application Rate</span>
-                    <span className="fw-medium text-success">100%</span>
-                  </div>
-                  <div className="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
-                    <span className="text-muted small">Time to Hire</span>
-                    <span className="fw-medium">-</span>
-                  </div>
-                  <div className="d-flex justify-content-between align-items-center py-2">
-                    <span className="text-muted small">Success Rate</span>
-                    <span className="fw-medium">-</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Candidate Quick View Modal (same style as Candidates page) */}
-      {showCandidateModal && selectedCandidate && (
-        <div
-          className="job-modal-overlay"
-          tabIndex="-1"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) handleCloseCandidateModal();
-          }}
-        >
-          <div
-            className="job-modal-dialog"
-            style={{ maxWidth: '900px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CandidateProfilePage
-              candidate={selectedCandidate}
-              onClose={handleCloseCandidateModal}
-            />
-          </div>
-        </div>
-      )}
+      {/* Modal */}
+      <Modal
+        isOpen={showCandidateModal}
+        onClose={handleCloseCandidateModal}
+        title="Candidate Profile"
+        size="2xl"
+      >
+        {selectedCandidate && (
+          <CandidateDetailsView
+            candidate={selectedCandidate}
+            onClose={handleCloseCandidateModal}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

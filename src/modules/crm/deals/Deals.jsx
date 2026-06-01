@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
-import { dealsAPI } from "../../utils/api";
+import { dealsAPI } from "../../../shared/utils/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Icon } from '@iconify/react';

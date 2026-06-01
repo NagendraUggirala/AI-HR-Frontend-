@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Link } from 'react-router-dom';
-import JobList from '../JobList';
-import RecruiterDashboardLayout from './RecruiterDashboardLayout';
+import JobList from '../jobs/JobList';
+import RecruiterDashboardLayout from '../../../app/layouts/RecruiterDashboardLayout';
 
 const RecruiterDashboardHome = () => {
   const [searchFocused, setSearchFocused] = useState(false);

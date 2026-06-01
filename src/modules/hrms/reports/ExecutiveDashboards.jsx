@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import RecruiterDashboardLayout from "../../recruiterDashboard/RecruiterDashboardLayout";
+import RecruiterDashboardLayout from "../../../app/layouts/RecruiterDashboardLayout";
 import {
   Search,
   Download,

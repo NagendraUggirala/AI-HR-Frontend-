@@ -14,7 +14,7 @@ import {
   Activity,
   AlertCircle
 } from 'lucide-react';
-import { BASE_URL } from '../../config/api.config';
+import { BASE_URL } from "../../../shared/constants/api.config";
 
 const JobAnalytics = () => {
   const navigate = useNavigate();

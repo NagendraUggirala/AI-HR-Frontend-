@@ -1,5 +1,5 @@
 // Email Service for sending emails
-import { BASE_URL, API_ENDPOINTS } from '../config/api.config';
+import { BASE_URL, API_ENDPOINTS } from "../constants/api.config";
 
 /**
  * Send email via API

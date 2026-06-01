@@ -12,8 +12,8 @@ import {
   Mic,
   Square
 } from 'lucide-react';
-import { BASE_URL } from '../config/api.config';
-import { aiInterviewAPI } from '../utils/api';
+import { BASE_URL } from "../../../shared/constants/api.config";
+import { aiInterviewAPI } from "../../../shared/utils/api";
 
 // Add pulse animation style
 const pulseStyle = `

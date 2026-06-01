@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import RecruiterDashboardLayout from "../../recruiterDashboard/RecruiterDashboardLayout";
+import RecruiterDashboardLayout from "../../../app/layouts/RecruiterDashboardLayout";
 import {
   Search, Download, Printer, Eye, Check, X, Trash2,
   Calendar, TrendingUp, TrendingDown, AlertTriangle, Users,

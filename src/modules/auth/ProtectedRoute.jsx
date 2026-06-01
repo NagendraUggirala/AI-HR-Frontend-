@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserRole } from '../../utils/auth';
+import { getUserRole } from "../../shared/utils/auth";
 
 const ProtectedRoute = ({ children, requiredRole = null, superAdminOnly = false }) => {
   const navigate = useNavigate();

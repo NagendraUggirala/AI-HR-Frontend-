@@ -1,41 +1,38 @@
 import React, { useState } from 'react';
-import { Download, Mail, Phone, MapPin, Calendar, Briefcase, DollarSign, Clock, Linkedin, Github, X, CheckCircle } from 'lucide-react';
+import { 
+  FiDownload, 
+  FiMail, 
+  FiCheckCircle,
+  FiXCircle,
+  FiUser,
+  FiAward,
+  FiMessageCircle,
+  FiFileText
+} from 'react-icons/fi';
+import Modal from '../../../shared/components/Modal';
+import { BASE_URL } from "../../../shared/constants/api.config";
 
 const CandidateProfilePage = ({ candidate, onClose }) => {
-  const fullData = candidate.fullData || {};
-  const backendBaseUrl = "http://localhost:8000";
+  const fullData = candidate.fullData || candidate;
+  const backendBaseUrl = BASE_URL; // Use BASE_URL from config
 
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentStage, setCurrentStage] = useState(candidate.stage);
+  const [currentStage, setCurrentStage] = useState(fullData.stage || 'Applied');
   const [actionMessage, setActionMessage] = useState(null);
 
-  const avatar = candidate.name?.split(' ').map(n => n[0]).join('') || '?';
-  const email = candidate.email || fullData.email || 'Not provided';
-  const phone = fullData.phone || 'Not provided';
-  const role = candidate.role || fullData.role || 'Not specified';
-  const appliedDate = fullData.applied_date
-    ? new Date(fullData.applied_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-    : 'Not available';
-  const summary = fullData.summary || fullData.about || 'No summary provided.';
-  const educationDetails = fullData.education_details || {};
-  const educationDegree = educationDetails.degree || fullData.education || null;
-  const educationInstitution = educationDetails.institution || educationDetails.college || null;
-  const educationYear = educationDetails.year || fullData.graduation_year || null;
-  const experienceValue = fullData.experience || fullData.experience_years || fullData.total_experience || null;
-  const lastCompany = fullData.last_company || fullData.current_company || null;
-  const expectedSalary = fullData.expected_salary || 'Not specified';
-  const location = fullData.location || 'Not specified';
-  const availability = fullData.availability || 'Not specified';
-  const noticePeriod = fullData.notice_period || 'Not specified';
-  const linkedinUrl = fullData.linkedin || '';
-  const githubUrl = fullData.github || '';
-  const skills = Array.isArray(candidate.skills)
-    ? candidate.skills
-    : fullData.skills
-      ? fullData.skills.split(',').map(skill => skill.trim())
-      : [];
-  const workHistory = Array.isArray(fullData.work_history) ? fullData.work_history : [];
-  const resumeUrl = candidate.resume_url || fullData.resume_url || '';
+  // Only backend fields from Candidate model
+  const name = fullData.name || 'Unknown Candidate';
+  const email = fullData.email || 'Not provided';
+  const role = fullData.role || 'Not specified';
+  const skills = fullData.skills || '';
+  const resumeUrl = fullData.resume_url || '';
+  const notes = fullData.notes || '';
+  const recruiterComments = fullData.recruiter_comments || '';
+
+  // Parse skills if it's a string
+  const skillsList = skills ? (Array.isArray(skills) ? skills : skills.split(',').map(s => s.trim())) : [];
+  
+  const avatar = name.charAt(0).toUpperCase() || '?';
 
   const showActionMessage = (message, type = 'success') => {
     setActionMessage({ message, type });
@@ -45,284 +42,270 @@ const CandidateProfilePage = ({ candidate, onClose }) => {
   const handleShortlist = () => {
     if (currentStage === 'Applied') {
       setCurrentStage('Screening');
-      showActionMessage(`✅ ${candidate.name} has been shortlisted and moved to Screening stage!`);
+      showActionMessage(`✅ ${name} has been shortlisted and moved to Screening stage!`);
     } else {
-      showActionMessage(`✅ ${candidate.name} has been shortlisted!`);
+      showActionMessage(`✅ ${name} has been shortlisted!`);
     }
   };
 
   const handleReject = () => {
-    if (window.confirm(`Are you sure you want to reject ${candidate.name}?`)) {
+    if (window.confirm(`Are you sure you want to reject ${name}?`)) {
       setCurrentStage('Rejected');
-      showActionMessage(`❌ ${candidate.name} has been rejected.`, 'danger');
+      showActionMessage(`❌ ${name} has been rejected.`, 'danger');
     }
   };
 
   const handleDownload = () => {
     if (resumeUrl) {
-      // Log the raw resumeUrl for debugging
-      console.log('Raw resumeUrl:', resumeUrl);
-
       let downloadUrl;
 
-      // Case 1: If it's already a full URL (starts with http)
       if (resumeUrl.startsWith('http')) {
         downloadUrl = resumeUrl;
-      }
-      // Case 2: If it starts with '/uploads/' (full path from root)
-      else if (resumeUrl.startsWith('/uploads/')) {
+      } else if (resumeUrl.startsWith('/uploads/')) {
         downloadUrl = `${backendBaseUrl}${resumeUrl}`;
-      }
-      // Case 3: If it starts with 'uploads/' (relative path)
-      else if (resumeUrl.startsWith('uploads/')) {
+      } else if (resumeUrl.startsWith('uploads/')) {
         downloadUrl = `${backendBaseUrl}/${resumeUrl}`;
-      }
-      // Case 4: If it starts with a slash but not /uploads/
-      else if (resumeUrl.startsWith('/')) {
+      } else if (resumeUrl.startsWith('/')) {
         downloadUrl = `${backendBaseUrl}${resumeUrl}`;
-      }
-      // Case 5: Just the filename (assume it's in uploads folder)
-      else {
+      } else {
         downloadUrl = `${backendBaseUrl}/uploads/${resumeUrl}`;
       }
 
-      console.log('Final download URL:', downloadUrl);
       window.open(downloadUrl, "_blank");
     } else {
       showActionMessage('No resume available for download', 'danger');
     }
   };
 
-  const handleStageChange = (e) => {
-    const newStage = e.target.value;
-    if (newStage && newStage !== '⏭ Move to Stage') {
+  const handleStageChange = (newStage) => {
+    if (newStage && newStage !== currentStage) {
       setCurrentStage(newStage);
-      showActionMessage(`✅ ${candidate.name} has been moved to ${newStage} stage!`);
+      showActionMessage(`✅ ${name} has been moved to ${newStage} stage!`);
     }
-  };
-
-  const handleSubmit = () => {
-    showActionMessage(`✅ Profile updated successfully! All changes for ${candidate.name} have been saved.`);
-    // You can add API call here to save the changes to the backend
   };
 
   const getStageColor = (stage) => {
     const colors = {
-      'Applied': 'bg-primary-subtle text-primary',
-      'Screening': 'bg-info-subtle text-info',
-      'Interview': 'bg-warning-subtle text-warning',
-      'Offer': 'bg-success-subtle text-success',
-      'Hired': 'bg-success-subtle text-success',
-      'Rejected': 'bg-danger-subtle text-danger'
+      'Applied': 'bg-primary/10 text-primary',
+      'Screening': 'bg-amber-50 text-amber-700',
+      'Interview': 'bg-indigo-50 text-indigo-700',
+      'Offer': 'bg-primary/10 text-primary',
+      'Hired': 'bg-emerald-50 text-emerald-700',
+      'Rejected': 'bg-rose-50 text-rose-700'
     };
-    return colors[stage] || 'bg-secondary-subtle text-secondary';
+    return colors[stage] || 'bg-gray-100 text-gray-600';
   };
 
+  const stages = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected'];
+
   return (
-    <div className="job-modal-overlay">
-      <div className="job-modal-dialog custom-modal-xl" style={{ width: '900px', maxWidth: '65%' }}>
-        <div className="job-modal-content" style={{ maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
-
-          {/* Modal Header */}
-          <div className="job-modal-header">
-            <div>
-              <h5 className="job-modal-subtitle">Candidate Profile</h5>
-            </div>
-            <button type="button" className="job-modal-close" onClick={onClose}>×</button>
+    <Modal isOpen={true} onClose={onClose} title="Candidate Profile" size="3xl">
+      <div className=" space-y-6">
+        {/* Action Message */}
+        {actionMessage && (
+          <div className={`flex items-center gap-2 p-3 rounded-lg ${
+            actionMessage.type === 'danger' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+          }`}>
+            {actionMessage.type === 'danger' ? <FiXCircle className="h-4 w-4" /> : <FiCheckCircle className="h-4 w-4" />}
+            <span className="text-sm flex-1">{actionMessage.message}</span>
           </div>
+        )}
 
-          {/* Modal Body with Scroll */}
-          <div className="job-modal-body custom-modal-scroll">
-            <div className="container-fluid p-0">
-
-              {/* Action Message */}
-              {actionMessage && (
-                <div className={`alert alert-${actionMessage.type} alert-dismissible fade show mb-4`} role="alert">
-                  {actionMessage.message}
-                  <button type="button" className="btn-close" onClick={() => setActionMessage(null)}></button>
-                </div>
-              )}
-
-              {/* Profile Header Card */}
-              <div className="job-section">
-                <div className="job-info-card p-4">
-                  <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-4">
-                    <div className="d-flex gap-4 flex-grow-1 align-items-center">
-                      <div>
-                        <h5 className="fw-bold mb-1">{candidate.name}</h5>
-                        <p className="text-muted mb-3">{role}</p>
-                        <div className="job-meta d-flex gap-3">
-                          <span className="d-flex align-items-center gap-1">
-                            <Phone size={16} />
-                            {phone}
-                          </span>
-                          <span className="d-flex align-items-center gap-1">
-                            <Mail size={16} />
-                            {email}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
-              {/* Tabs Navigation */}
-              <div className="job-section">
-                <div className="card border">
-                  <div className="card-header bg-white border-bottom p-0">
-                    <ul className="nav nav-tabs card-header-tabs border-0">
-                      {['overview', 'skills', 'work history'].map((tab) => (
-                        <li className="nav-item" key={tab}>
-                          <button
-                            onClick={() => setActiveTab(tab)}
-                            className={`nav-link text-capitalize ${activeTab === tab ? 'active' : ''}`}
-                            style={{ fontWeight: activeTab === tab ? '700' : '400' }}
-                          >
-                            {tab}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="card-body p-4">
-                    {/* Overview Tab */}
-                    {activeTab === 'overview' && (
-                      <div>
-                        <div className="job-section">
-                          <h6 className="job-section-title mb-3">About Me</h6>
-                          <p className="text-muted">{summary}</p>
-                        </div>
-
-                        <div className="row mb-4">
-                          <div className="col-md-6 mb-3 mb-md-0">
-                            <h6 className="job-section-title mb-3">Education</h6>
-                            <div className="job-info-card">
-                              {educationDegree || educationInstitution || educationYear ? (
-                                <>
-                                  {educationDegree && <p className="fw-bold mb-1">{educationDegree}</p>}
-                                  {educationInstitution && <p className="text-muted mb-1">{educationInstitution}</p>}
-                                  {educationYear && <p className="text-muted small mb-0">Graduated: {educationYear}</p>}
-                                </>
-                              ) : (
-                                <p className="text-muted mb-0">Education details not provided.</p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="col-md-6">
-                            <h6 className="job-section-title mb-3">Experience</h6>
-                            <div className="job-info-card">
-                              <div className="d-flex align-items-center gap-2 mb-2">
-                                <Briefcase size={18} className="text-muted" />
-                                {experienceValue || 'Not specified'}
-                              </div>
-                              <p className="text-muted small mb-0">
-                                Last Company: {lastCompany || 'Not specified'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="job-info-grid">
-                          <div className="job-info-card">
-                            <p className="job-info-label">Expected Salary</p>
-                            <p className="job-info-value">{expectedSalary}</p>
-                          </div>
-                          <div className="job-info-card">
-                            <p className="job-info-label">Location</p>
-                            <p className="job-info-value">{location}</p>
-                          </div>
-                          <div className="job-info-card">
-                            <p className="job-info-label">Availability</p>
-                            <p className="job-info-value">{availability}</p>
-                          </div>
-                          <div className="job-info-card">
-                            <p className="job-info-label">Notice Period</p>
-                            <p className="job-info-value">{noticePeriod}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Skills Tab */}
-                    {activeTab === 'skills' && (
-                      <div>
-                        <h6 className="job-section-title mb-4">Technical & Soft Skills</h6>
-                        <div className="job-skills">
-                          {skills.length > 0 ? skills.map((skill, index) => (
-                            <span key={index} className="job-skill">
-                              {skill}
-                            </span>
-                          )) : (
-                            <span className="text-muted">No skills provided.</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Work History Tab */}
-                    {activeTab === 'work history' && (
-                      <div>
-                        <h6 className="job-section-title mb-4">Work Experience</h6>
-                        <div className="d-flex flex-column gap-3">
-                          {workHistory.length > 0 ? workHistory.map((job, index) => (
-                            <div key={index} className="job-info-card">
-                              <div className="d-flex justify-content-between align-items-start mb-3 flex-wrap">
-                                <div>
-                                  <h6 className="fw-bold mb-1">{job.role}</h6>
-                                  <p className="text-primary fw-semibold mb-0">{job.company}</p>
-                                </div>
-                                <span className="job-badge primary">
-                                  {job.duration}
-                                </span>
-                              </div>
-                              <p className="text-muted small mb-0">{job.description}</p>
-                            </div>
-                          )) : (
-                            <div className="job-info-card">
-                              <p className="text-muted mb-0">No work history provided.</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Profile Header */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center text-white text-xl font-bold uppercase flex-shrink-0">
+            {avatar}
           </div>
-
-          {/* Modal Footer */}
-          <div className="job-modal-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <div className="text-muted small">
-              <span>
-                Last Updated:{' '}
-                {fullData.updated_at
-                  ? new Date(fullData.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                  : 'Not available'}
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <h2 className="text-xl font-bold text-midnight_text">{name}</h2>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${getStageColor(currentStage)}`}>
+                {currentStage}
               </span>
             </div>
-            <div className="d-flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="job-listings-btn"
-                disabled={!resumeUrl}
-                onClick={handleDownload}
-              >
-                <Download size={16} />
-                Download Resume
-              </button>
-              <button type="button" className="close-btn" onClick={onClose}>
-                Close
-              </button>
+            <p className="text-sm text-gray-600 mb-2">{role}</p>
+            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+              <span className="flex items-center gap-1">
+                <FiMail className="h-4 w-4" />
+                {email}
+              </span>
             </div>
           </div>
         </div>
+
+        {/* Stage Selector */}
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+          <label className="text-xs text-gray-500 font-semibold uppercase mb-2 block">Update Stage</label>
+          <div className="flex flex-wrap gap-2">
+            {stages.map(stageOption => (
+              <button
+                key={stageOption}
+                onClick={() => handleStageChange(stageOption)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  currentStage === stageOption
+                    ? getStageColor(stageOption)
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                }`}
+              >
+                {stageOption}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-100">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`pb-2 text-sm font-medium capitalize transition-all ${
+                activeTab === 'overview' 
+                  ? 'border-b-2 border-primary text-primary' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('skills')}
+              className={`pb-2 text-sm font-medium capitalize transition-all ${
+                activeTab === 'skills' 
+                  ? 'border-b-2 border-primary text-primary' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Skills
+            </button>
+            <button
+              onClick={() => setActiveTab('notes')}
+              className={`pb-2 text-sm font-medium capitalize transition-all ${
+                activeTab === 'notes' 
+                  ? 'border-b-2 border-primary text-primary' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Notes & Comments
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="min-h-[200px]">
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FiUser className="h-4 w-4" />
+                    Role Applied For
+                  </h4>
+                  <p className="text-sm font-semibold text-midnight_text">{role}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FiFileText className="h-4 w-4" />
+                    Current Stage
+                  </h4>
+                  <p className="text-sm font-semibold text-midnight_text">{currentStage}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Skills Tab */}
+          {activeTab === 'skills' && (
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <FiAward className="h-4 w-4" />
+                Skills
+              </h4>
+              {skillsList.length > 0 && skillsList[0] !== '' ? (
+                <div className="flex flex-wrap gap-2">
+                  {skillsList.map((skill, index) => (
+                    <span key={index} className="px-3 py-1 rounded-lg text-sm font-medium bg-primary/10 text-primary">
+                      {skill.trim()}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FiAward className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">No skills listed</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notes Tab */}
+          {activeTab === 'notes' && (
+            <div className="space-y-4">
+              {notes && notes.trim() !== '' ? (
+                <div className="bg-amber-50 rounded-lg p-4 border border-amber-100">
+                  <h4 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FiMessageCircle className="h-4 w-4" />
+                    Notes
+                  </h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">{notes}</p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FiMessageCircle className="h-4 w-4" />
+                    Notes
+                  </h4>
+                  <p className="text-sm text-gray-400 italic">No notes available</p>
+                </div>
+              )}
+              
+              {recruiterComments && recruiterComments.trim() !== '' ? (
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                  <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FiUser className="h-4 w-4" />
+                    Recruiter Comments
+                  </h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">{recruiterComments}</p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FiUser className="h-4 w-4" />
+                    Recruiter Comments
+                  </h4>
+                  <p className="text-sm text-gray-400 italic">No recruiter comments available</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex flex-wrap justify-end items-center gap-3 pt-4 border-t border-gray-100">
+          <div className="flex gap-2">
+            <button
+              onClick={handleShortlist}
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all"
+            >
+              Shortlist
+            </button>
+            <button
+              onClick={handleReject}
+              className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition-all"
+            >
+              Reject
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={!resumeUrl}
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiDownload className="h-4 w-4" />
+              Resume
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
-import { BASE_URL, API_ENDPOINTS } from '../../config/api.config';
+import { BASE_URL, API_ENDPOINTS } from "../../../shared/constants/api.config";
 
 const RecruiterProfile = () => {
   const [profileData, setProfileData] = useState({

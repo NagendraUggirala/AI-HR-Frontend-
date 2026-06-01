@@ -15,8 +15,7 @@ import {
   Copy
 } from 'lucide-react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import '../../App.css';
-import { BASE_URL } from '../../config/api.config';
+import { BASE_URL } from "../../../shared/constants/api.config";
 
 const ConfigureAIInterview = () => {
   const [templates, setTemplates] = useState([]);

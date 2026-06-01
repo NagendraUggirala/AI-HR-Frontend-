@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { companiesAPI } from '../../utils/api';
-import { BASE_URL } from '../../config/api.config';
+import { companiesAPI } from "../../../shared/utils/api";
+import { BASE_URL } from "../../../shared/constants/api.config";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Icon } from '@iconify/react/dist/iconify.js';

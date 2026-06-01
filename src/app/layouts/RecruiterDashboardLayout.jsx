@@ -1,14 +1,75 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState } from "react";
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import "../../App.css";
+import { useEffect, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import DashboardLayoutBase from "../../shared/components/DashboardLayoutBase";
+import {
+  HiOutlineHome,
+  HiOutlineClipboardDocumentList,
+  HiOutlineUsers,
+  HiOutlineDocumentMagnifyingGlass,
+  HiOutlineQueueList,
+  HiOutlineChartBarSquare,
+  HiOutlineBriefcase,
+  HiOutlineDocumentText,
+  HiOutlineUserPlus,
+  HiOutlineClipboardDocumentCheck,
+  HiOutlineMagnifyingGlass,
+  HiOutlineCog6Tooth,
+  HiOutlineEye,
+  HiOutlineDocumentDuplicate,
+  HiOutlineBuildingOffice2,
+  HiOutlineLink,
+  HiOutlineCreditCard,
+  HiOutlineFunnel,
+  HiOutlineCalendarDays,
+  HiOutlineUserGroup,
+  HiOutlineShieldCheck,
+  HiOutlineDocumentCheck,
+  HiOutlineChatBubbleLeftRight,
+  HiOutlineCalendar,
+  HiOutlineAcademicCap,
+  HiOutlineClock,
+  HiOutlineCamera,
+  HiOutlinePencilSquare,
+  HiOutlineExclamationCircle,
+  HiOutlineArrowPathRoundedSquare,
+  HiOutlineGift,
+  HiOutlineChartBar,
+  HiOutlineUserCircle,
+  HiOutlineRectangleStack,
+  HiOutlineArchiveBox,
+  HiOutlineArrowPath,
+  HiOutlineComputerDesktop,
+  HiOutlineBanknotes,
+  HiOutlineCog,
+  HiOutlineReceiptRefund,
+  HiOutlineCurrencyDollar,
+  HiOutlineBuildingLibrary,
+  HiOutlineChartPie,
+  HiOutlineArrowTrendingUp,
+  HiOutlineArrowRightCircle,
+  HiOutlineLifebuoy,
+  HiOutlineEnvelope,
+  HiOutlineCube,
+  HiOutlineExclamationTriangle,
+  HiOutlineArrowRightOnRectangle,
+  HiOutlineArrowsRightLeft,
+  HiOutlineCheckCircle,
+  HiOutlinePresentationChartBar,
+  HiOutlineSparkles,
+  HiOutlinePlus,
+  HiOutlineCheckBadge,
+  HiOutlineBell
+} from 'react-icons/hi2';
+
 const RecruiterDashboardLayout = ({ children, internalNav = false, activeTab, onTabChange }) => {
-  let [sidebarActive, seSidebarActive] = useState(false);
-  let [mobileMenu, setMobileMenu] = useState(false);
-  let [assessmentMenuOpen, setAssessmentMenuOpen] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
+
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const notificationRef = useRef(null);
+  const profileRef = useRef(null);
 
   // Load company logo from localStorage, fallback to default
   const [companyLogo, setCompanyLogo] = useState(() => {
@@ -23,10 +84,6 @@ const RecruiterDashboardLayout = ({ children, internalNav = false, activeTab, on
     }
     return 'assets/images/asset/NewLogo.png';
   });
-
-  const toggleAssessmentMenu = () => {
-    setAssessmentMenuOpen(!assessmentMenuOpen);
-  };
 
   // Listen for logo updates from CompanySettings
   useEffect(() => {
@@ -44,10 +101,7 @@ const RecruiterDashboardLayout = ({ children, internalNav = false, activeTab, on
       }
     };
 
-    // Listen for custom event
     window.addEventListener('companyLogoUpdated', handleLogoUpdate);
-    
-    // Also listen for storage events (in case logo is updated in another tab)
     window.addEventListener('storage', (e) => {
       if (e.key === 'companyLogo') {
         handleLogoUpdate();
@@ -60,81 +114,19 @@ const RecruiterDashboardLayout = ({ children, internalNav = false, activeTab, on
     };
   }, []);
 
+  // Handle click outside for dropdowns
   useEffect(() => {
-    const handleDropdownClick = (event) => {
-      event.preventDefault();
-      const clickedLink = event.currentTarget;
-      const clickedDropdown = clickedLink.closest(".dropdown");
-
-      if (!clickedDropdown) return;
-
-      const isActive = clickedDropdown.classList.contains("open");
-
-      // Close all dropdowns
-      const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
-      allDropdowns.forEach((dropdown) => {
-        dropdown.classList.remove("open");
-        const submenu = dropdown.querySelector(".sidebar-submenu");
-        if (submenu) {
-          submenu.style.maxHeight = "0px"; // Collapse submenu
-        }
-      });
-
-      // Toggle the clicked dropdown
-      if (!isActive) {
-        clickedDropdown.classList.add("open");
-        const submenu = clickedDropdown.querySelector(".sidebar-submenu");
-        if (submenu) {
-          submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
-        }
+    const handleOutsideClick = (e) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
+        setNotificationsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
       }
     };
-
-    const dropdownTriggers = document.querySelectorAll(
-      ".sidebar-menu .dropdown > a, .sidebar-menu .dropdown > Link"
-    );
-
-    dropdownTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", handleDropdownClick);
-    });
-
-    const openActiveDropdown = () => {
-      const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
-      allDropdowns.forEach((dropdown) => {
-        const submenuLinks = dropdown.querySelectorAll(".sidebar-submenu li a");
-        submenuLinks.forEach((link) => {
-          if (
-            link.getAttribute("href") === location.pathname ||
-            link.getAttribute("to") === location.pathname
-          ) {
-            dropdown.classList.add("open");
-            const submenu = dropdown.querySelector(".sidebar-submenu");
-            if (submenu) {
-              submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
-            }
-          }
-        });
-      });
-    };
-
-    // Open the submenu that contains the active route
-    openActiveDropdown();
-
-    // Cleanup event listeners on unmount
-    return () => {
-      dropdownTriggers.forEach((trigger) => {
-        trigger.removeEventListener("click", handleDropdownClick);
-      });
-    };
-  }, [location.pathname]);
-
-  let sidebarControl = () => {
-    seSidebarActive(!sidebarActive);
-  };
-
-  let mobileMenuControl = () => {
-    setMobileMenu(!mobileMenu);
-  };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -146,1019 +138,331 @@ const RecruiterDashboardLayout = ({ children, internalNav = false, activeTab, on
     }
   };
 
-  const LinkItem = ({ to, tabKey, icon, label, isParent = false }) => {
-    if (internalNav) {
-      return (
-        <a href="#" onClick={(e) => { e.preventDefault(); onTabChange && onTabChange(tabKey); }} className={activeTab === tabKey ? "active-page" : ""}>
-          <Icon icon={icon} className="menu-icon" />
-          <span>{label}</span>
-        </a>
-      );
+  // Sidebar items configuration
+  const sidebarItems = [
+    {
+      type: 'link',
+      to: '/dashboard',
+      tabKey: 'dashboard',
+      label: 'Dashboard',
+      icon: HiOutlineHome
+    },
+    {
+      type: 'title',
+      label: 'Recruitment'
+    },
+    {
+      type: 'link',
+      to: '/jobslist',
+      tabKey: 'jobs',
+      label: 'Jobs',
+      icon: HiOutlineClipboardDocumentList,
+      isParent: true
+    },
+    {
+      type: 'link',
+      to: '/candidates',
+      tabKey: 'candidates',
+      label: 'Candidates',
+      icon: HiOutlineUsers
+    },
+    {
+      type: 'link',
+      to: '/resume-screening',
+      tabKey: 'resume-screening',
+      label: 'AI Resume Screening',
+      icon: HiOutlineDocumentMagnifyingGlass
+    },
+    {
+      type: 'link',
+      to: '/pipeline/view',
+      tabKey: 'pipeline',
+      label: 'Pipeline View',
+      icon: HiOutlineQueueList
+    },
+    {
+      type: 'link',
+      to: '/analytics/recruiter-performance',
+      tabKey: 'recruiter-performance',
+      label: 'Analytics',
+      icon: HiOutlineChartBarSquare
+    },
+    {
+      type: 'dropdown',
+      label: 'Assessment',
+      icon: HiOutlineBriefcase,
+      items: [
+        { to: '/recruiter/assessments-library', tabKey: 'assessments-library', label: 'Assessments Library', icon: HiOutlineDocumentText },
+        { to: '/recruiter/assign-assessment', tabKey: 'assign-assessment', label: 'Assign Assessment', icon: HiOutlineUserPlus },
+        { to: '/recruiter/test-results', tabKey: 'test-results', label: 'Test Results', icon: HiOutlineClipboardDocumentCheck },
+        { to: '/recruiter/prescreening', tabKey: 'prescreening', label: 'AI Prescreening', icon: HiOutlineMagnifyingGlass },
+        { to: '/recruiter/ai-interview-configure', tabKey: 'ai-interview-configure', label: 'Configure AI Interview', icon: HiOutlineCog6Tooth },
+        { to: '/recruiter/ai-interview-review', tabKey: 'ai-interview-review', label: 'Review AI Interview', icon: HiOutlineEye },
+        { to: '/recruiter/offer-templates', tabKey: 'offer-templates', label: 'Offer Templates', icon: HiOutlineDocumentDuplicate },
+        { to: '/recruiter/offer-tracking', tabKey: 'offer-tracking', label: 'Offer Tracking', icon: HiOutlineClipboardDocumentList }
+      ]
+    },
+    {
+      type: 'title',
+      label: 'CRM'
+    },
+    {
+      type: 'dropdown',
+      label: 'CRM',
+      icon: HiOutlineBuildingOffice2,
+      items: [
+        { to: '/crm/contacts', tabKey: 'crm-contacts', label: 'Contacts', icon: HiOutlineBuildingOffice2 },
+        { to: '/crm/companies', tabKey: 'crm-companies', label: 'Companies', icon: HiOutlineLink },
+        { to: '/crm/deals', tabKey: 'crm-deals', label: 'Deals', icon: HiOutlineCreditCard },
+        { to: '/crm/leads', tabKey: 'crm-leads', label: 'Leads', icon: HiOutlineFunnel },
+        { to: '/crm/pipeline', tabKey: 'crm-pipeline', label: 'Pipeline', icon: HiOutlineLink },
+        { to: '/crm/analytics', tabKey: 'crm-analytics', label: 'Analytics', icon: HiOutlineCreditCard },
+        { to: '/crm/activities', tabKey: 'crm-activities', label: 'Activities', icon: HiOutlineCalendarDays }
+      ]
+    },
+    {
+      type: 'title',
+      label: 'HR Management'
+    },
+    {
+      type: 'link',
+      to: '/hrms/all-employees',
+      tabKey: 'all-employees',
+      label: 'All Employees',
+      icon: HiOutlineUserGroup
+    },
+    {
+      type: 'dropdown',
+      label: 'Onboarding & Pre-Joining',
+      icon: HiOutlineUserPlus,
+      items: [
+        { to: '/onboarding/background-verification', tabKey: 'bg-verify', label: 'Background Verification', icon: HiOutlineShieldCheck },
+        { to: '/onboarding/offer-letters', tabKey: 'offer-letters', label: 'Offer Letters', icon: HiOutlineDocumentCheck },
+        { to: '/onboarding/pre-joining', tabKey: 'pre-joining', label: 'On Boarding Form', icon: HiOutlineChatBubbleLeftRight },
+        { to: '/onboarding/joining-day', tabKey: 'joining-day', label: 'Add Employee', icon: HiOutlineCalendar },
+        { to: '/onboarding/induction', tabKey: 'induction', label: 'Induction & Orientation', icon: HiOutlineAcademicCap },
+        { to: '/onboarding/probation', tabKey: 'probation', label: 'Probation Management', icon: HiOutlineClock },
+        { to: '/onboarding/buddy', tabKey: 'buddy-mentor', label: 'Buddy/Mentor Program', icon: HiOutlineUserGroup }
+      ]
+    },
+    {
+      type: 'dropdown',
+      label: 'Attendance & Leave',
+      icon: HiOutlineCalendar,
+      items: [
+        { to: '/attendance/capture', tabKey: 'att-capture', label: 'Attendance Capture', icon: HiOutlineClock },
+        { to: '/attendance/daily-punches', tabKey: 'daily-punches', label: 'Daily Punches', icon: HiOutlineCamera },
+        { to: '/attendance/daily-attendance', tabKey: 'daily-attendance', label: 'Daily Attendance', icon: HiOutlineCalendarDays },
+        { to: '/attendance/monthly-attendance', tabKey: 'monthly-attendance', label: 'Monthly Attendance', icon: HiOutlineCalendar },
+        { to: '/attendance/manual-attendance', tabKey: 'manual-attendance', label: 'Manual Attendance', icon: HiOutlinePencilSquare },
+        { to: '/attendance/leave-correction', tabKey: 'leave-correction', label: 'Leave Correction', icon: HiOutlineExclamationCircle },
+        { to: '/attendance/shifts', tabKey: 'shifts', label: 'Shift Management', icon: HiOutlineArrowPathRoundedSquare },
+        { to: '/attendance/rules', tabKey: 'rules', label: 'Work Hour Rules', icon: HiOutlineDocumentText },
+        { to: '/attendance/leave', tabKey: 'leave-mgmt', label: 'Leave Management', icon: HiOutlineCalendarDays },
+        { to: '/attendance/regularization', tabKey: 'regularization', label: 'Regularization', icon: HiOutlineCheckBadge },
+        { to: '/attendance/holidays', tabKey: 'holidays', label: 'Holiday Calendar', icon: HiOutlineGift },
+        { to: '/attendance/reports', tabKey: 'att-reports', label: 'Attendance Reports', icon: HiOutlineChartBar }
+      ]
+    },
+    {
+      type: 'dropdown',
+      label: 'Employee Management',
+      icon: HiOutlineUsers,
+      items: [
+        { to: '/employee/master', tabKey: 'emp-master', label: 'Employee Master Data', icon: HiOutlineUserCircle },
+        { to: '/employee/hierarchy', tabKey: 'emp-hierarchy', label: 'Org Hierarchy', icon: HiOutlineRectangleStack },
+        { to: '/employee/documents', tabKey: 'emp-docs', label: 'Document Vault', icon: HiOutlineArchiveBox },
+        { to: '/employee/lifecycle', tabKey: 'emp-lifecycle', label: 'Employee Lifecycle', icon: HiOutlineArrowPath },
+        { to: '/employee/self-service', tabKey: 'emp-self-service', label: 'Employee Self-Service', icon: HiOutlineComputerDesktop }
+      ]
+    },
+    {
+      type: 'dropdown',
+      label: 'Payroll Management',
+      icon: HiOutlineBanknotes,
+      items: [
+        { to: '/payroll/structure', tabKey: 'payroll-struct', label: 'Salary Structure', icon: HiOutlineCog6Tooth },
+        { to: '/payroll/processing', tabKey: 'payroll-process', label: 'Payroll Processing', icon: HiOutlineCog },
+        { to: '/payroll/compliance', tabKey: 'payroll-compliance', label: 'Statutory Compliance', icon: HiOutlineShieldCheck },
+        { to: '/payroll/slips', tabKey: 'payroll-slips', label: 'Salary Slips', icon: HiOutlineDocumentText },
+        { to: '/payroll/reimbursements', tabKey: 'payroll-reimb', label: 'Reimbursements', icon: HiOutlineReceiptRefund },
+        { to: '/payroll/loans', tabKey: 'payroll-loans', label: 'Loans & Advances', icon: HiOutlineCurrencyDollar },
+        { to: '/payroll/settlement', tabKey: 'payroll-settle', label: 'Final Settlement', icon: HiOutlineDocumentCheck },
+        { to: '/payroll/bank-transfer', tabKey: 'payroll-transfer', label: 'Bank Transfer', icon: HiOutlineBuildingLibrary },
+        { to: '/payroll/reports', tabKey: 'payroll-reports', label: 'Payroll Reports', icon: HiOutlineChartPie },
+        { to: '/payroll/payroll-integration', tabKey: 'payroll-integrate', label: 'Payroll Integration', icon: HiOutlineGift }
+      ]
+    },
+    {
+      type: 'dropdown',
+      label: 'HR Operations',
+      icon: HiOutlineBriefcase,
+      items: [
+        { to: '/hr-ops/confirmation', tabKey: 'ops-confirm', label: 'Employee Confirmation', icon: HiOutlineCheckBadge },
+        { to: '/hr-ops/promotions', tabKey: 'ops-promo', label: 'Promotions & Career', icon: HiOutlineArrowTrendingUp },
+        { to: '/hr-ops/transfers', tabKey: 'ops-transfer', label: 'Transfers & Movement', icon: HiOutlineArrowRightCircle },
+        { to: '/hr-ops/helpdesk', tabKey: 'ops-help', label: 'HR Helpdesk', icon: HiOutlineLifebuoy },
+        { to: '/hr-ops/letters', tabKey: 'ops-letters', label: 'Letter Generation', icon: HiOutlineEnvelope },
+        { to: '/hr-ops/assets', tabKey: 'ops-assets', label: 'Asset Management', icon: HiOutlineCube },
+        { to: '/hr-ops/notice', tabKey: 'ops-notice', label: 'Notice Period Tracking', icon: HiOutlineExclamationTriangle },
+        { to: '/hr-ops/exit', tabKey: 'ops-exit', label: 'Exit Management', icon: HiOutlineArrowRightOnRectangle }
+      ]
+    },
+    {
+      type: 'dropdown',
+      label: 'Forms & Workflows',
+      icon: HiOutlineArrowPath,
+      items: [
+        { to: '/forms/builder', tabKey: 'form-builder', label: 'Custom Form Builder', icon: HiOutlinePencilSquare },
+        { to: '/forms/requests', tabKey: 'form-requests', label: 'Request Management', icon: HiOutlineClipboardDocumentList },
+        { to: '/forms/workflow', tabKey: 'form-workflow', label: 'Workflow Engine', icon: HiOutlineArrowsRightLeft },
+        { to: '/forms/surveys', tabKey: 'form-surveys', label: 'Surveys & Pulse Checks', icon: HiOutlineChartBarSquare },
+        { to: '/forms/approvals', tabKey: 'form-approvals', label: 'Approvals Dashboard', icon: HiOutlineCheckCircle }
+      ]
+    },
+    {
+      type: 'dropdown',
+      label: 'Reports & Analytics',
+      icon: HiOutlineChartBar,
+      items: [
+        { to: '/reports/employee', tabKey: 'rep-emp', label: 'Employee Reports', icon: HiOutlineUserGroup },
+        { to: '/reports/attendance', tabKey: 'rep-att', label: 'Attendance Reports', icon: HiOutlineClock },
+        { to: '/reports/leave', tabKey: 'rep-leave', label: 'Leave Reports', icon: HiOutlineCalendar },
+        { to: '/reports/payroll', tabKey: 'rep-pay', label: 'Payroll Reports', icon: HiOutlineBanknotes },
+        { to: '/reports/compliance', tabKey: 'rep-comp', label: 'Compliance Reports', icon: HiOutlineShieldCheck },
+        { to: '/reports/custom', tabKey: 'rep-custom', label: 'Custom Report Builder', icon: HiOutlinePencilSquare },
+        { to: '/reports/dashboards', tabKey: 'rep-dash', label: 'Executive Dashboards', icon: HiOutlinePresentationChartBar },
+        { to: '/reports/ai-insights', tabKey: 'rep-insights', label: 'AI-Driven Insights', icon: HiOutlineSparkles }
+      ]
+    },
+    {
+      type: 'link',
+      to: '/Tenant/Company',
+      tabKey: 'company-settings',
+      label: 'Company Settings',
+      icon: HiOutlineCog6Tooth
+    },
+    {
+      type: 'title',
+      label: 'Quick Actions'
+    },
+    {
+      type: 'link',
+      to: '/jobs/new',
+      tabKey: 'create-job',
+      label: 'Create Job',
+      icon: HiOutlinePlus
     }
-    return (
-      <NavLink
-        to={to}
-        className={(navData) => {
-          if (isParent) {
-            // For parent items like "Jobs", check if current path starts with the parent path
-            return location.pathname.startsWith(to) ? "active-page" : "";
-          }
-          return navData.isActive ? "active-page" : "";
-        }}
-      >
-        <Icon icon={icon} className="menu-icon" />
-        <span>{label}</span>
-      </NavLink>
-    );
-  };
+  ];
 
-  const ShortcutLink = ({ to, tabKey, label, icon }) => {
-    if (internalNav) {
-      return (
-        <a href="#" onClick={(e) => { e.preventDefault(); onTabChange && onTabChange(tabKey); }} className={activeTab === tabKey ? "active-page" : ""}>
-          <Icon icon={icon} className="menu-icon" />
-          <span>{label}</span>
-        </a>
-      );
-    }
-    return (
-      <NavLink to={to} className={(navData) => (navData.isActive ? "active-page" : "")}>
-        <Icon icon={icon} className="menu-icon" />
-        <span>{label}</span>
-      </NavLink>
-    );
-  };
-
-  // Add CSS to ensure active state is visible
-const activeStyles = `
-  .sidebar-menu li > a.active-page {
-    background-color: #007bff !important;
-    color: #fff !important;
-    border-radius: 8px;
-  }
-  /* Add this rule to make icons white in active parent menu items */
-  .sidebar-menu li > a.active-page .menu-icon {
-    color: #fff !important;
-  }
-  
-  .sidebar-menu .sidebar-submenu li > a.active-page {
-    background-color: #6c757d !important;
-    color: #fff !important;
-    border-radius: 6px;
-  }
-  /* Add this rule to make icons white in active submenu items */
-  .sidebar-menu .sidebar-submenu li > a.active-page .icon,
-  .sidebar-menu .sidebar-submenu li > a.active-page .menu-icon {
-    color: #fff !important;
-  }
-  
-  .sidebar-menu .dropdown.open > a {
-    background-color: #007bff !important;
-    color: #fff !important;
-    border-radius: 8px;
-  }
-  /* Add this rule to make icons white when dropdown is open */
-  .sidebar-menu .dropdown.open > a .menu-icon {
-    color: #fff !important;
-  }
-  
-  .sidebar-menu .dropdown > a {
-    background-color: transparent !important;
-    color: inherit !important;
-  }
-  
-  .sidebar-menu .dropdown.has-active-submenu > a {
-    background-color: #007bff !important;
-    color: #fff !important;
-    border-radius: 8px;
-  }
-  /* Add this rule for dropdowns that have active submenu */
-  .sidebar-menu .dropdown.has-active-submenu > a .menu-icon {
-    color: #fff !important;
-  }
-
-  /* Additional rules for the custom styled links */
-  .active-link svg {
-    color: #fff !important;
-  }
-  
-  .active-link .menu-icon {
-    color: #fff !important;
-  }
-  
-  .navbar-header.sticky-top {
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    z-index: 1020;
-  }
-  
-  .sidebar-submenu li {
-    list-style: none !important;
-  }
-  
-  .sidebar-submenu li::before {
-    display: none !important;
-  }
-  
-  .sidebar-submenu {
-    list-style-type: none !important;
-  }
-`;
-  return (
-    <>
-      <style>{activeStyles}</style>
-      <section className={mobileMenu ? "overlay active" : "overlay "}>
-        {/* sidebar */}
-        <aside
-          className={
-            sidebarActive
-              ? "sidebar active "
-              : mobileMenu
-                ? "sidebar sidebar-open"
-                : "sidebar"
-          }
+  const topbarRightContent = (
+    <div className="flex items-center gap-3.5">
+      {/* Notifications Dropdown */}
+      <div className="relative" ref={notificationRef}>
+        <button
+          onClick={() => setNotificationsOpen(!notificationsOpen)}
+          className="w-10 h-10 bg-slate-100/80 hover:bg-slate-200/80 active:bg-slate-300/80 rounded-full flex items-center justify-center border border-slate-200/50 text-slate-600 transition-all duration-150 relative"
+          type="button"
         >
-          <button onClick={mobileMenuControl} type='button' className='sidebar-close-btn'>
-            <Icon icon='radix-icons:cross-2' />
-          </button>
-          <div>
-            <Link to='/dashboard' className='sidebar-logo'>
-              <img src={companyLogo} alt='site logo' className='light-logo' />
-              <img src={companyLogo} alt='site logo' className='logo-icon' />
-            </Link>
-          </div>
-          <div className='sidebar-menu-area'>
+          <HiOutlineBell className="text-xl" />
+          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
+            3
+          </span>
+        </button>
 
-            <ul className='sidebar-menu' id='sidebar-menu' style={{ display: "flex", justifyContent: "flex-start", flexDirection: "column", alignItems: "flex-start" }}>
-              {/* Recruiter Dashboard */}
-              <li>
-                <LinkItem to='/dashboard' tabKey='dashboard' icon='heroicons:home' label='Dashboard' />
-              </li>
-
-              <li className='sidebar-menu-group-title'>Recruitment</li>
-
-              {/* Jobs Management */}
-              <li>
-                <LinkItem to='/jobslist' tabKey='jobs' icon='solar:clipboard-list-outline' label='Jobs' isParent={true} />
-              </li>
-
-              {/* Candidates Management */}
-              <li>
-                <LinkItem to='/candidates' tabKey='candidates' icon='heroicons:users' label='Candidates' />
-              </li>
-
-              {/* AI Resume Screening */}
-              <li>
-                <LinkItem to='/resume-screening' tabKey='resume-screening' icon='heroicons:document-magnifying-glass' label='AI Resume Screening' />
-              </li>
-
-              {/* Pipeline Management */}
-              <li>
-                <LinkItem to='/pipeline/view' tabKey='pipeline' icon='heroicons:queue-list' label='Pipeline View' />
-              </li>
-
-              {/* Recruiter Performance */}
-              <li>
-                <LinkItem to='/analytics/recruiter-performance' tabKey='recruiter-performance' icon='heroicons:chart-bar-square' label='Analytics' />
-              </li>
-
-
-
-              {/* Assessment Dropdown */}
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon='heroicons:briefcase' className='menu-icon' />
-                  <span>Assessment</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink
-                      to='/recruiter/assessments-library'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:document-text' className='icon text-sm me-2' />
-                      Assessments Library
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/recruiter/assign-assessment'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:user-plus' className='icon text-sm me-2' />
-                      Assign Assessment
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/recruiter/test-results'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:clipboard-document-check' className='icon text-sm me-2' />
-                      Test Results
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/recruiter/prescreening'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:magnifying-glass' className='icon text-sm me-2' />
-                      AI Prescreening
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/recruiter/ai-interview-configure'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:cog-6-tooth' className='icon text-sm me-2' />
-                      Configure AI Interview
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/recruiter/ai-interview-review'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:eye' className='icon text-sm me-2' />
-                      Review AI Interview
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/recruiter/offer-templates'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:document-duplicate' className='icon text-sm me-2' />
-                      Offer Templates
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/recruiter/offer-tracking'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:clipboard-document-list' className='icon text-sm me-2' />
-                      Offer Tracking
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-              
-
-              {/* CRM Section */}
-              <li className='sidebar-menu-group-title'>CRM</li>
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon="icon-park-outline:badge" className="menu-icon" />
-                  <span>CRM</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink
-                      to='/crm/contacts'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:building-office' className='icon text-sm me-2 fs-5' />
-                      Contacts
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/crm/companies'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:link' className='icon text-sm me-2 fs-5' />
-                      Companies
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/crm/deals'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:credit-card' className='icon text-sm me-2 fs-5' />
-                      Deals
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/crm/leads'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                     <Icon icon="heroicons:funnel" className="icon text-sm me-2 fs-5" />
-
-                      Leads
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/crm/pipeline'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:link' className='icon text-sm me-2 fs-5' />
-                      Pipeline
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/crm/analytics'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon='heroicons:credit-card' className='icon text-sm me-2 fs-5' />
-                      Analytics
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to='/crm/activities'
-                      className={(navData) =>
-                        navData.isActive ? "active-page" : ""
-                      }
-                    >
-                      <Icon icon="heroicons:calendar-days" className="icon text-sm me-2 fs-5" />
-
-                      Activities
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-
-
-
-              <li className='sidebar-menu-group-title'>HR Management</li>
-
-<li>
-  <NavLink
-    to="/hrms/all-employees"
-    className={({ isActive }) => (isActive ? "active-link" : "")}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      padding: "8px 12px",
-      textDecoration: "none",
-      borderRadius: "6px",
-      fontWeight: 600,
-      color: "#000",
-      transition: "all 0.2s ease",
-    }}
-  >
-    <Icon
-      icon="heroicons:user-group"
-      className="menu-icon"
-      style={{ fontSize: "18px" }}
-    />
-    <span>All Employees</span>
-  </NavLink>
-
-  <style>
-    {`
-      /* Hover ONLY when not active */
-      a:not(.active-link):hover {
-        color: #0d6efd !important;
-      }
-
-      a:not(.active-link):hover svg {
-        color: #0d6efd !important;
-      }
-
-      /* Active state */
-      .active-link {
-        background-color: #0d6efd;
-        color: #fff !important;
-      }
-
-      .active-link svg {
-        color: #fff !important;
-      }
-    `}
-  </style>
-</li>
-
-
-              {/* Onboarding & Pre-Joining */}
-              <li className='dropdown'>
-                <Link to='/onboarding'>
-                  <Icon icon='heroicons:user-plus' className='menu-icon' />
-                  <span>Onboarding & Pre-Joining</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-
-                  <li>
-                    <NavLink to='/onboarding/background-verification' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:shield-check' className='icon text-sm me-2 fs-5' />
-                      Background Verification
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/onboarding/offer-letters' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:document-check' className='icon text-sm me-2 fs-5' />
-                      Offer Letters
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/onboarding/pre-joining' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:chat-bubble-left-right' className='icon text-sm me-2 fs-5' />
-                      On Boarding Form
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/onboarding/joining-day' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:calendar' className='icon text-sm me-2 fs-5' />
-                      Add Employee
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/onboarding/induction' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:academic-cap' className='icon text-sm me-2 fs-5' />
-                      Induction & Orientation
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/onboarding/probation' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:clock' className='icon text-sm me-2 fs-5' />
-                      Probation Management
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/onboarding/buddy' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:user-group' className='icon text-sm me-2 fs-5' />
-                      Buddy/Mentor Program
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-
-              {/* Attendance & Leave Management */}
-
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon='heroicons:calendar' className='menu-icon' />
-                  <span>Attendance & Leave</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink to='/attendance/capture' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:clock' className='icon text-sm me-2 fs-5' />
-                      Attendance Capture
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/daily-punches' className={(navData) => navData.isActive ? "active-page" : ""}>
-<Icon icon="heroicons:camera" className="icon text-sm me-2 fs-5" />
-                      Daily Punches
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/daily-attendance' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:calendar-days' className='icon text-sm me-2 fs-5' />
-                      Daily Attendance
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/monthly-attendance' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:calendar' className='icon text-sm me-2 fs-5' />
-                      Monthly Attendance
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/manual-attendance' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:pencil-square' className='icon text-sm me-2 fs-5' />
-                      Manual Attendance
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/leave-correction' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:exclamation-circle' className='icon text-sm me-2 fs-5' />
-                      Leave Correction
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/shifts' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:arrow-path-rounded-square' className='icon text-sm me-2 fs-5' />
-                      Shift Management
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/rules' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:document-text' className='icon text-sm me-2 fs-5' />
-                      Work Hour Rules
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/leave' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:calendar-days' className='icon text-sm me-2 fs-5' />
-                      Leave Management
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/regularization' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:check-badge' className='icon text-sm me-2 fs-5' />
-                      Regularization
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/attendance/holidays' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:gift' className='icon text-sm me-2 fs-5' />
-                      Holiday Calendar
-                    </NavLink>
-                  </li>
-
-                  
-                  <li>
-                    <NavLink to='/attendance/reports' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:chart-bar' className='icon text-sm me-2 fs-5' />
-                      Attendance Reports
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-              {/* Employee Management */}
-
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon='heroicons:users' className='menu-icon' />
-                  <span>Employe
-                    Management</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink to='/employee/master' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:user-circle' className='icon text-sm me-2 fs-5' />
-                      Employee Master Data
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/employee/hierarchy' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:rectangle-stack' className='icon text-sm me-2 fs-5' />
-                      Org Hierarchy
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/employee/documents' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:archive-box' className='icon text-sm me-2 fs-5' />
-                      Document Vault
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/employee/lifecycle' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:arrow-path' className='icon text-sm me-2 fs-5' />
-                      Employee Lifecycle
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/employee/self-service' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:computer-desktop' className='icon text-sm me-2 fs-5' />
-                      Employee Self-Service
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-
-
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon='heroicons:banknotes' className='menu-icon' />
-                  <span>Payroll Management</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink to='/payroll/structure' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:cog-6-tooth' className='icon text-sm me-2 fs-5' />
-                      Salary Structure
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/processing' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:cog' className='icon text-sm me-2 fs-5' />
-                      Payroll Processing
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/compliance' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:shield-check' className='icon text-sm me-2 fs-5' />
-                      Statutory Compliance
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/slips' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:document-text' className='icon text-sm me-2 fs-5' />
-                      Salary Slips
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/reimbursements' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:receipt-refund' className='icon text-sm me-2 fs-5' />
-                      Reimbursements
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/loans' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:currency-dollar' className='icon text-sm me-2 fs-5' />
-                      Loans & Advances
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/settlement' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:document-check' className='icon text-sm me-2 fs-5' />
-                      Final Settlement
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/bank-transfer' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:building-library' className='icon text-sm me-2 fs-5' />
-                      Bank Transfer
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/reports' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:chart-pie' className='icon text-sm me-2 fs-5' />
-                      Payroll Reports
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/payroll/payroll-integration' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:gift' className='icon text-sm me-2 fs-5' />
-                      Payroll Integration
-                    </NavLink>
-                  </li>
-                </ul> 
-              </li>
-
-
-
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon='heroicons:briefcase' className='menu-icon' />
-                  <span>HR Operations</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink to='/hr-ops/confirmation' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:check-badge' className='icon text-sm me-2 fs-5' />
-                      Employee Confirmation
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/hr-ops/promotions' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:arrow-trending-up' className='icon text-sm me-2 fs-5' />
-                      Promotions & Career
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/hr-ops/transfers' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:arrow-right-circle' className='icon text-sm me-2 fs-5' />
-                      Transfers & Movement
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/hr-ops/helpdesk' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:lifebuoy' className='icon text-sm me-2 fs-5' />
-                      HR Helpdesk
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/hr-ops/letters' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:envelope' className='icon text-sm me-2 fs-5' />
-                      Letter Generation
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/hr-ops/assets' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:cube' className='icon text-sm me-2 fs-5' />
-                      Asset Management
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/hr-ops/notice' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:exclamation-triangle' className='icon text-sm me-2 fs-5' />
-                      Notice Period Tracking
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/hr-ops/exit' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:arrow-right-on-rectangle' className='icon text-sm me-2 fs-5' />
-                      Exit Management
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon='heroicons:arrow-path' className='menu-icon' />
-                  <span>Forms & Workflows</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink to='/forms/builder' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:pencil-square' className='icon text-sm me-2 fs-5' />
-                      Custom Form Builder
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/forms/requests' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:clipboard-document-list' className='icon text-sm me-2 fs-5' />
-                      Request Management
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/forms/workflow' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:arrows-right-left' className='icon text-sm me-2 fs-5' />
-                      Workflow Engine
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/forms/surveys' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:chart-bar-square' className='icon text-sm me-2 fs-5' />
-                      Surveys & Pulse Checks
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/forms/approvals' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:check-circle' className='icon text-sm me-2 fs-5' />
-                      Approvals Dashboard
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-              <li className='dropdown'>
-                <Link to='#'>
-                  <Icon icon='heroicons:chart-bar' className='menu-icon' />
-                  <span>Reports & Analytics</span>
-                </Link>
-                <ul className='sidebar-submenu'>
-                  <li>
-                    <NavLink to='/reports/employee' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:user-group' className='icon text-sm me-2 fs-5' />
-                      Employee Reports
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/reports/attendance' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:clock' className='icon text-sm me-2 fs-5' />
-                      Attendance Reports
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/reports/leave' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:calendar' className='icon text-sm me-2 fs-5' />
-                      Leave Reports
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/reports/payroll' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:banknotes' className='icon text-sm me-2 fs-5' />
-                      Payroll Reports
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/reports/compliance' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:shield-check' className='icon text-sm me-2 fs-5' />
-                      Compliance Reports
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/reports/custom' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:pencil-square' className='icon text-sm me-2 fs-5' />
-                      Custom Report Builder
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/reports/dashboards' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:presentation-chart-bar' className='icon text-sm me-2 fs-5' />
-                      Executive Dashboards
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to='/reports/ai-insights' className={(navData) => navData.isActive ? "active-page" : ""}>
-                      <Icon icon='heroicons:sparkles' className='icon text-sm me-2 fs-5' />
-                      AI-Driven Insights
-                    </NavLink>
-                  </li>
-                </ul>
-              </li>
-
-       
-
-<li>
-  <NavLink
-    to="/Tenant/Company"
-    className={({ isActive }) => (isActive ? "active-link" : "")}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      padding: "8px 12px",
-      textDecoration: "none",
-      borderRadius: "6px",
-      fontWeight: 600,
-      color: "#000",
-      transition: "all 0.2s ease",
-    }}
-  >
-    <Icon
-      icon="heroicons:cog-6-tooth"
-      style={{ fontSize: "18px" }}
-    />
-    <span>Company Settings</span>
-
-    <style>
-      {`
-        /* Hover ONLY when not active */
-        a:not(.active-link):hover {
-          color: #0d6efd !important;
-        }
-
-        a:not(.active-link):hover svg {
-          color: #0d6efd !important;
-        }
-
-        /* Active state */
-        .active-link {
-          background-color: #0d6efd;
-          color: #fff !important;
-        }
-
-        .active-link svg {
-          color: #fff !important;
-        }
-      `}
-    </style>
-  </NavLink>
-</li>
-
-
-
-
-
-
-
-
-
-              <li className='sidebar-menu-group-title'>Quick Actions</li>
-
-              {/* Shortcuts */}
-              <li className="mb-5">
-                <ShortcutLink to='/jobs/new' tabKey='create-job' label='Create Job' icon='heroicons:plus' />
-              </li>
-            </ul>
-          </div>
-        </aside>
-        
-
-        <main className={(sidebarActive ? "dashboard-main active " : "dashboard-main") + " bg-neutral-50"}>
-          <div className='navbar-header bg-base' style={{ minHeight: "90px" }} >
-            <div className='row align-items-center justify-content-between'>
-              <div className='col-auto'>
-                <div className='d-flex flex-wrap align-items-center gap-4'>
-                  <button type='button' className='sidebar-toggle' onClick={sidebarControl}>
-                    {sidebarActive ? (
-                      <Icon icon='iconoir:arrow-right' className='icon text-2xl non-active' />
-                    ) : (
-                      <Icon icon='heroicons:bars-3-solid' className='icon text-2xl non-active ' />
-                    )}
-                  </button>
-                  <button onClick={mobileMenuControl} type='button' className='sidebar-mobile-toggle'>
-                    <Icon icon='heroicons:bars-3-solid' className='icon' />
-                  </button>
-
+        {notificationsOpen && (
+          <div className="absolute right-0 mt-2.5 w-80 bg-white rounded-xl shadow-lg border border-slate-200/70 overflow-hidden py-1 z-50 animate-slide-up">
+            <div className="p-3 bg-primary-50 border-b border-primary-100/60 flex items-center justify-between">
+              <h6 className="text-sm text-slate-800 font-semibold mb-0">Notifications</h6>
+              <span className="text-[10px] text-primary-600 font-bold px-2 py-0.5 bg-white rounded-full border border-primary-200">
+                03 New
+              </span>
+            </div>
+            
+            <div className="max-h-80 overflow-y-auto scrollbar-hide divide-y divide-slate-100">
+              <Link
+                to="#"
+                onClick={() => setNotificationsOpen(false)}
+                className="p-3.5 flex items-start gap-3 hover:bg-slate-50 transition-colors"
+              >
+                <span className="w-8 h-8 bg-green-50 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 border border-green-100">
+                  <HiOutlineCheckBadge className="text-lg" />
+                </span>
+                <div className="flex-1">
+                  <h6 className="text-xs font-semibold text-slate-800 mb-0.5">New candidate applied</h6>
+                  <p className="mb-0 text-[11px] text-slate-500 leading-relaxed">You have 5 new applications today.</p>
+                  <span className="text-[10px] text-slate-400 block mt-1">10 mins ago</span>
                 </div>
-              </div>
-              <div className='col-auto'>
-                <div className='d-flex flex-wrap align-items-center gap-3'>
-                  <div className='dropdown'>
-                    <button className='has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center border-0' type='button' data-bs-toggle='dropdown' aria-expanded='false'>
-                      <Icon icon='iconoir:bell' className='text-primary-light text-xl' />
-                    </button>
-                    <div className='dropdown-menu dropdown-menu-end to-top dropdown-menu-lg p-0'>
-                      <div className='p-3 radius-8 bg-primary-50 mb-2 d-flex align-items-center justify-content-between'>
-                        <div className='flex-grow-1'>
-                          <h6 className='text-lg text-primary-light fw-semibold mb-0'>Notifications</h6>
-                        </div>
-                        <span className='text-primary-600 fw-semibold text-sm w-32-px h-32-px rounded-circle bg-base d-flex justify-content-center align-items-center flex-shrink-0 ms-2'>
-                          03
-                        </span>
-                      </div>
-                      <div className='max-h-400-px overflow-y-auto scroll-sm'>
-                        <Link to='#' className='px-3 py-3 d-flex align-items-start gap-3 mb-2 border-bottom hover-bg-light'>
-                          <span className='w-40-px h-40-px bg-success-subtle text-success-main rounded-circle d-flex justify-content-center align-items-center flex-shrink-0'>
-                            <Icon icon='bitcoin-icons:verify-outline' className='icon text-xl' />
-                          </span>
-                          <div className='flex-grow-1'>
-                            <h6 className='text-md fw-semibold mb-1'>New candidate applied</h6>
-                            <p className='mb-0 text-sm text-secondary-light'>You have 5 new applications.</p>
-                          </div>
-                          <span className='text-sm text-secondary-light flex-shrink-0'>10 mins ago</span>
-                        </Link>
-                      </div>
-                      <div className='text-center p-3 border-top'>
-                        <Link to='#' className='text-primary-600 fw-semibold text-sm'>See All Notifications</Link>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className='dropdown'>
-                    <button className='d-flex justify-content-center align-items-center rounded-circle border-0 bg-transparent p-0' type='button' data-bs-toggle='dropdown' aria-expanded='false'>
-                      <img src='assets/images/user.png' alt='Recruiter' className='w-40-px h-40-px object-fit-cover rounded-circle' />
-                    </button>
-                    <div className='dropdown-menu dropdown-menu-end to-top dropdown-menu-sm p-0'>
-                      <div className='py-3 px-3  bg-primary-50 mb-2 d-flex align-items-center justify-content-between'>
-                        <div className='flex-grow-1'>
-                          <h6 className='text-lg text-primary-light fw-semibold mb-1'>Recruiter</h6>
-                          <span className='text-secondary-light fw-medium text-sm d-block'>Talent & Hiring</span>
-                        </div>
-                        <button type='button' className='btn-close btn-close-sm ms-2' aria-label='Close'></button>
-                      </div>
-                      <ul className='list-unstyled mb-0'>
-                        <li>
-                          <Link className='dropdown-item text-black px-3 py-2 hover-bg-transparent hover-text-primary d-flex align-items-center gap-2' to='/view-profile'>
-                            <Icon icon='solar:user-linear' className='icon text-xl' /> <span>My Profile</span>
-                          </Link>
-                        </li>
-                        <li>
-                          <button className='dropdown-item text-black px-3 py-2 hover-bg-transparent hover-text-danger d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start' onClick={handleLogout}>
-                            <Icon icon='lucide:power' className='icon text-xl' /> <span>Log Out</span>
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </Link>
+            </div>
+            <div className="text-center p-2.5 border-t border-slate-100 bg-slate-50/50">
+              <Link to="#" onClick={() => setNotificationsOpen(false)} className="text-primary-600 hover:text-primary-700 font-semibold text-xs transition-colors">
+                See All Notifications
+              </Link>
             </div>
           </div>
+        )}
+      </div>
 
-          <div className='dashboard-main-body bg-neutral-50'>{children}</div>
+      {/* Recruiter Profile Dropdown */}
+      <div className="relative" ref={profileRef}>
+        <button
+          onClick={() => setProfileOpen(!profileOpen)}
+          className="flex items-center rounded-full border border-slate-200 p-0.5 hover:ring-2 hover:ring-primary-500/20 active:ring-4 transition-all duration-150"
+          type="button"
+        >
+          <img
+            src="assets/images/user.png"
+            alt="Recruiter"
+            className="w-8 h-8 object-cover rounded-full"
+          />
+        </button>
 
-          {/* Footer section */}
-          <footer className='d-footer bg-neutral-50'>
-            <div className='row align-items-center justify-content-between'>
-              <div className='col-auto'>
-                <p className='mb-0'>© 2025 Recruiter Dashboard. All Rights Reserved.</p>
-              </div>
-              <div className='col-auto'>
-                <p className='mb-0'>
-                  Made by{' '}
-                  <a
-                    href='https://designcareermetrics.com/'
-                    target='_blank'
-                    rel='noreferrer'
-                    className='text-primary-600 text-decoration-none'
-                  >
-                    DCM
-                  </a>
-                </p>
-              </div>
+        {profileOpen && (
+          <div className="absolute right-0 mt-2.5 w-56 bg-white rounded-xl shadow-lg border border-slate-200/70 overflow-hidden py-1.5 z-50 animate-slide-up">
+            <div className="py-2.5 px-4 bg-primary-50 border-b border-primary-100/60 flex flex-col">
+              <h6 className="text-xs text-slate-800 font-bold mb-0.5">Recruiter</h6>
+              <span className="text-[10px] text-slate-500 font-medium">Talent & Hiring</span>
             </div>
-          </footer>
-        </main>
-      </section>
-    </>
+            <div className="py-1">
+              <Link
+                className="px-4 py-2 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-2.5 transition-colors"
+                to="/view-profile"
+                onClick={() => setProfileOpen(false)}
+              >
+                <HiOutlineUsers className="text-base text-slate-400" />
+                <span>My Profile</span>
+              </Link>
+              <button
+                className="w-full px-4 py-2 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs font-semibold flex items-center gap-2.5 transition-colors border-0 bg-transparent text-start"
+                onClick={() => {
+                  setProfileOpen(false);
+                  handleLogout();
+                }}
+              >
+                <HiOutlineArrowRightOnRectangle className="text-base text-red-400" />
+                <span>Log Out</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <DashboardLayoutBase
+      sidebarItems={sidebarItems}
+      companyLogo={companyLogo}
+      logoLink="/dashboard"
+      topbarLeftContent={null}
+      topbarRightContent={topbarRightContent}
+      activeTab={internalNav ? activeTab : null}
+      onTabChange={internalNav ? onTabChange : null}
+    >
+      {children}
+    </DashboardLayoutBase>
   );
 };
 
 export default RecruiterDashboardLayout;
-
-
-
-
-
-
-

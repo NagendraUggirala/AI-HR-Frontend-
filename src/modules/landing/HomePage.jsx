@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Zap, FileText, Code, BarChart3, Bot, ShieldCheck, Users, Calendar, Clock, DollarSign } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-import { getUserRole } from '../../utils/auth';
+import { getUserRole } from "../../shared/utils/auth";
 import { Link } from 'react-router-dom';
 import Slider from 'react-slick';
 import "slick-carousel/slick/slick.css";

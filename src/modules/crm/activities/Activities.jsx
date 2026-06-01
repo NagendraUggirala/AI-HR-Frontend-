@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { activitiesAPI } from "../../utils/api";
+import { activitiesAPI } from "../../../shared/utils/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Icon } from '@iconify/react/dist/iconify.js';

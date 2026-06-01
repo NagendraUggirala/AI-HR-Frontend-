@@ -14,8 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import '../../App.css';
-import { assessmentAPI } from '../../utils/api';
+import { assessmentAPI } from "../../../shared/utils/api";
 
 const TEST_TYPE_OPTIONS = [
   {

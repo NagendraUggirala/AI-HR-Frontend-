@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BASE_URL, API_ENDPOINTS } from '../../config/api.config';
+import { BASE_URL, API_ENDPOINTS } from "../../shared/constants/api.config";
 
 const SuperAdminLogin = () => {
   const navigate = useNavigate();

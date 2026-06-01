@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import Breadcrump from "../../Layout/Breadcrump";
+import Breadcrump from "../../../shared/components/Breadcrump";
 
 
 const ManualAttendance = () => {

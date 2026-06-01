@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import RecruiterDashboardLayout from '../../recruiterDashboard/RecruiterDashboardLayout';
+import RecruiterDashboardLayout from "../../../app/layouts/RecruiterDashboardLayout";
 
 // Document Types Configuration
 const DOCUMENT_TYPES = {

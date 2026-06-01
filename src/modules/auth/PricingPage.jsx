@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Check, X, CreditCard, Lock, CheckCircle } from 'lucide-react';
-import { getUserRole } from '../../utils/auth';
+import { getUserRole } from "../../shared/utils/auth";
 
 const PricingPage = () => {
   const navigate = useNavigate();

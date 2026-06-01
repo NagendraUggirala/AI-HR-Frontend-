@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Eye, MoreVertical, Users, TrendingUp, Calendar, ArrowRight, RefreshCw } from 'lucide-react';
-import { BASE_URL } from '../../config/api.config';
+import { BASE_URL } from "../../../shared/constants/api.config";
 
 const PipelineView = () => {
   const [stages, setStages] = useState([]);

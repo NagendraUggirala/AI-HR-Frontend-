@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Users, Calendar, Clock, TrendingUp, Award, Download, Filter, Eye, ArrowUp, ArrowDown, CalendarCheck, Timer, Target, Trophy, X, RefreshCw, AlertCircle } from 'lucide-react';
-import { BASE_URL } from '../../config/api.config';
+import { BASE_URL } from "../../../shared/constants/api.config";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 

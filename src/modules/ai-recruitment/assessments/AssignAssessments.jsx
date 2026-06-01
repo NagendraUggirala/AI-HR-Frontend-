@@ -11,9 +11,8 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import '../../App.css';
-import { assessmentAPI } from '../../utils/api';
-import { BASE_URL } from '../../config/api.config';
+import { assessmentAPI } from "../../../shared/utils/api";
+import { BASE_URL } from "../../../shared/constants/api.config";
 
 const ASSESSMENT_SETUP_STORAGE_KEY = 'recruiterAssessmentSetup';
 

@@ -1,153 +1,146 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import Signup from './components/auth/Signup';
-import Login from './components/auth/Login';
-import ForgotPassword from './components/auth/ForgotPassword';
-import PricingPage from './components/auth/PricingPage';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import SuperAdminPanel from './components/superAdmin/SuperAdminPanel';
-import SuperAdminLayout from './components/superAdmin/SuperAdminLayout';
-import MultiTenantSetup from './components/superAdmin/MultiTenantSetup';
-import RolesPermissions from './components/superAdmin/RolesPermissions';
-import CompanySettings from './components/superAdmin/CompanySettings';
-import Authentication from './components/superAdmin/Authentication';
-import Candidates from './components/recruiterDashboard/Candidates';
-import DashboardOverview from './components/recruiterDashboard/DashboardOverview';
-import PipelineOverview from './components/recruiterDashboard/PipelineOverview';
-import JobAnalytics from './components/recruiterDashboard/JobAnalytics';
-import RecruiterDashboardLayout from './components/recruiterDashboard/RecruiterDashboardLayout';
-import ResumeScreening from './components/recruiterDashboard/ResumeScreening';
-import CreateJob from './components/CreateJob';
-import JobList from './components/JobList';
-import Stages from './components/pipeline/Stages';
-import DragDrop from './components/pipeline/DragDrop';
-import CollaborationTools from './components/pipeline/CollaborationTools';
-import RecruiterPerformance from './components/analytics/RecruiterPerformance';
-import TimeToHire from './components/analytics/TimeToHire';
-import CandidateSourcing from './components/analytics/CandidateSourcing';
-import JobPerformance from './components/analytics/JobPerformance';
-import Settings from './components/Settings';
-import OrgInfo from './components/recruiterDashboard/OrgInfo';
-import Integrations from './components/recruiterDashboard/Integrations';
-import Billing from './components/recruiterDashboard/Billing';
-import RecruiterProfile from './components/recruiterDashboard/RecruiterProfile';
-import CandidateLogin from './components/candidateDashboard/CandidateLogin';
-import CandidateDashboard from './components/candidateDashboard/CandidateDashboard';
-import CandidateDashboardLayout from './components/candidateDashboard/CandidateDashboardLayout';
-import JobSearch from './components/candidateDashboard/JobSearch';
-import Applications from './components/candidateDashboard/Applications';
-import Profile from './components/candidateDashboard/Profile';
-import CandidateSettings from './components/candidateDashboard/CandidateSettings';
-import AssessmentManagement from './components/assessments/AssessmentManagement';
-import AssessmentLibrary from './components/assessments/AssessmentLibrary';
-import AssignAssessments from './components/assessments/AssignAssessments';
-import TestResultsViewer from './components/assessments/TestResultsViewer';
-import AptitudeTest from './components/assessments/AptitudeTest';
-import CodingTest from './components/assessments/CodingTest';
-import CommunicationTest from './components/assessments/CommunicationTest';
-import AIPrescreening from './components/recruiterDashboard/AIPrescreening';
-import ConfigureAIInterview from './components/recruiterDashboard/ConfigureAIInterview';
-import ReviewAIInterview from './components/recruiterDashboard/ReviewAIInterview';
-import AIInterviewPortal from './components/AIInterviewPortal';
-import OfferTemplates from './components/recruiterDashboard/OfferTemplates';
-import OfferTracking from './components/recruiterDashboard/OfferTracking';
+import Signup from './modules/auth/Signup';
+import Login from './modules/auth/Login';
+import ForgotPassword from './modules/auth/ForgotPassword';
+import PricingPage from './modules/auth/PricingPage';
+import ProtectedRoute from './modules/auth/ProtectedRoute';
+import SuperAdminPanel from './modules/super-admin/SuperAdminPanel';
+import SuperAdminLayout from './modules/super-admin/SuperAdminLayout';
+import MultiTenantSetup from './modules/super-admin/MultiTenantSetup';
+import RolesPermissions from './modules/super-admin/RolesPermissions';
+import CompanySettings from './modules/super-admin/CompanySettings';
+import Authentication from './modules/super-admin/Authentication';
+import Candidates from './modules/ai-recruitment/candidates/Candidates';
+import DashboardOverview from './modules/ai-recruitment/dashboard/DashboardOverview';
+import PipelineOverview from './modules/ai-recruitment/analytics/PipelineOverview';
+import JobAnalytics from './modules/ai-recruitment/analytics/JobAnalytics';
+import RecruiterDashboardLayout from './app/layouts/RecruiterDashboardLayout';
+import ResumeScreening from './modules/ai-recruitment/interviews/ResumeScreening';
+import CreateJob from './modules/ai-recruitment/jobs/CreateJob';
+import JobList from './modules/ai-recruitment/jobs/JobList';
+import Stages from './modules/ai-recruitment/analytics/Stages';
+import DragDrop from './modules/ai-recruitment/analytics/DragDrop';
+import CollaborationTools from './modules/ai-recruitment/analytics/CollaborationTools';
+import RecruiterPerformance from './modules/ai-recruitment/analytics/RecruiterPerformance';
+import TimeToHire from './modules/ai-recruitment/analytics/TimeToHire';
+import CandidateSourcing from './modules/ai-recruitment/analytics/CandidateSourcing';
+import JobPerformance from './modules/ai-recruitment/analytics/JobPerformance';
+import Settings from "./shared/components/Settings";
+import OrgInfo from './modules/ai-recruitment/dashboard/OrgInfo';
+import Integrations from './modules/ai-recruitment/dashboard/Integrations';
+import Billing from './modules/ai-recruitment/dashboard/Billing';
+import RecruiterProfile from './modules/ai-recruitment/dashboard/RecruiterProfile';
+import AssessmentManagement from './modules/ai-recruitment/assessments/AssessmentManagement';
+import AssessmentLibrary from './modules/ai-recruitment/assessments/AssessmentLibrary';
+import AssignAssessments from './modules/ai-recruitment/assessments/AssignAssessments';
+import TestResultsViewer from './modules/ai-recruitment/assessments/TestResultsViewer';
+import AptitudeTest from "./modules/ai-recruitment/assessments/aptitude/AptitudeTest";
+import CodingTest from './modules/ai-recruitment/assessments/CodingTest';
+import CommunicationTest from './modules/ai-recruitment/assessments/CommunicationTest';
+import AIPrescreening from './modules/ai-recruitment/interviews/AIPrescreening';
+import ConfigureAIInterview from './modules/ai-recruitment/interviews/ConfigureAIInterview';
+import ReviewAIInterview from './modules/ai-recruitment/interviews/ReviewAIInterview';
+import AIInterviewPortal from './modules/ai-recruitment/interviews/AIInterviewPortal';
+import OfferTemplates from './modules/ai-recruitment/onboarding/OfferTemplates';
+import OfferTracking from './modules/ai-recruitment/onboarding/OfferTracking';
 
-import Activities from './components/CRM/Activities';
-import Analytics from './components/CRM/Analytics';
-import Companies from './components/CRM/Companies';
-import Contacts from './components/CRM/Contacts';
-import Deals from './components/CRM/Deals';
-import Leads from './components/CRM/Leads';
-import Pipeline from './components/CRM/Pipeline';
+import Activities from './modules/crm/activities/Activities';
+import Analytics from './modules/crm/analytics/Analytics';
+import Companies from './modules/crm/companies/Companies';
+import Contacts from './modules/crm/contacts/Contacts';
+import Deals from './modules/crm/deals/Deals';
+import Leads from './modules/crm/leads/Leads';
+import Pipeline from './modules/crm/pipeline/Pipeline';
 // Tenant & User Management - Moved to superAdmin folder
 // Employee Management
-import AllEmployees from './components/HRMS/AllEmployees';
-import EmployeeLifecycle from './components/HRMS/EmployeeManagement/EmployeeLifecycle';
-import EmployeeMasterData from './components/HRMS/EmployeeManagement/EmployeeMasterData';
-import EmployeeSelfService from './components/HRMS/EmployeeManagement/EmployeeSelfService';
-import OrganizationHierarchy from './components/HRMS/EmployeeManagement/OrganizationHierarchy';
-import DocumentVault from './components/HRMS/EmployeeManagement/DocumentVault';
+import AllEmployees from './modules/hrms/employees/AllEmployees';
+import EmployeeLifecycle from './modules/hrms/employees/EmployeeLifecycle';
+import EmployeeMasterData from './modules/hrms/employees/EmployeeMasterData';
+import EmployeeSelfService from './modules/hrms/employees/EmployeeSelfService';
+import OrganizationHierarchy from './modules/hrms/employees/OrganizationHierarchy';
+import DocumentVault from './modules/hrms/employees/DocumentVault';
 // Onboarding & Joining
-import OnboardingDashboard from './components/HRMS/Onboarding&Joining/OnboardingDashboard';
-import NewOnboardingForm from './components/HRMS/Onboarding&Joining/NewOnboardingForm';
-import PersonalInformationForm from './components/HRMS/Onboarding&Joining/PersonalInformationForm';
-import OfferManagement from './components/HRMS/Onboarding&Joining/OfferManagement';
-import Newhire from './components/HRMS/OnboardingForm/Newhire';
-import Basicdetails from './components/HRMS/OnboardingForm/Basicdetails';
-import Onboardingcontactdetails from './components/HRMS/OnboardingForm/Onboardingcontactdetails';
-import OnboardingPersonaldetails from './components/HRMS/OnboardingForm/OnboardingPersonaldetails';
-import OnboardingStatutorydetails from './components/HRMS/OnboardingForm/OnboardingStatutorydetails';
-import Familydetails from './components/HRMS/OnboardingForm/Familydetails';
-import Onboardingpresentaddress from './components/HRMS/OnboardingForm/Onboardingpresentaddress';
-import Permanentaddress from './components/HRMS/OnboardingForm/Permanentaddress';
-import Onboardingbankdetails from './components/HRMS/OnboardingForm/Onboardingbankdetails';
-import Uploaddocument from './components/HRMS/OnboardingForm/Uploaddocument';
-import Final from './components/HRMS/OnboardingForm/Final';
-import JoiningDayManagement from './components/HRMS/Onboarding&Joining/JoiningDayManagement';
-import ProbationManagement from './components/HRMS/Onboarding&Joining/ProbationManagement';
-import PreJoiningEngagement from './components/HRMS/Onboarding&Joining/PreJoiningEngagement';
-import InductionOrientation from './components/HRMS/Onboarding&Joining/InductionOrientation';
-import BuddyMentorAssignment from './components/HRMS/Onboarding&Joining/BuddyMentorAssignment';
-import BackgroundVerification from './components/HRMS/Onboarding&Joining/BackgroundVerification';
+import OnboardingDashboard from './modules/ai-recruitment/onboarding/OnboardingDashboard';
+import NewOnboardingForm from './modules/ai-recruitment/onboarding/NewOnboardingForm';
+import PersonalInformationForm from './modules/ai-recruitment/onboarding/PersonalInformationForm';
+import OfferManagement from './modules/ai-recruitment/onboarding/OfferManagement';
+import Newhire from './modules/ai-recruitment/onboarding/Newhire';
+import Basicdetails from './modules/ai-recruitment/onboarding/Basicdetails';
+import Onboardingcontactdetails from './modules/ai-recruitment/onboarding/Onboardingcontactdetails';
+import OnboardingPersonaldetails from './modules/ai-recruitment/onboarding/OnboardingPersonaldetails';
+import OnboardingStatutorydetails from './modules/ai-recruitment/onboarding/OnboardingStatutorydetails';
+import Familydetails from './modules/ai-recruitment/onboarding/Familydetails';
+import Onboardingpresentaddress from './modules/ai-recruitment/onboarding/Onboardingpresentaddress';
+import Permanentaddress from './modules/ai-recruitment/onboarding/Permanentaddress';
+import Onboardingbankdetails from './modules/ai-recruitment/onboarding/Onboardingbankdetails';
+import Uploaddocument from './modules/ai-recruitment/onboarding/Uploaddocument';
+import Final from './modules/ai-recruitment/onboarding/Final';
+import JoiningDayManagement from './modules/ai-recruitment/onboarding/JoiningDayManagement';
+import ProbationManagement from './modules/ai-recruitment/onboarding/ProbationManagement';
+import PreJoiningEngagement from './modules/ai-recruitment/onboarding/PreJoiningEngagement';
+import InductionOrientation from './modules/ai-recruitment/onboarding/InductionOrientation';
+import BuddyMentorAssignment from './modules/ai-recruitment/onboarding/BuddyMentorAssignment';
+import BackgroundVerification from './modules/ai-recruitment/onboarding/BackgroundVerification';
 // Payroll Management
 // HR Operations (HROperations)
-import AssestManagement from './components/HRMS/HROperations/AssestManagement';
-import EmployeeConfirmation from './components/HRMS/HROperations/EmployeeConfirmation';
-import ExitManagement from './components/HRMS/HROperations/ExitManagement';
-import HRHelpdesk from './components/HRMS/HROperations/HRHelpdesk';
-import LetterGeneration from './components/HRMS/HROperations/LetterGeneration';
-import NoticePeriodTracking from './components/HRMS/HROperations/NoticePeriodTracking';
-import PromotionsCareer from './components/HRMS/HROperations/PromotionsCareer';
-import TranfersMovement from './components/HRMS/HROperations/TranfersMovement';
+import AssestManagement from './modules/hrms/employees/AssestManagement';
+import EmployeeConfirmation from './modules/hrms/employees/EmployeeConfirmation';
+import ExitManagement from './modules/hrms/employees/ExitManagement';
+import HRHelpdesk from './modules/hrms/employees/HRHelpdesk';
+import LetterGeneration from './modules/hrms/employees/LetterGeneration';
+import NoticePeriodTracking from './modules/hrms/employees/NoticePeriodTracking';
+import PromotionsCareer from './modules/hrms/employees/PromotionsCareer';
+import TranfersMovement from './modules/hrms/employees/TranfersMovement';
 
-import Salaryslip from './components/HRMS/PayrollManagement/Salaryslip';
-import StatutoryCompliance from './components/HRMS/PayrollManagement/StatutoryCompliance';
-import SalaryStructure from './components/HRMS/PayrollManagement/SalaryStructure';
-import Reimbursements from './components/HRMS/PayrollManagement/Reimbursements';
-import PayrollProcessingEngine from './components/HRMS/PayrollManagement/PayrollProcessingEngine';
-import LoansAdvances from './components/HRMS/PayrollManagement/LoansAdvances';
-import PayrollReports from './components/HRMS/PayrollManagement/PayrollReports';
-import BankTransfer from './components/HRMS/PayrollManagement/BankTransfer';
-import FinalSettlement from './components/HRMS/PayrollManagement/FinalSettlement';
+import Salaryslip from './modules/hrms/payroll/Salaryslip';
+import StatutoryCompliance from './modules/hrms/payroll/StatutoryCompliance';
+import SalaryStructure from './modules/hrms/payroll/SalaryStructure';
+import Reimbursements from './modules/hrms/payroll/Reimbursements';
+import PayrollProcessingEngine from './modules/hrms/payroll/PayrollProcessingEngine';
+import LoansAdvances from './modules/hrms/payroll/LoansAdvances';
+import PayrollReports from './modules/hrms/payroll/PayrollReports';
+import BankTransfer from './modules/hrms/payroll/BankTransfer';
+import FinalSettlement from './modules/hrms/payroll/FinalSettlement';
 // Attendance & Leave Management
-import AttendanceCapture from './components/HRMS/Attendance&Leave/AttendanceCapture';
-import DailyPunches from './components/HRMS/Attendance&Leave/DailyPunches';
-import DailyAttendance from './components/HRMS/Attendance&Leave/DailyAttendance';
-import MonthlyAttendance from './components/HRMS/Attendance&Leave/MonthlyAttendance';
-import ManualAttendance from './components/HRMS/Attendance&Leave/ManualAttendance';
-import LeaveCorrection from './components/HRMS/Attendance&Leave/LeaveCorrection';
-import ShiftManagement from './components/HRMS/Attendance&Leave/ShiftManagement';
-import WorkHourRules from './components/HRMS/Attendance&Leave/WorkHourRules';
-import LeaveManagement from './components/HRMS/Attendance&Leave/LeaveManagement';
-import Regularization from './components/HRMS/Attendance&Leave/Regularization';
-import HolidayCalendar from './components/HRMS/Attendance&Leave/HolidayCalendar';
-import AttendanceReports from './components/HRMS/Attendance&Leave/AttendanceReports';
-import PayrollIntegration from './components/HRMS/Attendance&Leave/PayrollIntegration';
+import AttendanceCapture from './modules/hrms/attendance/AttendanceCapture';
+import DailyPunches from './modules/hrms/attendance/DailyPunches';
+import DailyAttendance from './modules/hrms/attendance/DailyAttendance';
+import MonthlyAttendance from './modules/hrms/attendance/MonthlyAttendance';
+import ManualAttendance from './modules/hrms/attendance/ManualAttendance';
+import LeaveCorrection from './modules/hrms/attendance/LeaveCorrection';
+import ShiftManagement from './modules/hrms/attendance/ShiftManagement';
+import WorkHourRules from './modules/hrms/attendance/WorkHourRules';
+import LeaveManagement from './modules/hrms/leave/LeaveManagement';
+import Regularization from './modules/hrms/attendance/Regularization';
+import HolidayCalendar from './modules/hrms/attendance/HolidayCalendar';
+import AttendanceReports from './modules/hrms/reports/AttendanceReports';
+import PayrollIntegration from './modules/hrms/attendance/PayrollIntegration';
 // Reports & Analytics
-import AIDrivenInsights from './components/HRMS/Reports&Analytics/AIDrivenInsights';
-import ReportsAttendance from './components/HRMS/Reports&Analytics/AttendanceReports';
-import ComplianceReports from './components/HRMS/Reports&Analytics/ComplianceReports';
-import CustomReportBuilder from './components/HRMS/Reports&Analytics/CustomReportBuilder';
-import EmployeeReports from './components/HRMS/Reports&Analytics/EmployeeReports';
-import LeaveReports from './components/HRMS/Reports&Analytics/LeaveReports';
-import ReportsPayroll from './components/HRMS/Reports&Analytics/PayrollReports';
-import ExecutiveDashboards from './components/HRMS/Reports&Analytics/ExecutiveDashboards';
+import AIDrivenInsights from './modules/hrms/reports/AIDrivenInsights';
+import ReportsAttendance from './modules/hrms/reports/AttendanceAnalyticsReports';
+import ComplianceReports from './modules/hrms/reports/ComplianceReports';
+import CustomReportBuilder from './modules/hrms/reports/CustomReportBuilder';
+import EmployeeReports from './modules/hrms/reports/EmployeeReports';
+import LeaveReports from './modules/hrms/reports/LeaveReports';
+import ReportsPayroll from './modules/hrms/reports/PayrollReports';
+import ExecutiveDashboards from './modules/hrms/reports/ExecutiveDashboards';
 // Forms & Workflows
-import ApprovalsDashboard from './components/HRMS/Forms&Workflows/ApprovalsDashboard';
-import CustomFromBuilder from './components/HRMS/Forms&Workflows/CustomFromBuilder';
-import RequestManagement from './components/HRMS/Forms&Workflows/RequestManagement';
-import SurveysPulseChecks from './components/HRMS/Forms&Workflows/SurveysPulseChecks';
-import WorkflowEngine from './components/HRMS/Forms&Workflows/WorkflowEngine';
+import ApprovalsDashboard from './modules/hrms/dashboard/ApprovalsDashboard';
+import CustomFromBuilder from './modules/hrms/dashboard/CustomFromBuilder';
+import RequestManagement from './modules/hrms/dashboard/RequestManagement';
+import SurveysPulseChecks from './modules/hrms/dashboard/SurveysPulseChecks';
+import WorkflowEngine from './modules/hrms/dashboard/WorkflowEngine';
 
-import HRAutomation from './components/Landing/HRAutomation'
-import CrmLanding from './components/Landing/Crmlanding'
-import Navbar from './components/Landing/Navbar'
-import Bookademo from './components/Landing/Bookademo'
-import Footer from './components/Landing/Footer'
-import ContactPage from './components/Landing/ContactPage';
-import Human from './components/Landing/Human'
-import HomePage from './components/Landing/HomePage';
+import HRAutomation from './modules/landing/HRAutomation'
+import CrmLanding from './modules/landing/Crmlanding'
+import Navbar from './modules/landing/Navbar'
+import Bookademo from './modules/landing/Bookademo'
+import Footer from './modules/landing/Footer'
+import ContactPage from './modules/landing/ContactPage';
+import Human from './modules/landing/Human'
+import HomePage from './modules/landing/HomePage';
 
 
 
@@ -161,13 +154,13 @@ const App = () => {
       <Route path='/login' element={<Login />} />
       <Route path='/ForgotPassword' element={<ForgotPassword />} />
       <Route path='/pricing' element={<PricingPage />} />
-<Route path='/hrAutomation' element={<HRAutomation />}/>
-<Route path='/crmlanding' element={<CrmLanding />}/>
-<Route path='/navbar' element={<Navbar/>}/>
-<Route path='/bookademo' element={<Bookademo />}/>
-<Route path='/footer' element={<Footer />}/>
-<Route path='/contactpage'element={<ContactPage/>}/>
-<Route path='/human'element={<Human/>}/>
+      <Route path='/hrAutomation' element={<HRAutomation />}/>
+      <Route path='/crmlanding' element={<CrmLanding />}/>
+      <Route path='/navbar' element={<Navbar/>}/>
+      <Route path='/bookademo' element={<Bookademo />}/>
+      <Route path='/footer' element={<Footer />}/>
+      <Route path='/contactpage'element={<ContactPage/>}/>
+      <Route path='/human'element={<Human/>}/>
 
 
 
@@ -380,60 +373,6 @@ const App = () => {
           </ProtectedRoute>
         }
       />
-
-      {/* Candidate Routes */}
-      <Route path='/candidate/login' element={<CandidateLogin />} />
-      <Route
-        path='/candidate/dashboard'
-        element={
-          <ProtectedRoute>
-            <CandidateDashboardLayout>
-              <CandidateDashboard />
-            </CandidateDashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/candidate/jobs'
-        element={
-          <ProtectedRoute>
-            <CandidateDashboardLayout>
-              <JobSearch />
-            </CandidateDashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/candidate/applications'
-        element={
-          <ProtectedRoute>
-            <CandidateDashboardLayout>
-              <Applications />
-            </CandidateDashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/candidate/profile'
-        element={
-          <ProtectedRoute>
-            <CandidateDashboardLayout>
-              <Profile />
-            </CandidateDashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path='/candidate/settings'
-        element={
-          <ProtectedRoute>
-            <CandidateDashboardLayout>
-              <CandidateSettings />
-            </CandidateDashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-
       {/* Assessment Management Routes - Recruiter */}
       <Route
         path='/assessments'

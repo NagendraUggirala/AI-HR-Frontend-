@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { X, MapPin, DollarSign, Building2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { BASE_URL, API_ENDPOINTS } from '../config/api.config';
-import '../App.css';
+import { BASE_URL, API_ENDPOINTS } from "../../../shared/constants/api.config";
 
 const CreateJob = () => {
   const navigate = useNavigate();

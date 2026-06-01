@@ -2060,9 +2060,7 @@ const resetForm = () => {
 const handleEdit = (offer) => {
   setSelectedOffer(offer);
   
-  // Merge the offer data with default structure to ensure all nested objects exist
   setFormData({
-    // Start with default values
     candidateName: "",
     email: "",
     phone: "",
@@ -2073,12 +2071,6 @@ const handleEdit = (offer) => {
     noticePeriod: "30 days",
     candidateSource: "",
     customSource: "",
-    referralDetails: {
-      employeeId: "",
-      role: "",
-      designation: "",
-      experience: ""
-    },
     ctc: "",
     gender: "male",
     relation: "select",
@@ -2087,27 +2079,6 @@ const handleEdit = (offer) => {
     guardianGender: "",
     guardianPhone: "",
     isLegalGuardian: false,
-    address: {
-      street: "",
-      city: "",
-      district: "",
-      state: "",
-      customState: "",
-      pincode: ""
-    },
-    ctcBreakup: {
-      basic: "",
-      hra: "",
-      specialAllowance: "",
-      conveyance: "",
-      telephoneAllowance: "",
-      medicalAllowance: "",
-      employeePF: "",
-      professionalTax: "",
-      gratuityEmployee: "",
-      employerPF: "",
-      groupInsurance: "",
-    },
     joiningDate: "",
     offerType: "Full-time",
     template: "standard",
@@ -2127,9 +2098,7 @@ const handleEdit = (offer) => {
     costCenter: "",
     shiftPolicy: "",
     weekOffPolicy: "",
-    // Then override with the offer data, ensuring nested objects are merged properly
     ...offer,
-    // Handle nested objects separately to ensure they exist
     address: {
       street: "",
       city: "",

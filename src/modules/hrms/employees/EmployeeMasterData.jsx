@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import RecruiterDashboardLayout from '../../recruiterDashboard/RecruiterDashboardLayout';
+import RecruiterDashboardLayout from "../../../app/layouts/RecruiterDashboardLayout";
 
 const EmployeeMasterData = () => {
   // Tab state for employee detail view

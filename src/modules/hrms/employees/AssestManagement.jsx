@@ -1,6 +1,6 @@
 // src/components/HRMS/HROperations/AssestManagement.jsx
 import React, { useState, useEffect, useCallback } from "react";
-import { assetsAPI } from "../../../utils/api";
+import { assetsAPI } from "../../../shared/utils/api";
 import {
   Search,
   Filter,

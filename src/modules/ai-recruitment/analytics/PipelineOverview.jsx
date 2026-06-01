@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { CheckCircle, AlertCircle, Eye } from 'lucide-react';
-import { BASE_URL } from '../../config/api.config';
-import '../../App.css';
+import { BASE_URL } from "../../../shared/constants/api.config";
 
 const PipelineOverview = () => {
   const navigate = useNavigate();

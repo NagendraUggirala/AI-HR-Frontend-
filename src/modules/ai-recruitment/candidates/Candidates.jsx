@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Icon } from '@iconify/react/dist/iconify.js';
-import { AlertCircle, Upload, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { 
+  FiUsers, 
+  FiRefreshCw, 
+  FiAlertCircle, 
+  FiMessageCircle, 
+  FiMail, 
+  FiCheckCircle, 
+  FiXCircle, 
+  FiFileText,
+  FiSearch,
+  FiDownload,
+  FiTrash2,
+  FiEye,
+  FiUpload,
+  FiChevronLeft,
+  FiChevronRight,
+  FiX,
+  FiMoreVertical
+} from 'react-icons/fi';
 import CandidateProfilePage from './CandidateProfilePage';
-import { BASE_URL, API_ENDPOINTS } from '../../config/api.config';
-import '../../App.css';
+import { BASE_URL, API_ENDPOINTS } from "../../../shared/constants/api.config";
 
 const CandidatesPage = () => {
   const navigate = useNavigate();
@@ -21,6 +37,7 @@ const CandidatesPage = () => {
   });
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(null);
 
   // Backend integration
   const [candidates, setCandidates] = useState([]);
@@ -29,10 +46,9 @@ const CandidatesPage = () => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch jobs from backend (for "All Jobs" filter options; same source as JobList.jsx)
+  // Fetch jobs from backend
   const fetchJobs = async () => {
     const token = localStorage.getItem('token');
-
     if (!token) return;
 
     try {
@@ -58,8 +74,7 @@ const CandidatesPage = () => {
         setJobsData(transformedJobs);
       }
     } catch (err) {
-      // Non-blocking: candidates table should still work even if job list fails.
-      console.error('❌ Error fetching jobs for filters:', err);
+      console.error('Error fetching jobs for filters:', err);
     }
   };
 
@@ -72,10 +87,8 @@ const CandidatesPage = () => {
     showModal: false
   });
 
-  // Track which candidates have been AI screened (for backward compatibility)
   const [aiScreenedEmails, setAiScreenedEmails] = useState(new Set());
 
-  // Fetch candidates from backend
   const fetchCandidates = async () => {
     const token = localStorage.getItem('token');
     
@@ -89,8 +102,6 @@ const CandidatesPage = () => {
       setRefreshing(true);
       const url = `${BASE_URL}/api/recruiter_dashboard/candidates`;
       
-      console.log('📥 Fetching candidates from:', url);
-
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -101,9 +112,7 @@ const CandidatesPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Candidates fetched:', data);
         
-        // Transform backend data to match display format
         const transformedCandidates = data.map(candidate => ({
           id: candidate.id,
           name: candidate.name,
@@ -115,9 +124,9 @@ const CandidatesPage = () => {
                   candidate.stage === 'Interview' ? 'In Progress' : 
                   candidate.stage === 'Offer' ? 'Awaiting Decision' : 'Pending',
           resume_url: candidate.resume_url,
-          notes: candidate.notes,
-          recruiter_comments: candidate.recruiter_comments,
-          resume_screened: candidate.resume_screened || 'no', // Get from backend API response
+          notes: candidate.notes || '',
+          recruiter_comments: candidate.recruiter_comments || '',
+          resume_screened: candidate.resume_screened || 'no',
           fullData: candidate
         }));
         
@@ -133,7 +142,7 @@ const CandidatesPage = () => {
         setError(errorData.detail || 'Failed to fetch candidates');
       }
     } catch (err) {
-      console.error('❌ Error fetching candidates:', err);
+      console.error('Error fetching candidates:', err);
       setError('Network error. Please check if backend is running.');
     } finally {
       setLoading(false);
@@ -143,9 +152,7 @@ const CandidatesPage = () => {
 
   const fetchAIScreenedCandidates = async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      return;
-    }
+    if (!token) return;
 
     try {
       const response = await fetch(`${BASE_URL}/api/resume/candidates?limit=1000&show_all=true`, {
@@ -170,7 +177,6 @@ const CandidatesPage = () => {
     }
   };
 
-  // Update aiScreenedEmails set from candidates data (for backward compatibility)
   useEffect(() => {
     if (candidates.length > 0) {
       const screenedEmails = new Set(
@@ -179,19 +185,16 @@ const CandidatesPage = () => {
           .map(c => c.email?.toLowerCase().trim())
           .filter(email => email)
       );
-      console.log('🔍 AI-Screened emails from candidates:', Array.from(screenedEmails));
       setAiScreenedEmails(screenedEmails);
     }
   }, [candidates]);
 
-  // Fetch candidates and AI-screened list when component mounts
   useEffect(() => {
     fetchCandidates();
     fetchAIScreenedCandidates();
     fetchJobs();
   }, []);
 
-  // If PipelineOverview redirects here with a stage, apply it to the Stage filter.
   useEffect(() => {
     const stageFromNav = location.state?.stage;
     if (stageFromNav) {
@@ -208,7 +211,7 @@ const CandidatesPage = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedCandidates(candidates.map(c => c.id));
+      setSelectedCandidates(currentCandidates.map(c => c.id));
     } else {
       setSelectedCandidates([]);
     }
@@ -222,43 +225,24 @@ const CandidatesPage = () => {
 
   const getStageColor = (stage) => {
     const colors = {
-      'Applied': 'bg-primary-subtle text-primary',
-      'Screening': 'bg-info-subtle text-info',
-      'Interview': 'bg-warning-subtle text-warning',
-      'Offer': 'bg-success-subtle text-success',
-      'Hired': 'bg-success-subtle text-success'
+      'Applied': 'bg-primary/10 text-primary',
+      'Screening': 'bg-amber-50 text-amber-700',
+      'Interview': 'bg-indigo-50 text-indigo-700',
+      'Offer': 'bg-primary/10 text-primary',
+      'Hired': 'bg-emerald-50 text-emerald-700',
+      'Rejected': 'bg-rose-50 text-rose-700'
     };
-    return colors[stage] || 'bg-secondary-subtle text-secondary';
+    return colors[stage] || 'bg-gray-100 text-gray-600';
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      'Pending': 'text-secondary',
-      'In Progress': 'text-primary',
-      'Completed': 'text-success',
-      'Awaiting Decision': 'text-warning'
-    };
-    return colors[status] || 'text-secondary';
-  };
-
-  // Job options for the filter dropdown.
-  // Prefer real jobs list (same as JobList.jsx). If it fails/empty, fall back to candidate roles.
   const jobFilterOptions = React.useMemo(() => {
-    const titlesFromJobs = jobsData
-      .map(j => j.title)
-      .filter(Boolean);
-
-    const titlesFromCandidates = candidates
-      .map(c => (c.role || '').toString().trim())
-      .filter(Boolean);
-
+    const titlesFromJobs = jobsData.map(j => j.title).filter(Boolean);
+    const titlesFromCandidates = candidates.map(c => (c.role || '').toString().trim()).filter(Boolean);
     const uniqueTitles = Array.from(new Set((titlesFromJobs.length ? titlesFromJobs : titlesFromCandidates)))
       .sort((a, b) => a.localeCompare(b));
-
     return uniqueTitles;
   }, [jobsData, candidates]);
 
-  // Filter candidates based on search and filters
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          candidate.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -268,17 +252,12 @@ const CandidatesPage = () => {
       skill.toLowerCase().includes(filters.skills.toLowerCase())
     );
     
-    const matchesJob =
-      !filters.job ||
-      candidate.role.toLowerCase().trim() === filters.job.toLowerCase().trim();
-    
+    const matchesJob = !filters.job || candidate.role.toLowerCase().trim() === filters.job.toLowerCase().trim();
     const matchesStage = !filters.stage || candidate.stage.toLowerCase() === filters.stage.toLowerCase();
     
-    const isAiScreened =
-      (candidate.resume_screened || '').toString().toLowerCase().trim() === 'yes' ||
+    const isAiScreened = (candidate.resume_screened || '').toString().toLowerCase().trim() === 'yes' ||
       aiScreenedEmails.has(candidate.email?.toLowerCase().trim());
-    const matchesAiScreened =
-      !filters.aiScreened ||
+    const matchesAiScreened = !filters.aiScreened ||
       (filters.aiScreened === 'yes' ? isAiScreened : !isAiScreened);
     
     return matchesSearch && matchesSkills && matchesJob && matchesStage && matchesAiScreened;
@@ -289,8 +268,7 @@ const CandidatesPage = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentCandidates = filteredCandidates.slice(startIndex, endIndex);
 
-  // Reset to page 1 when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filters]);
 
@@ -317,10 +295,6 @@ const CandidatesPage = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleViewCandidate = (candidateId) => {
     const candidate = candidates.find(c => c.id === candidateId);
     if (candidate) {
@@ -334,38 +308,24 @@ const CandidatesPage = () => {
     setSelectedCandidate(null);
   };
 
-  // AI Resume Screening for bulk candidates
   const handleAIScreening = async () => {
     const selectedCandidateData = candidates.filter(c => selectedCandidates.includes(c.id));
-    
-    console.log('📋 Selected Candidates:', selectedCandidateData);
-    console.log('📋 Resume URLs:', selectedCandidateData.map(c => ({ name: c.name, resume_url: c.resume_url })));
-    
-    // Filter candidates that have resume URLs (check for truthy and non-empty strings)
     const candidatesWithResumes = selectedCandidateData.filter(c => 
       c.resume_url && c.resume_url.trim() !== '' && c.resume_url !== 'null' && c.resume_url !== 'undefined'
     );
     
-    console.log('📋 Candidates with resumes:', candidatesWithResumes.length);
-    
     if (candidatesWithResumes.length === 0) {
-      const candidateNames = selectedCandidateData.map(c => c.name).join(', ');
-      alert(`⚠️ No resumes found for selected candidates.\n\nSelected: ${candidateNames}\n\nPlease ensure candidates have uploaded resumes. Check the 'resume_url' field in the database.`);
+      alert('No resumes found for selected candidates.');
       return;
     }
 
-    // Check which candidates have already been screened
     try {
       const token = localStorage.getItem('token');
       const aiScreenedResponse = await fetch(`${BASE_URL}/api/resume/candidates?limit=1000&show_all=true`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const aiScreenedCandidates = aiScreenedResponse.ok ? await aiScreenedResponse.json() : [];
       
-      // Create a set of already screened emails for quick lookup (using resume_screened field)
       const screenedEmails = new Set(
         aiScreenedCandidates
           .filter(c => c.resume_screened === "yes" || c.resume_screened === "Yes")
@@ -373,56 +333,19 @@ const CandidatesPage = () => {
           .filter(email => email)
       );
       
-      // Filter out already screened candidates (trim and lowercase for robust matching)
-      const notYetScreened = candidatesWithResumes.filter(c => 
-        !screenedEmails.has(c.email?.toLowerCase().trim())
-      );
+      const notYetScreened = candidatesWithResumes.filter(c => !screenedEmails.has(c.email?.toLowerCase().trim()));
       
-      const alreadyScreened = candidatesWithResumes.filter(c => 
-        screenedEmails.has(c.email?.toLowerCase().trim())
-      );
-      
-      console.log('📋 Already screened:', alreadyScreened.length);
-      console.log('📋 Not yet screened:', notYetScreened.length);
-      
-      if (alreadyScreened.length > 0 && notYetScreened.length === 0) {
-        alert(`⚠️ All selected candidates have already been screened with AI.\n\nAlready screened:\n${alreadyScreened.map(c => '• ' + c.name).join('\n')}\n\nThey cannot be screened again. Please select different candidates.`);
-        return;
-      }
-      
-      if (alreadyScreened.length > 0) {
-        const proceed = window.confirm(
-          `⚠️ ${alreadyScreened.length} candidate(s) have already been screened and will be skipped:\n${alreadyScreened.map(c => '• ' + c.name).join('\n')}\n\n✅ ${notYetScreened.length} new candidate(s) will be screened:\n${notYetScreened.map(c => '• ' + c.name).join('\n')}\n\nDo you want to proceed with screening the new candidates only?`
-        );
-        if (!proceed) return;
-      }
-      
-      // Update candidatesWithResumes to only include not yet screened
       if (notYetScreened.length === 0) {
-        alert('⚠️ No new candidates to screen. All selected candidates have already been screened.');
+        alert('All selected candidates have already been screened.');
         return;
       }
       
-      // Continue with notYetScreened candidates
       candidatesWithResumes.length = 0;
       candidatesWithResumes.push(...notYetScreened);
-      
     } catch (error) {
       console.error('Error checking already screened candidates:', error);
-      // Continue anyway if check fails
     }
 
-    if (candidatesWithResumes.length < selectedCandidateData.length) {
-      const withoutResumes = selectedCandidateData.filter(c => !c.resume_url || c.resume_url.trim() === '');
-      if (withoutResumes.length > 0) {
-        const proceed = window.confirm(
-          `Only ${candidatesWithResumes.length} of ${selectedCandidateData.length} selected candidates can be screened.\n\nCandidates without resumes:\n${withoutResumes.map(c => '• ' + c.name).join('\n')}\n\nDo you want to proceed with AI screening for those with resumes?`
-        );
-        if (!proceed) return;
-      }
-    }
-
-    // Initialize AI screening state
     setAiScreening({
       isProcessing: true,
       currentIndex: 0,
@@ -431,18 +354,13 @@ const CandidatesPage = () => {
       showModal: true
     });
 
-    // Process each resume one by one
     const results = [];
     for (let i = 0; i < candidatesWithResumes.length; i++) {
       const candidate = candidatesWithResumes[i];
       
-      setAiScreening(prev => ({
-        ...prev,
-        currentIndex: i + 1
-      }));
+      setAiScreening(prev => ({ ...prev, currentIndex: i + 1 }));
 
       try {
-        // Fetch the resume file from the server
         const resumeResponse = await fetch(`${BASE_URL}/${candidate.resume_url}`);
         
         if (!resumeResponse.ok) {
@@ -457,16 +375,13 @@ const CandidatesPage = () => {
         const resumeBlob = await resumeResponse.blob();
         const fileName = candidate.resume_url.split('/').pop();
         
-        // Create FormData for AI screening
         const formData = new FormData();
         formData.append('file', resumeBlob, fileName);
         formData.append('role', candidate.role);
-        formData.append('experience_level', 'mid'); // Default, can be enhanced
-        // Link screening result back to the same Candidate row (by id) to avoid email mismatches from resume extraction.
+        formData.append('experience_level', 'mid');
         formData.append('candidate_id', String(candidate.id));
         formData.append('candidate_email', candidate.email || '');
 
-        // Send to AI screening endpoint
         const screeningResponse = await fetch(`${BASE_URL}/api/resume/process`, {
           method: 'POST',
           body: formData
@@ -483,8 +398,6 @@ const CandidatesPage = () => {
             message: `Score: ${result.score.toFixed(1)}% - ${result.status}`
           });
 
-          // Backend/database: resume/process API already updated Candidate, candidate_records, and Application tables with stage (Rejected/Applied) and resume_screened.
-          // Update UI immediately so the row reflects new stage and AI SCREENED = Yes without waiting for refetch.
           const nextStage = result.status === 'rejected' ? 'Rejected' : 'Applied';
           setCandidates(prev =>
             prev.map(c =>
@@ -492,58 +405,35 @@ const CandidatesPage = () => {
                 ? {
                     ...c,
                     stage: nextStage,
-                    status:
-                      nextStage === 'Rejected'
-                        ? 'Completed'
-                        : nextStage === 'Interview'
-                          ? 'In Progress'
-                          : nextStage === 'Offer'
-                            ? 'Awaiting Decision'
-                            : 'Pending',
+                    status: nextStage === 'Rejected' ? 'Completed' : 'Pending',
                     resume_screened: 'yes'
                   }
                 : c
             )
           );
         } else {
-          const errorData = await screeningResponse.json().catch(() => ({}));
           results.push({
-            candidateId: candidate.id,
             candidate: candidate.name,
             status: 'error',
-            message: errorData.detail || 'Processing failed'
+            message: 'Processing failed'
           });
-          // Do not force stage to Rejected for generic errors.
-          // Keep the existing stage and let backend remain the source of truth.
         }
       } catch (error) {
         console.error(`Error processing ${candidate.name}:`, error);
         results.push({
-          candidateId: candidate.id,
           candidate: candidate.name,
           status: 'error',
           message: 'Network error'
         });
-        // Keep existing stage on network errors; do not force a rejection in UI.
       }
 
-      // Small delay between requests to avoid overwhelming the server
       if (i < candidatesWithResumes.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
-    // Update final state
-    setAiScreening(prev => ({
-      ...prev,
-      isProcessing: false,
-      results: results
-    }));
-
-    // Clear selection after processing
+    setAiScreening(prev => ({ ...prev, isProcessing: false, results: results }));
     setSelectedCandidates([]);
-
-    // Sync frontend with backend/DB: stage and resume_screened are already updated in DB by resume/process API; refetch so list and Pipeline stay in sync.
     await fetchCandidates();
     await fetchAIScreenedCandidates();
   };
@@ -563,521 +453,554 @@ const CandidatesPage = () => {
     navigate('/resume-screening', { state: { tab: 'candidates' } });
   };
 
-  return (
-    <div className="container-fluid py-4">
-      {/* Page Header: title left, actions right */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:user-group" className="text-black" style={{ fontSize: 28 }} />
-            Candidates
-          </h4>
-          <p className="text-secondary mb-0 mt-1">View, filter, and manage all job applicants.</p>
-        </div>
-        <div className="d-flex flex-wrap align-items-center gap-2">
-          <button
-            type="button"
-            className="btn refresh-btn d-inline-flex align-items-center gap-2"
-            onClick={async () => {
-              setRefreshing(true);
-              await fetchCandidates();
-              await fetchAIScreenedCandidates();
-              await fetchJobs();
-              setRefreshing(false);
-            }}
-            disabled={refreshing}
-          >
-            <Icon icon="heroicons:arrow-path" style={{ width: 16, height: 16 }} className={refreshing ? 'spin' : ''} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-          <button
-            type="button"
-            className="sync-btn d-inline-flex align-items-center gap-2"
-            onClick={async () => {
-              try {
-                const response = await fetch(`${BASE_URL}/api/resume/sync-stages`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  }
-                });
-                if (response.ok) {
-                  const result = await response.json();
-                  alert(`✅ Stages synced successfully!\n\nUpdated ${result.records_updated} candidate_records\nUpdated ${result.candidates_updated} candidate records`);
-                  await fetchCandidates();
-                  await fetchAIScreenedCandidates();
-                } else {
-                  alert('⚠️ Failed to sync stages. Please check backend logs.');
-                }
-              } catch (error) {
-                console.error('Error syncing stages:', error);
-                alert('⚠️ Error syncing stages. Please check console.');
-              }
-            }}
-            title="Sync candidate stages based on scores"
-          >
-            <Icon icon="heroicons:arrow-path" style={{ width: 16, height: 16 }} />
-            Sync Stages
-          </button>
-        </div>
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[500px] px-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+        <p className="text-gray-500 text-sm">Loading candidates...</p>
       </div>
+    );
+  }
 
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-danger d-flex align-items-center rounded-3 mb-4 py-3" role="alert">
-          <AlertCircle size={20} className="me-2 flex-shrink-0" />
-          <div className="flex-grow-1">{error}</div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
+  return (
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiUsers className="text-gray-700" />
+              Candidates
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">View, filter, and manage all job applicants</p>
           </div>
-          <p className="text-secondary-light">Loading candidates...</p>
-        </div>
-      ) : candidates.length === 0 && !error ? (
-        <div className="card border shadow-none">
-          <div className="card-body text-center py-5">
-            <h5 className="mb-2">No Candidates Yet</h5>
-            <p className="text-secondary-light mb-3">
-              No candidates have applied to your jobs yet. Make sure your jobs are published!
-            </p>
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
-              type="button"
-              className="create-job-btn d-inline-flex align-items-center gap-2"
-              onClick={() => navigate('/jobslist')}
+              onClick={async () => {
+                setRefreshing(true);
+                await fetchCandidates();
+                await fetchAIScreenedCandidates();
+                await fetchJobs();
+                setRefreshing(false);
+              }}
+              disabled={refreshing}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
             >
-              <Icon icon="heroicons:briefcase" style={{ width: 16, height: 16 }} />
-              View Jobs
+              <FiRefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch(`${BASE_URL}/api/resume/sync-stages`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                  });
+                  if (response.ok) {
+                    alert('Stages synced successfully!');
+                    await fetchCandidates();
+                    await fetchAIScreenedCandidates();
+                  } else {
+                    alert('Failed to sync stages');
+                  }
+                } catch (error) {
+                  console.error('Error syncing stages:', error);
+                }
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+            >
+              <FiRefreshCw className="h-4 w-4" />
+              Sync Stages
             </button>
           </div>
         </div>
-      ) : null}
 
-      {/* Candidates Content - Only show if not loading and has candidates */}
-      {!loading && candidates.length > 0 && (
-        <>
+        {/* Error Alert */}
+        {error && (
+          <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 rounded-lg p-4 text-rose-700">
+            <FiAlertCircle className="h-5 w-5 text-rose-500 flex-shrink-0" />
+            <span className="text-sm flex-1">{error}</span>
+          </div>
+        )}
 
-      {/* KPI Summary - App.css kpi-row/kpi-card (ref JobList) */}
-      <div className="kpi-row mb-4">
-        {[
-          { title: 'Total Candidates', value: insights.total, icon: 'heroicons:user-group', bg: 'kpi-primary', color: 'kpi-primary-text' },
-          { title: 'In Interview', value: insights.inInterview, icon: 'heroicons:chat-bubble-left-right', bg: 'kpi-info', color: 'kpi-info-text' },
-          { title: 'Offers Sent', value: insights.offersSent, icon: 'heroicons:envelope', bg: 'kpi-success', color: 'kpi-success-text' },
-          { title: 'Hired', value: insights.hired, icon: 'heroicons:check-badge', bg: 'kpi-warning', color: 'kpi-warning-text' }
-        ].map((item, index) => (
-          <div className="kpi-col" key={index}>
-            <div className="kpi-card">
-              <div className="kpi-card-body">
-                <div className={`kpi-icon ${item.bg}`}>
-                  <Icon icon={item.icon} className={`kpi-icon-style ${item.color}`} />
+        {/* Empty State */}
+        {!loading && candidates.length === 0 && !error && (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-8 md:p-12 text-center">
+            <FiUsers className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-midnight_text mb-2">No Candidates Yet</h3>
+            <p className="text-sm text-gray-500 mb-4">No candidates have applied to your jobs yet</p>
+            <button
+              onClick={() => navigate('/jobslist')}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
+            >
+              <FiFileText className="h-4 w-4" />
+              View Jobs
+            </button>
+          </div>
+        )}
+
+        {/* Main Content */}
+        {!loading && candidates.length > 0 && (
+          <>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Total Candidates</p>
+                    <p className="text-2xl font-bold text-midnight_text mt-1">{insights.total}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FiUsers className="h-5 w-5 text-primary" />
+                  </div>
                 </div>
-                <div className="kpi-content">
-                  <div className="kpi-title">{item.title}</div>
-                  <div className="kpi-value">{item.value}</div>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">In Interview</p>
+                    <p className="text-2xl font-bold text-midnight_text mt-1">{insights.inInterview}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                    <FiMessageCircle className="h-5 w-5 text-indigo-600" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Offers Sent</p>
+                    <p className="text-2xl font-bold text-midnight_text mt-1">{insights.offersSent}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FiMail className="h-5 w-5 text-primary" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Hired</p>
+                    <p className="text-2xl font-bold text-midnight_text mt-1">{insights.hired}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <FiCheckCircle className="h-5 w-5 text-emerald-600" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Filters & Search */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-header bg-transparent border-bottom py-3">
-          <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-            <Icon icon="heroicons:funnel" style={{ width: 18, height: 18 }} />
-            Filter & search
-          </h6>
-        </div>
-        <div className="card-body">
-          <div className="row g-3 align-items-end">
-            <div className="col-12 col-md-6 col-lg-4">
-              <label className="form-label small text-muted mb-1">Search</label>
-              <div className="position-relative">
-                <Icon icon="heroicons:magnifying-glass" className="position-absolute top-50 translate-middle-y text-muted ms-3" style={{ pointerEvents: 'none', fontSize: 18 }} />
-                <input
-                  className="form-control ps-5"
-                  placeholder="Name, role, or skills..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            {/* Filters */}
+            <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search candidates..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+                  />
+                </div>
+                
+                <select
+                  value={filters.skills}
+                  onChange={(e) => setFilters(prev => ({ ...prev, skills: e.target.value }))}
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+                >
+                  <option value="">All Skills</option>
+                  <option value="react">React.js</option>
+                  <option value="python">Python</option>
+                  <option value="javascript">JavaScript</option>
+                </select>
+                
+                <select
+                  value={filters.job}
+                  onChange={(e) => setFilters(prev => ({ ...prev, job: e.target.value }))}
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+                >
+                  <option value="">All Jobs</option>
+                  {jobFilterOptions.map((title) => (
+                    <option key={title} value={title}>{title}</option>
+                  ))}
+                </select>
+                
+                <select
+                  value={filters.stage}
+                  onChange={(e) => setFilters(prev => ({ ...prev, stage: e.target.value }))}
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+                >
+                  <option value="">All Stages</option>
+                  <option value="applied">Applied</option>
+                  <option value="screening">Screening</option>
+                  <option value="interview">Interview</option>
+                  <option value="offer">Offer</option>
+                  <option value="hired">Hired</option>
+                </select>
+                
+                <select
+                  value={filters.aiScreened}
+                  onChange={(e) => setFilters(prev => ({ ...prev, aiScreened: e.target.value }))}
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+                >
+                  <option value="">AI Screened: All</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+                
+                <button
+                  onClick={handleExport}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+                >
+                  <FiDownload className="h-4 w-4" />
+                  Export
+                </button>
               </div>
             </div>
-            <div className="col-6 col-md-4 col-lg-2">
-              <label className="form-label small text-muted mb-1">Skills</label>
-              <select
-                className="form-select"
-                value={filters.skills}
-                onChange={(e) => setFilters(prev => ({ ...prev, skills: e.target.value }))}
-              >
-                <option value="">All Skills</option>
-                <option value="react">React.js</option>
-                <option value="python">Python</option>
-                <option value="sql">SQL</option>
-                <option value="figma">Figma</option>
-                <option value="js">JavaScript</option>
-                <option value="css">CSS</option>
-                <option value="html">HTML</option>
-                <option value="typescript">TypeScript</option>
-                <option value="node">Node.js</option>
-                <option value="mongodb">MongoDB</option>
-                <option value="selenium">Selenium</option>
-                <option value="tableau">Tableau</option>
-                <option value="aws">AWS</option>
-                <option value="docker">Docker</option>
-              </select>
-            </div>
-            <div className="col-6 col-md-4 col-lg-2">
-              <label className="form-label small text-muted mb-1">Job</label>
-              <select
-                className="form-select"
-                value={filters.job}
-                onChange={(e) => setFilters(prev => ({ ...prev, job: e.target.value }))}
-              >
-                <option value="">All Jobs</option>
-                {jobFilterOptions.map((title) => (
-                  <option key={title} value={title}>
-                    {title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-6 col-md-4 col-lg-2">
-              <label className="form-label small text-muted mb-1">Stage</label>
-              <select
-                className="form-select"
-                value={filters.stage}
-                onChange={(e) => setFilters(prev => ({ ...prev, stage: e.target.value }))}
-              >
-                <option value="">All Stages</option>
-                <option value="applied">Applied</option>
-                <option value="screening">Screening</option>
-                <option value="interview">Interview</option>
-                <option value="offer">Offer</option>
-                <option value="hired">Hired</option>
-              </select>
-            </div>
-            <div className="col-6 col-md-4 col-lg-2">
-              <label className="form-label small text-muted mb-1">AI SCREENED</label>
-              <select
-                className="form-select"
-                value={filters.aiScreened}
-                onChange={(e) => setFilters(prev => ({ ...prev, aiScreened: e.target.value }))}
-              >
-                <option value="">All</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-            <div className="col-12 col-md-6 col-lg-2 d-flex justify-content-md-end">
-              <button type="button" className="sync-btn d-inline-flex align-items-center gap-2 w-100 w-md-auto justify-content-center" onClick={handleExport}>
-                <Icon icon="heroicons:document-arrow-down" style={{ width: 16, height: 16 }} />
-                Export
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Bulk Actions Bar */}
-      {selectedCandidates.length > 0 && (
-        <div className="alert alert-info d-flex align-items-center justify-content-between flex-wrap gap-3 rounded-3 py-3 mb-4">
-          <div className="d-flex align-items-center gap-3 flex-wrap">
-            <span className="fw-semibold">
-              {selectedCandidates.length} candidate{selectedCandidates.length > 1 ? 's' : ''} selected
-            </span>
-            <div className="vr d-none d-sm-block" style={{ height: '1.25rem' }} />
-            <div className="d-flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="create-assessment-btn d-inline-flex align-items-center gap-2"
-                onClick={handleAIScreening}
-                title="Process selected candidates with AI Resume Screening"
-                disabled={selectedCandidates.some(id => {
-                  const candidate = candidates.find(c => c.id === id);
-                  return candidate && (candidate.resume_screened === "yes" || candidate.resume_screened === "Yes");
-                })}
-              >
-                <Icon icon="heroicons:arrow-up-tray" style={{ width: 18, height: 18 }} />
-                AI Resume Screening
-              </button>
-              <button type="button" className="delete-btn d-inline-flex align-items-center gap-2">
-                <Icon icon="heroicons:trash" style={{ width: 16, height: 16 }} />
-                Delete
-              </button>
-            </div>
-          </div>
-          <button type="button" onClick={() => setSelectedCandidates([])} className="btn btn-link p-0 text-decoration-none fw-medium">
-            Clear selection
-          </button>
-        </div>
-      )}
+            {/* Bulk Actions */}
+            {selectedCandidates.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-primary">
+                    {selectedCandidates.length} candidate{selectedCandidates.length > 1 ? 's' : ''} selected
+                  </span>
+                  <button
+                    onClick={() => setSelectedCandidates([])}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleAIScreening}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
+                  >
+                    <FiUpload className="h-4 w-4" />
+                    AI Screening
+                  </button>
+                  <button className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-sm font-medium transition-all">
+                    <FiTrash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
 
-      {/* Candidates Table */}
-      <div className="card border shadow-none mb-4 overflow-hidden">
-        <div className="card-header bg-transparent border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <h6 className="fw-semibold mb-0">Candidates list</h6>
-          <span className="badge bg-primary-subtle text-primary">{filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? 's' : ''}</span>
-        </div>
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th style={{ width: 44 }} className="text-center py-3">
-                  <label className={`custom-checkbox mb-0 d-inline-flex align-items-center justify-content-center ${selectedCandidates.length === currentCandidates.length && currentCandidates.length > 0 ? 'checked' : ''}`} style={{ cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      className="d-none"
-                      checked={selectedCandidates.length === currentCandidates.length && currentCandidates.length > 0}
-                      onChange={handleSelectAll}
-                    />
-                    <span className="checkbox-box">
-                      {selectedCandidates.length === currentCandidates.length && currentCandidates.length > 0 && <span className="checkmark">✓</span>}
-                    </span>
-                  </label>
-                </th>
-                <th className="text-start py-3 small text-uppercase text-muted fw-semibold">Candidate</th>
-                <th className="text-start py-3 small text-uppercase text-muted fw-semibold">Job role</th>
-                <th className="text-start py-3 small text-uppercase text-muted fw-semibold">Skills</th>
-                <th className="text-center py-3 small text-uppercase text-muted fw-semibold">Resume</th>
-                <th className="text-center py-3 small text-uppercase text-muted fw-semibold">AI screened</th>
-                <th className="text-center py-3 small text-uppercase text-muted fw-semibold">Stage</th>
-                <th className="text-center py-3 small text-uppercase text-muted fw-semibold" style={{ width: 90 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+            {/* Mobile View (Card Layout) */}
+            <div className="block md:hidden space-y-3">
               {currentCandidates.map(candidate => (
-                <tr key={candidate.id}>
-                  <td className="text-center align-middle">
-                    <label className={`custom-checkbox mb-0 d-inline-flex align-items-center justify-content-center ${selectedCandidates.includes(candidate.id) ? 'checked' : ''}`} style={{ cursor: (candidate.resume_screened === "yes" || candidate.resume_screened === "Yes") ? 'not-allowed' : 'pointer' }} title={candidate.resume_screened === "yes" || candidate.resume_screened === "Yes" ? "This candidate's resume has already been screened" : ''}>
+                <div key={candidate.id} className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3 flex-1">
                       <input
                         type="checkbox"
-                        className="d-none"
                         checked={selectedCandidates.includes(candidate.id)}
                         onChange={() => handleSelectCandidate(candidate.id)}
-                        disabled={candidate.resume_screened === "yes" || candidate.resume_screened === "Yes"}
+                        disabled={candidate.resume_screened === "yes"}
+                        className="rounded border-gray-300 text-primary focus:ring-primary mt-1"
                       />
-                      <span className="checkbox-box">
-                        {selectedCandidates.includes(candidate.id) && <span className="checkmark">✓</span>}
-                      </span>
-                    </label>
-                  </td>
-                  <td className="text-start align-middle">
-                    <span className="fw-medium">{candidate.name}</span>
-                  </td>
-                  <td className="text-start align-middle text-muted">{candidate.role}</td>
-                  <td className="text-start align-middle">
-                    <div className="d-flex flex-wrap gap-1">
-                      {candidate.skills.slice(0, 4).map((skill, idx) => (
-                        <span key={idx} className="badge bg-light text-dark border">
-                          {skill}
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-midnight_text">{candidate.name}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{candidate.role}</p>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <button
+                        onClick={() => setMobileMenuOpen(mobileMenuOpen === candidate.id ? null : candidate.id)}
+                        className="p-2 text-gray-400 hover:text-gray-600"
+                      >
+                        <FiMoreVertical className="h-5 w-5" />
+                      </button>
+                      {mobileMenuOpen === candidate.id && (
+                        <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
+                          <button
+                            onClick={() => {
+                              handleViewCandidate(candidate.id);
+                              setMobileMenuOpen(null);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <FiEye className="h-4 w-4" /> View
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">Skills:</span>
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {candidate.skills.slice(0, 2).map((skill, idx) => (
+                          <span key={idx} className="px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
+                            {skill}
+                          </span>
+                        ))}
+                        {candidate.skills.length > 2 && (
+                          <span className="text-xs text-gray-500">+{candidate.skills.length - 2}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">Resume:</span>
+                      {candidate.resume_url && candidate.resume_url.trim() !== '' ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                          <FiFileText className="h-3 w-3" />
+                          Available
                         </span>
-                      ))}
-                      {candidate.skills.length > 4 && (
-                        <span className="badge bg-primary-subtle text-primary">
-                          +{candidate.skills.length - 4}
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-rose-600">
+                          <FiXCircle className="h-3 w-3" />
+                          Missing
                         </span>
                       )}
                     </div>
-                  </td>
-                  <td className="text-center align-middle">
-                    {candidate.resume_url && candidate.resume_url.trim() !== '' ? (
-                      <span className="badge bg-success-subtle text-success d-inline-flex align-items-center gap-1" title={candidate.resume_url}>
-                        <FileText size={12} />
-                        Available
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">AI Screened:</span>
+                      {candidate.resume_screened === "yes" ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                          <FiCheckCircle className="h-3 w-3" />
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                          <FiXCircle className="h-3 w-3" />
+                          No
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">Stage:</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${getStageColor(candidate.stage)}`}>
+                        {candidate.stage}
                       </span>
-                    ) : (
-                      <span className="badge bg-danger-subtle text-danger d-inline-flex align-items-center gap-1">
-                        <XCircle size={12} />
-                        Missing
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-center align-middle">
-                    {candidate.resume_screened === "yes" || candidate.resume_screened === "Yes" ? (
-                      <span className="badge bg-success-subtle text-success d-inline-flex align-items-center gap-1" title="Resume has been screened with AI">
-                        <CheckCircle size={12} />
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="badge bg-warning-subtle text-warning d-inline-flex align-items-center gap-1" title="Resume not yet screened">
-                        <XCircle size={12} />
-                        No
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-center align-middle">
-                    <span className={`badge ${getStageColor(candidate.stage)}`}>
-                      {candidate.stage}
-                    </span>
-                  </td>
-                  <td className="text-center align-middle">
-                    <button
-                      type="button"
-                      className="btn btn-sm job-listings-btn d-inline-flex align-items-center justify-content-center"
-                      style={{ width: 36, height: 36 }}
-                      title="View profile"
-                      onClick={() => handleViewCandidate(candidate.id)}
-                    >
-                      <Icon icon="heroicons:eye" style={{ width: 18, height: 18 }} />
-                    </button>
-                  </td>
-                </tr>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-body py-3">
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div className="small text-muted">
-              Showing <strong className="text-body">{startIndex + 1}</strong>–<strong className="text-body">{Math.min(endIndex, filteredCandidates.length)}</strong> of <strong className="text-body">{filteredCandidates.length}</strong> candidates
             </div>
-            <div className="d-flex align-items-center gap-2 flex-wrap">
-              <div className="btn-group btn-group-sm" role="group">
+
+            {/* Desktop View (Table Layout) */}
+            <div className="hidden md:block bg-white rounded-lg border border-gray-100 shadow-deatail_shadow overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className="w-10 px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedCandidates.length === currentCandidates.length && currentCandidates.length > 0}
+                          onChange={handleSelectAll}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </th>
+                      <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">CANDIDATE</th>
+                      <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">JOB ROLE</th>
+                      <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">SKILLS</th>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">RESUME</th>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">AI SCREENED</th>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">STAGE</th>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {currentCandidates.map(candidate => (
+                      <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedCandidates.includes(candidate.id)}
+                            onChange={() => handleSelectCandidate(candidate.id)}
+                            disabled={candidate.resume_screened === "yes"}
+                            className="rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-medium text-midnight_text">{candidate.name}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-600">{candidate.role}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {candidate.skills.slice(0, 3).map((skill, idx) => (
+                              <span key={idx} className="px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
+                                {skill}
+                              </span>
+                            ))}
+                            {candidate.skills.length > 3 && (
+                              <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                                +{candidate.skills.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {candidate.resume_url && candidate.resume_url.trim() !== '' ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                              <FiFileText className="h-3 w-3" />
+                              Available
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-rose-600">
+                              <FiXCircle className="h-3 w-3" />
+                              Missing
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {candidate.resume_screened === "yes" ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                              <FiCheckCircle className="h-3 w-3" />
+                              Yes
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                              <FiXCircle className="h-3 w-3" />
+                              No
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${getStageColor(candidate.stage)}`}>
+                            {candidate.stage}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleViewCandidate(candidate.id)}
+                            className="p-1.5 text-gray-500 hover:text-primary rounded-lg hover:bg-primary/10 transition-all"
+                            title="View Profile"
+                          >
+                            <FiEye className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination - Responsive */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-gray-50/30 rounded-lg">
+              <div className="text-xs text-gray-500 text-center sm:text-left">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredCandidates.length)} of {filteredCandidates.length} candidates
+              </div>
+              <div className="flex items-center gap-2">
                 <button
-                  type="button"
-                  className="btn btn-outline-secondary"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
+                  className="p-2 text-sm border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  Previous
+                  <FiChevronLeft className="h-4 w-4" />
                 </button>
-                {[...Array(Math.min(5, totalPages))].map((_, idx) => {
-                  const pageNum = idx + 1;
-                  return (
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => i + 1).map(page => (
                     <button
-                      key={pageNum}
-                      type="button"
-                      className={pageNum === currentPage ? 'btn btn-primary' : 'btn btn-outline-secondary'}
-                      onClick={() => setCurrentPage(pageNum)}
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1 text-sm rounded-lg transition-all ${currentPage === page
+                          ? 'bg-primary text-white'
+                          : 'border border-gray-200 hover:bg-white'
+                        }`}
                     >
-                      {pageNum}
+                      {page}
                     </button>
-                  );
-                })}
+                  ))}
+                  {totalPages > 3 && currentPage > 2 && (
+                    <span className="px-2 py-1 text-sm text-gray-500">...</span>
+                  )}
+                  {totalPages > 3 && currentPage < totalPages - 1 && (
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      className={`px-3 py-1 text-sm rounded-lg transition-all ${currentPage === totalPages
+                          ? 'bg-primary text-white'
+                          : 'border border-gray-200 hover:bg-white'
+                        }`}
+                    >
+                      {totalPages}
+                    </button>
+                  )}
+                </div>
                 <button
-                  type="button"
-                  className="btn btn-outline-secondary"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
+                  className="p-2 text-sm border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  Next
+                  <FiChevronRight className="h-4 w-4" />
                 </button>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className="px-2 py-1 text-sm border border-gray-200 rounded-lg bg-white"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
               </div>
-              <select
-                className="form-select form-select-sm w-auto"
-                value={itemsPerPage}
-                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                style={{ minWidth: '70px' }}
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-              <span className="small text-muted ms-1">per page</span>
             </div>
-          </div>
-        </div>
-      </div>
+          </>
+        )}
 
-      {/* Candidate Profile Modal - ref JobList: centered overlay (App.css) */}
-      {showCandidateModal && selectedCandidate && (
-        <div
-          className="job-modal-overlay"
-          tabIndex="-1"
-          onClick={(e) => { if (e.target === e.currentTarget) handleCloseCandidateModal(); }}
-        >
-          <div className="job-modal-dialog" style={{ maxWidth: '900px' }} onClick={e => e.stopPropagation()}>
-            <CandidateProfilePage
-              candidate={selectedCandidate}
-              onClose={handleCloseCandidateModal}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* AI Screening Progress Modal - ref JobList: hrms-modal (App.css) */}
-      {aiScreening.showModal && (
-        <div className="hrms-modal-overlay">
-          <div className="hrms-modal hrms-modal-xl" style={{ maxWidth: '900px', width: '95%' }}>
-            <div className="hrms-modal-header">
-              <h5 className="d-flex align-items-center gap-2 mb-0">
-                <Icon icon="heroicons:arrow-up-tray" style={{ width: 20, height: 20 }} />
-                AI Resume Screening Progress
-              </h5>
-              {!aiScreening.isProcessing && (
-                <button type="button" className="hrms-modal-close" onClick={closeAIScreeningModal} aria-label="Close">&times;</button>
-              )}
-            </div>
-            <div className="hrms-modal-body">
+        {/* AI Screening Modal */}
+        {aiScreening.showModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeAIScreeningModal}>
+            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-deatail_shadow" onClick={e => e.stopPropagation()}>
+              <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-midnight_text flex items-center gap-2">
+                    <FiUpload className="h-5 w-5 text-primary" />
+                    AI Resume Screening
+                  </h3>
+                  {!aiScreening.isProcessing && (
+                    <button onClick={closeAIScreeningModal} className="text-gray-400 hover:text-gray-600">
+                      <FiX className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="p-5">
                 {aiScreening.isProcessing ? (
                   <>
-                    {/* Processing State */}
                     <div className="text-center mb-4">
-                      <div className="spinner-border text-primary mb-3" role="status">
-                        <span className="visually-hidden">Processing...</span>
-                      </div>
-                      <h6 className="mb-2">
+                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-3" />
+                      <p className="text-sm font-medium text-midnight_text">
                         Processing {aiScreening.currentIndex} of {aiScreening.total} resumes...
-                      </h6>
-                      <p className="text-secondary-light mb-3">
-                        Please wait while we analyze resumes with AI. This may take a few minutes.
                       </p>
-                      {/* Progress Bar */}
-                      <div className="progress" style={{ height: '8px' }}>
+                      <p className="text-xs text-gray-500 mt-1">This may take a few minutes</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
                         <div 
-                          className="progress-bar progress-bar-striped progress-bar-animated"
-                          role="progressbar"
-                          style={{ 
-                            width: `${(aiScreening.currentIndex / aiScreening.total) * 100}%` 
-                          }}
-                        ></div>
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${(aiScreening.currentIndex / aiScreening.total) * 100}%` }}
+                        />
                       </div>
                     </div>
-
-                    {/* Already Processed Results */}
+                    
                     {aiScreening.results.length > 0 && (
                       <div className="mt-4">
-                        <h6 className="mb-3">Processed Candidates:</h6>
-                        <div className="list-group">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Processed</h4>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
                           {aiScreening.results.map((result, idx) => (
-                            <div 
-                              key={idx} 
-                              className="list-group-item d-flex justify-content-between align-items-center"
-                            >
-                              <div className="d-flex align-items-center">
-                                {result.status === 'shortlisted' ? (
-                                  <CheckCircle size={16} className="text-success me-2" />
-                                ) : result.status === 'rejected' ? (
-                                  <XCircle size={16} className="text-warning me-2" />
-                                ) : (
-                                  <XCircle size={16} className="text-danger me-2" />
-                                )}
-                                <div>
-                                  <strong>{result.candidate}</strong>
-                                  <br />
-                                  <small className="text-secondary-light">{result.message}</small>
-                                </div>
+                            <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                {result.status === 'shortlisted' && <FiCheckCircle className="h-4 w-4 text-emerald-500" />}
+                                {result.status === 'rejected' && <FiXCircle className="h-4 w-4 text-amber-500" />}
+                                {result.status === 'error' && <FiXCircle className="h-4 w-4 text-rose-500" />}
+                                <span className="text-sm text-midnight_text">{result.candidate}</span>
                               </div>
-                              {result.status === 'shortlisted' && (
-                                <span className="badge bg-success">Shortlisted</span>
-                              )}
-                              {result.status === 'rejected' && (
-                                <span className="badge bg-warning">Rejected</span>
-                              )}
-                              {result.status === 'error' && (
-                                <span className="badge bg-danger">Error</span>
-                              )}
+                              <span className="text-xs text-gray-500">{result.message}</span>
                             </div>
                           ))}
                         </div>
@@ -1086,109 +1009,80 @@ const CandidatesPage = () => {
                   </>
                 ) : (
                   <>
-                    {/* Completed State */}
-                    <div className="text-center mb-4 justify-items-center">
-                      <CheckCircle size={48} className="text-success mb-3" />
-                      <h5 className="mb-2">Screening Complete!</h5>
-                      <p className="text-secondary-light">
-                        Processed {aiScreening.total} candidate{aiScreening.total > 1 ? 's' : ''}
-                      </p>
+                    <div className="text-center mb-4">
+                      <FiCheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+                      <h3 className="text-lg font-bold text-midnight_text">Screening Complete!</h3>
+                      <p className="text-sm text-gray-500">Processed {aiScreening.total} candidate(s)</p>
                     </div>
-
-                    {/* Results Summary */}
-                    <div className="row mb-4">
-                      <div className="col-4 text-center">
-                        <div className="card border shadow-none">
-                          <div className="card-body">
-                            <div className="h3 mb-0 text-success">
-                              {aiScreening.results.filter(r => r.status === 'shortlisted').length}
-                            </div>
-                            <small className="text-secondary-light">Shortlisted</small>
-                          </div>
+                    
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-3 bg-emerald-50 rounded-lg">
+                        <div className="text-xl font-bold text-emerald-600">
+                          {aiScreening.results.filter(r => r.status === 'shortlisted').length}
                         </div>
+                        <div className="text-xs text-gray-500">Shortlisted</div>
                       </div>
-                      <div className="col-4 text-center">
-                        <div className="card border shadow-none">
-                          <div className="card-body">
-                            <div className="h3 mb-0 text-warning">
-                              {aiScreening.results.filter(r => r.status === 'rejected').length}
-                            </div>
-                            <small className="text-secondary-light">Rejected</small>
-                          </div>
+                      <div className="text-center p-3 bg-amber-50 rounded-lg">
+                        <div className="text-xl font-bold text-amber-600">
+                          {aiScreening.results.filter(r => r.status === 'rejected').length}
                         </div>
+                        <div className="text-xs text-gray-500">Rejected</div>
                       </div>
-                      <div className="col-4 text-center">
-                        <div className="card border shadow-none">
-                          <div className="card-body">
-                            <div className="h3 mb-0 text-danger">
-                              {aiScreening.results.filter(r => r.status === 'error').length}
-                            </div>
-                            <small className="text-secondary-light">Errors</small>
-                          </div>
+                      <div className="text-center p-3 bg-rose-50 rounded-lg">
+                        <div className="text-xl font-bold text-rose-600">
+                          {aiScreening.results.filter(r => r.status === 'error').length}
                         </div>
+                        <div className="text-xs text-gray-500">Errors</div>
                       </div>
                     </div>
-
-                    {/* Detailed Results */}
-                    <div>
-                      <h6 className="mb-3">Detailed Results:</h6>
-                      <div className="list-group">
-                        {aiScreening.results.map((result, idx) => (
-                          <div 
-                            key={idx} 
-                            className="list-group-item d-flex justify-content-between align-items-center"
-                          >
-                            <div className="d-flex align-items-center">
-                              {result.status === 'shortlisted' ? (
-                                <CheckCircle size={16} className="text-success me-2" />
-                              ) : result.status === 'rejected' ? (
-                                <XCircle size={16} className="text-warning me-2" />
-                              ) : (
-                                <XCircle size={16} className="text-danger me-2" />
-                              )}
-                              <div>
-                                <strong>{result.candidate}</strong>
-                                <br />
-                                <small className="text-secondary-light">{result.message}</small>
-                                {result.email_status && result.email_status === 'yes' && (
-                                  <span className="ms-2">
-                                    <span className="badge bg-success-subtle text-success">✉ Email Sent</span>
-                                  </span>
-                                )}
-                              </div>
+                    
+                    <div className="max-h-64 overflow-y-auto space-y-2">
+                      {aiScreening.results.map((result, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              {result.status === 'shortlisted' && <FiCheckCircle className="h-4 w-4 text-emerald-500" />}
+                              {result.status === 'rejected' && <FiXCircle className="h-4 w-4 text-amber-500" />}
+                              {result.status === 'error' && <FiXCircle className="h-4 w-4 text-rose-500" />}
+                              <span className="text-sm font-medium text-midnight_text">{result.candidate}</span>
                             </div>
-                            {result.status === 'shortlisted' && (
-                              <span className="badge bg-success">Shortlisted</span>
-                            )}
-                            {result.status === 'rejected' && (
-                              <span className="badge bg-warning">Rejected</span>
-                            )}
-                            {result.status === 'error' && (
-                              <span className="badge bg-danger">Error</span>
-                            )}
+                            <p className="text-xs text-gray-500 ml-6">{result.message}</p>
                           </div>
-                        ))}
-                      </div>
+                          {result.status === 'shortlisted' && (
+                            <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-600">Shortlisted</span>
+                          )}
+                          {result.status === 'rejected' && (
+                            <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 text-amber-600">Rejected</span>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}
-            </div>
-            {!aiScreening.isProcessing && (
-              <div className="hrms-modal-footer">
-                <button type="button" className="close-btn" onClick={closeAIScreeningModal}>
-                  Close
-                </button>
-                <button type="button" className="save-template-btn d-inline-flex align-items-center gap-2" onClick={viewAIScreeningResults}>
-                  <Icon icon="heroicons:eye" style={{ width: 16, height: 16 }} />
-                  View All Results
-                </button>
               </div>
-            )}
+              
+              {!aiScreening.isProcessing && (
+                <div className="sticky bottom-0 bg-white border-t border-gray-100 px-5 py-3 flex justify-end gap-2">
+                  <button onClick={closeAIScreeningModal} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                    Close
+                  </button>
+                  <button onClick={viewAIScreeningResults} className="px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-all">
+                    View Results
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-      </>
-      )}
+        )}
+
+        {/* Candidate Profile Modal */}
+        {showCandidateModal && selectedCandidate && (
+          <CandidateProfilePage
+            candidate={selectedCandidate}
+            onClose={handleCloseCandidateModal}
+          />
+        )}
+      </div>
     </div>
   );
 };

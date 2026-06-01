@@ -1,5 +1,5 @@
 // API Utility for Backend Communication
-import { BASE_URL } from '../config/api.config';
+import { BASE_URL } from "../constants/api.config";
 
 // Get JWT token from localStorage
 const getToken = () => localStorage.getItem('token');

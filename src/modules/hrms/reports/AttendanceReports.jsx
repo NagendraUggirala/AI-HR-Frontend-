@@ -3836,7 +3836,6 @@ const AttendanceReports = () => {
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: 'none',
               background: reportCategory === 'all' ? '#3b82f6' : 'white',
               color: reportCategory === 'all' ? 'white' : '#475569',
               cursor: 'pointer',
@@ -3852,7 +3851,6 @@ const AttendanceReports = () => {
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: 'none',
               background: reportCategory === 'standard' ? '#3b82f6' : 'white',
               color: reportCategory === 'standard' ? 'white' : '#475569',
               cursor: 'pointer',
@@ -3868,7 +3866,6 @@ const AttendanceReports = () => {
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: 'none',
               background: reportCategory === 'exception' ? '#3b82f6' : 'white',
               color: reportCategory === 'exception' ? 'white' : '#475569',
               cursor: 'pointer',
@@ -3884,7 +3881,6 @@ const AttendanceReports = () => {
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: 'none',
               background: reportCategory === 'analytics' ? '#3b82f6' : 'white',
               color: reportCategory === 'analytics' ? 'white' : '#475569',
               cursor: 'pointer',

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { MessageSquare, Send, CheckCircle, AlertCircle, RefreshCw, FileText, Mic, ClipboardList, ArrowRight } from 'lucide-react';
-import { assessmentAPI } from '../../utils/api';
+import { assessmentAPI } from "../../../shared/utils/api";
 
 const CommunicationTest = () => {
   const [searchParams] = useSearchParams();
@@ -585,10 +585,10 @@ const CommunicationTest = () => {
             </div>
 
             <button
-              onClick={() => navigate('/candidate/dashboard')}
+              onClick={() => navigate('/')}
               className="btn btn-primary btn-lg"
             >
-              Back to Dashboard
+              Back to Home
             </button>
           </div>
         </div>

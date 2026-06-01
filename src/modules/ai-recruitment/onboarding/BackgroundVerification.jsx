@@ -6,7 +6,7 @@ import {
   sendBulkEmails,
   copyEmailToClipboard,
   generateMailtoLink,
-} from "../../../services/emailService";
+} from "../../../shared/services/emailService";
 
 const BackgroundVerification = () => {
   const [employees, setEmployees] = useState([]);
@@ -989,7 +989,6 @@ const loadDocumentRequests = () => {
           email: newRequestEmail,
           status: initialStatus,
           requestedDate: timestamp,
-          isExperienced: isExperienced,
           yearsOfExperience: isExperienced ? yearsOfExperience : null,
           experienceData: isExperienced
             ? {

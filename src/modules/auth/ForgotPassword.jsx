@@ -16,7 +16,7 @@ const ForgotPassword = () => {
               <p className='lead' style={{ opacity: 0.9 }}>We'll help you get back into your account</p>
             </div>
             <img
-              src='/assets/images/WhatsApp Image 2025-11-14 at 09.56.23.jpeg'
+              src='/assets/images/leviticalogo.png'
               alt='Forgot Password'
               className='img-fluid login-image rounded-4 shadow-lg'
               style={{ 
@@ -56,7 +56,7 @@ const ForgotPassword = () => {
             <div className='mb-4 mb-md-5'>
               <div className='d-flex align-items-center gap-3 mb-3'>
                 <img 
-                  src='/assets/images/168X40.jpeg' 
+                  src='/assets/images/leviticalogo.png' 
                   alt='Logo' 
                   className='img-fluid' 
                   style={{ height: '40px', width: 'auto' }}

@@ -737,7 +737,6 @@ const TransferMovement = () => {
         estimatedCost: newTransfer.estimatedCost ? parseInt(newTransfer.estimatedCost) : 0
       } : null,
       documents: [],
-      requestInitiator: newTransfer.requestInitiator || 'employee',
       createdBy: newTransfer.requestInitiator === 'employee' ? employee.name :
         newTransfer.requestInitiator === 'manager' ? employee.currentReportingManager : 'HR Department',
       lastModified: new Date()

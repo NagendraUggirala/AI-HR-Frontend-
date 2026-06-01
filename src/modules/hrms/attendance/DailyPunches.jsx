@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Breadcrump from "../../Layout/Breadcrump";
+import Breadcrump from "../../../shared/components/Breadcrump";
 
 function DailyPunches() {
   const businessUnit = ["All Units", "Default Business Units"];

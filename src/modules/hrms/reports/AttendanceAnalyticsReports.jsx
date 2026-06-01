@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
-import RecruiterDashboardLayout from '../../recruiterDashboard/RecruiterDashboardLayout';
+import RecruiterDashboardLayout from "../../../app/layouts/RecruiterDashboardLayout";
 import { Eye, X } from "lucide-react";
 
 

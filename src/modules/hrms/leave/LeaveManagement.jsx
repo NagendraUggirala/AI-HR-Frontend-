@@ -23,8 +23,6 @@ import {
   User,
   Building,
   CalendarCheck,
-  ClockIn,
-  ClockOut,
   Coffee,
   Moon,
   Sun,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { Code, Play, Send, CheckCircle, AlertCircle, RefreshCw, Terminal, ClipboardList, ArrowRight } from 'lucide-react';
-import { assessmentAPI } from '../../utils/api';
+import { assessmentAPI } from "../../../shared/utils/api";
 
 const CodingTest = () => {
   const [searchParams] = useSearchParams();
@@ -670,10 +670,10 @@ const CodingTest = () => {
             )}
 
             <button
-              onClick={() => navigate('/candidate/dashboard')}
+              onClick={() => navigate('/')}
               className="btn btn-outline-primary"
             >
-              Back to Dashboard
+              Back to Home
             </button>
           </div>
         </div>

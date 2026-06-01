@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { leadsAPI } from "../../utils/api";
+import { leadsAPI } from "../../../shared/utils/api";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
 const initialKanbanState = {

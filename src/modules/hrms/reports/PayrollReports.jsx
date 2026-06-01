@@ -5,7 +5,7 @@ import {
   FileText, FileJson, FileSpreadsheet, File, Share2, Mail, ExternalLink,
   Clock, User, Building, DollarSign, Percent, Layers, BarChart3, PieChart
 } from 'lucide-react';
-import RecruiterDashboardLayout from '../../recruiterDashboard/RecruiterDashboardLayout';
+import RecruiterDashboardLayout from "../../../app/layouts/RecruiterDashboardLayout";
 
 const PayrollReports = () => {
   const [selectedReports, setSelectedReports] = useState([]);

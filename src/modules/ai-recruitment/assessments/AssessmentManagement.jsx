@@ -13,7 +13,7 @@ import {
   MessageSquare,
   Brain
 } from 'lucide-react';
-import { assessmentAPI } from '../../utils/api';
+import { assessmentAPI } from "../../../shared/utils/api";
 import { Icon } from '@iconify/react/dist/iconify.js';
 
 const AssessmentManagement = () => {

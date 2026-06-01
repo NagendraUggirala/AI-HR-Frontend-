@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Edit } from 'lucide-react';
-import { adminAPI } from '../../utils/api';
-import { BASE_URL } from '../../config/api.config';
+import { adminAPI } from "../../shared/utils/api";
+import { BASE_URL } from "../../shared/constants/api.config";
 import { UserPlus } from "lucide-react";
 
 const SuperAdminPanel = () => {

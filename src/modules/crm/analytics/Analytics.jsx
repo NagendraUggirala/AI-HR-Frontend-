@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { contactsAPI, leadsAPI, dealsAPI, companiesAPI, activitiesAPI } from "../../utils/api";
+import { contactsAPI, leadsAPI, dealsAPI, companiesAPI, activitiesAPI } from "../../../shared/utils/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { BASE_URL } from "../../config/api.config";
+import { BASE_URL } from "../../../shared/constants/api.config";
 
  
 const Analytics = () => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
-import Breadcrump from "../../Layout/Breadcrump";
+import Breadcrump from "../../../shared/components/Breadcrump";
 
 
 const punchTypes = [

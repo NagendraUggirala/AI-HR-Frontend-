@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Send,
-  Eye,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertCircle,
-  FileText,
-  Mail,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  RefreshCw,
-  Save,
-  X,
-  Filter
-} from 'lucide-react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiSend,
+  FiEye,
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
+  FiAlertCircle,
+  FiFileText,
+  FiMail,
+  FiCalendar,
+  FiDollarSign,
+  FiTrendingUp,
+  FiRefreshCw,
+  FiSave,
+  FiX,
+  FiFilter,
+  FiBriefcase,
+  FiUser,
+  FiUsers
+} from 'react-icons/fi';
 import { BASE_URL } from "../../../shared/constants/api.config";
+import Modal from '../../../shared/components/Modal';
 
 const OfferTracking = () => {
   const [offers, setOffers] = useState([]);
@@ -53,14 +56,12 @@ const OfferTracking = () => {
     position: ''
   });
 
-  // Fetch offers
   const fetchOffers = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.error('❌ No authentication token found for fetching offers');
         showAlert('Authentication required. Please log in again.', 'error');
         setLoading(false);
         return;
@@ -71,7 +72,6 @@ const OfferTracking = () => {
       if (filters.position) params.append('position', filters.position);
       
       const url = `${BASE_URL}/api/offers/offer-tracking?${params.toString()}`;
-      console.log('📥 Fetching offers from:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -81,46 +81,26 @@ const OfferTracking = () => {
         }
       });
       
-      console.log('📊 Offers response status:', response.status, response.statusText);
-      
       if (response.ok) {
         const data = await response.json();
         setOffers(data);
-        console.log(`📊 Total offers received: ${data.length}`);
       } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to fetch offers. Status:', response.status);
-        console.error('❌ Error response:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { detail: errorText || 'Failed to fetch offers' };
-        }
-        
-        showAlert(errorData.detail || 'Error fetching offers', 'error');
+        showAlert('Error fetching offers', 'error');
       }
     } catch (error) {
-      console.error('❌ Error fetching offers:', error);
+      console.error('Error fetching offers:', error);
       showAlert('Error fetching offers', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch stats
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
       
-      if (!token) {
-        console.error('❌ No authentication token found for fetching stats');
-        return;
-      }
+      if (!token) return;
 
-      console.log('📥 Fetching offer stats from:', `${BASE_URL}/api/offers/offer-tracking/stats`);
-      
       const response = await fetch(`${BASE_URL}/api/offers/offer-tracking/stats`, {
         method: 'GET',
         headers: {
@@ -129,34 +109,20 @@ const OfferTracking = () => {
         }
       });
       
-      console.log('📊 Stats response status:', response.status, response.statusText);
-      
       if (response.ok) {
         const data = await response.json();
         setStats(data);
-        console.log('📊 Offer stats received:', data);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to fetch stats. Status:', response.status);
-        console.error('❌ Error response:', errorText);
       }
     } catch (error) {
-      console.error('❌ Error fetching stats:', error);
+      console.error('Error fetching stats:', error);
     }
   };
 
-  // Fetch templates
   const fetchTemplates = async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      if (!token) {
-        console.error('❌ No authentication token found for fetching templates');
-        return;
-      }
+      if (!token) return;
 
-      console.log('📥 Fetching offer templates from:', `${BASE_URL}/api/offers/offer-templates/`);
-      
       const response = await fetch(`${BASE_URL}/api/offers/offer-templates/`, {
         method: 'GET',
         headers: {
@@ -165,34 +131,20 @@ const OfferTracking = () => {
         }
       });
       
-      console.log('📊 Templates response status:', response.status, response.statusText);
-      
       if (response.ok) {
         const data = await response.json();
         setTemplates(data);
-        console.log(`📊 Total templates received: ${data.length}`);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to fetch templates. Status:', response.status);
-        console.error('❌ Error response:', errorText);
       }
     } catch (error) {
-      console.error('❌ Error fetching templates:', error);
+      console.error('Error fetching templates:', error);
     }
   };
 
-  // Fetch candidates
   const fetchCandidates = async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      if (!token) {
-        console.error('❌ No authentication token found for fetching candidates');
-        return;
-      }
+      if (!token) return;
 
-      console.log('📥 Fetching candidates from:', `${BASE_URL}/api/recruiter_dashboard/candidates`);
-      
       const response = await fetch(`${BASE_URL}/api/recruiter_dashboard/candidates`, {
         method: 'GET',
         headers: {
@@ -201,19 +153,12 @@ const OfferTracking = () => {
         }
       });
       
-      console.log('📊 Candidates response status:', response.status, response.statusText);
-      
       if (response.ok) {
         const data = await response.json();
         setCandidates(data);
-        console.log(`📊 Total candidates received: ${data.length}`);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to fetch candidates. Status:', response.status);
-        console.error('❌ Error response:', errorText);
       }
     } catch (error) {
-      console.error('❌ Error fetching candidates:', error);
+      console.error('Error fetching candidates:', error);
     }
   };
 
@@ -224,17 +169,14 @@ const OfferTracking = () => {
     fetchCandidates();
   }, [filters]);
 
-  // Show alert
   const showAlert = (message, type = 'success') => {
     setAlert({ message, type });
     setTimeout(() => setAlert(null), 5000);
   };
 
-  // Handle form input
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Auto-populate template content
     if (field === 'template_id' && value) {
       const template = templates.find(t => t.id === parseInt(value));
       if (template) {
@@ -248,7 +190,6 @@ const OfferTracking = () => {
       }
     }
 
-    // Auto-populate candidate info
     if (field === 'candidate_id' && value) {
       const candidate = candidates.find(c => c.id === parseInt(value));
       if (candidate) {
@@ -261,7 +202,6 @@ const OfferTracking = () => {
     }
   };
 
-  // Add benefit
   const addBenefit = () => {
     if (newBenefit.trim()) {
       setFormData(prev => ({
@@ -272,7 +212,6 @@ const OfferTracking = () => {
     }
   };
 
-  // Remove benefit
   const removeBenefit = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -280,7 +219,6 @@ const OfferTracking = () => {
     }));
   };
 
-  // Open create modal
   const openCreateModal = () => {
     setEditingOffer(null);
     setFormData({
@@ -300,7 +238,6 @@ const OfferTracking = () => {
     setShowModal(true);
   };
 
-  // Open edit modal
   const openEditModal = (offer) => {
     setEditingOffer(offer);
     setFormData({
@@ -320,13 +257,11 @@ const OfferTracking = () => {
     setShowModal(true);
   };
 
-  // View offer details
   const viewOffer = (offer) => {
     setSelectedOffer(offer);
     setShowDetailModal(true);
   };
 
-  // Save offer
   const saveOffer = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -342,9 +277,6 @@ const OfferTracking = () => {
       
       const method = editingOffer ? 'PUT' : 'POST';
       
-      console.log(`📤 ${method} offer to:`, url);
-      console.log('📤 Offer data:', formData);
-      
       const response = await fetch(url, {
         method,
         headers: {
@@ -354,11 +286,7 @@ const OfferTracking = () => {
         body: JSON.stringify(formData)
       });
 
-      console.log('📊 Save offer response status:', response.status, response.statusText);
-
       if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Offer saved successfully:', data);
         showAlert(
           editingOffer
             ? 'Offer updated successfully'
@@ -369,42 +297,14 @@ const OfferTracking = () => {
         fetchOffers();
         fetchStats();
       } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to save offer. Status:', response.status);
-        console.error('❌ Error response:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { detail: errorText || 'Error saving offer' };
-        }
-        
-        // Handle Pydantic validation errors
-        let errorMessage = 'Error saving offer';
-        if (errorData.detail) {
-          if (Array.isArray(errorData.detail)) {
-            errorMessage = errorData.detail.map(err => {
-              if (typeof err === 'object' && err.msg) {
-                const field = err.loc ? err.loc.join('.') : 'field';
-                return `${field}: ${err.msg}`;
-              }
-              return String(err);
-            }).join(', ');
-          } else {
-            errorMessage = String(errorData.detail);
-          }
-        }
-        
-        showAlert(errorMessage, 'error');
+        showAlert('Error saving offer', 'error');
       }
     } catch (error) {
-      console.error('❌ Error saving offer:', error);
+      console.error('Error saving offer:', error);
       showAlert('Error saving offer', 'error');
     }
   };
 
-  // Update offer status
   const updateStatus = async (offerId, status) => {
     try {
       const token = localStorage.getItem('token');
@@ -413,8 +313,6 @@ const OfferTracking = () => {
         showAlert('Authentication required. Please log in again.', 'error');
         return;
       }
-
-      console.log(`📤 Updating offer ${offerId} status to:`, status);
       
       const response = await fetch(`${BASE_URL}/api/offers/offer-tracking/${offerId}/status`, {
         method: 'PATCH',
@@ -425,35 +323,19 @@ const OfferTracking = () => {
         body: JSON.stringify({ status })
       });
 
-      console.log('📊 Update status response status:', response.status, response.statusText);
-
       if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Status updated successfully:', data);
         showAlert('Status updated successfully', 'success');
         fetchOffers();
         fetchStats();
       } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to update status. Status:', response.status);
-        console.error('❌ Error response:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { detail: errorText || 'Error updating status' };
-        }
-        
-        showAlert(errorData.detail || 'Error updating status', 'error');
+        showAlert('Error updating status', 'error');
       }
     } catch (error) {
-      console.error('❌ Error updating status:', error);
+      console.error('Error updating status:', error);
       showAlert('Error updating status', 'error');
     }
   };
 
-  // Delete offer
   const deleteOffer = async (id) => {
     if (!window.confirm('Are you sure you want to delete this offer?')) return;
 
@@ -464,8 +346,6 @@ const OfferTracking = () => {
         showAlert('Authentication required. Please log in again.', 'error');
         return;
       }
-
-      console.log(`🗑️ Deleting offer: ${id}`);
       
       const response = await fetch(`${BASE_URL}/api/offers/offer-tracking/${id}`, {
         method: 'DELETE',
@@ -475,183 +355,151 @@ const OfferTracking = () => {
         }
       });
 
-      console.log('📊 Delete offer response status:', response.status, response.statusText);
-
       if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Offer deleted successfully:', data);
         showAlert('Offer deleted successfully', 'success');
         fetchOffers();
         fetchStats();
       } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to delete offer. Status:', response.status);
-        console.error('❌ Error response:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { detail: errorText || 'Error deleting offer' };
-        }
-        
-        showAlert(errorData.detail || 'Error deleting offer', 'error');
+        showAlert('Error deleting offer', 'error');
       }
     } catch (error) {
-      console.error('❌ Error deleting offer:', error);
+      console.error('Error deleting offer:', error);
       showAlert('Error deleting offer', 'error');
     }
   };
 
-  // Get status badge
   const getStatusBadge = (status) => {
     const statusConfig = {
-      Draft: { color: 'secondary', icon: FileText },
-      Sent: { color: 'info', icon: Send },
-      Accepted: { color: 'success', icon: CheckCircle },
-      Rejected: { color: 'danger', icon: XCircle },
-      Expired: { color: 'warning', icon: Clock }
+      Draft: { color: 'bg-gray-100 text-gray-600', icon: FiFileText },
+      Sent: { color: 'bg-primary/10 text-primary', icon: FiSend },
+      Accepted: { color: 'bg-emerald-50 text-emerald-700', icon: FiCheckCircle },
+      Rejected: { color: 'bg-rose-50 text-rose-700', icon: FiXCircle },
+      Expired: { color: 'bg-amber-50 text-amber-700', icon: FiClock }
     };
 
     const config = statusConfig[status] || statusConfig.Draft;
     const Icon = config.icon;
 
     return (
-      <span className={`badge bg-${config.color} d-inline-flex align-items-center`}>
-        <Icon size={12} className="me-1" />
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${config.color}`}>
+        <Icon className="h-3 w-3" />
         <span>{status}</span>
       </span>
     );
   };
 
   return (
-    <div className="container-fluid py-4">
-      {/* Alert */}
-      {alert && (
-        <div
-          className={`alert alert-${alert.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show mb-4`}
-          role="alert"
-        >
-          <div className="d-flex align-items-center">
-            {alert.type === 'success' ? (
-              <CheckCircle size={20} className="me-2" />
-            ) : (
-              <AlertCircle size={20} className="me-2" />
-            )}
-            {alert.message}
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Alert */}
+        {alert && (
+          <div className={`flex items-center justify-between gap-3 p-3 rounded-lg ${
+            alert.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-rose-50 border border-rose-200 text-rose-700'
+          }`}>
+            <div className="flex items-center gap-2">
+              {alert.type === 'success' ? <FiCheckCircle className="h-5 w-5" /> : <FiAlertCircle className="h-5 w-5" />}
+              <span className="text-sm">{alert.message}</span>
+            </div>
+            <button onClick={() => setAlert(null)} className="text-gray-400 hover:text-gray-600">
+              <FiX className="h-4 w-4" />
+            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Header - aligned with JobList/CreateJob */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:document-check" className="text-black" style={{ fontSize: 28 }} />
-            Offer Tracking
-          </h4>
-          <p className="text-secondary mb-0 mt-1">
-            Track and manage job offers.
-          </p>
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated:{' '}
-            <span className="fw-medium text-body">
-              {new Date().toLocaleDateString()}
-            </span>
-          </span>
-          <div className="d-flex flex-wrap align-items-center gap-2 justify-content-end">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiFileText className="text-gray-600 text-xl sm:text-2xl" />
+              Offer Tracking
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Track and manage job offers</p>
+          </div>
+          <div className="flex gap-2">
             <button
-              className="btn refresh-btn d-inline-flex align-items-center gap-2"
               onClick={fetchOffers}
               disabled={loading}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
             >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Refreshing...' : 'Refresh'}
             </button>
             <button
-              className="create-job-btn d-inline-flex align-items-center gap-2"
               onClick={openCreateModal}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
             >
-              <Icon icon="heroicons:plus" style={{ width: 16, height: 16 }} />
+              <FiPlus className="h-4 w-4" />
               Create Offer
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Stats - kpi-row layout */}
-      {stats && (
-        <div className="kpi-row mb-4">
-          {[
-            {
-              title: 'Total Offers',
-              value: stats.total,
-              sub: 'All statuses',
-              icon: 'heroicons:rectangle-group',
-              bg: 'kpi-primary',
-              color: 'kpi-primary-text'
-            },
-            {
-              title: 'Sent',
-              value: stats.sent,
-              sub: 'Offers sent to candidates',
-              icon: 'heroicons:paper-airplane',
-              bg: 'kpi-info',
-              color: 'kpi-info-text'
-            },
-            {
-              title: 'Accepted',
-              value: stats.accepted,
-              sub: 'Candidates who accepted',
-              icon: 'heroicons:check-badge',
-              bg: 'kpi-success',
-              color: 'kpi-success-text'
-            },
-            {
-              title: 'Acceptance Rate',
-              value: `${stats.acceptance_rate}%`,
-              sub: 'Accepted / Sent',
-              icon: 'heroicons:chart-pie',
-              bg: 'kpi-warning',
-              color: 'kpi-warning-text'
-            }
-          ].map((item, index) => (
-            <div className="kpi-col" key={index}>
-              <div className="kpi-card">
-                <div className="kpi-card-body">
-                  <div className={`kpi-icon ${item.bg}`}>
-                    <Icon icon={item.icon} className={`kpi-icon-style ${item.color}`} />
-                  </div>
-                  <div className="kpi-content">
-                    <div className="kpi-title">{item.title}</div>
-                    <div className="kpi-value">{item.value}</div>
-                    {item.sub && <div className="kpi-sub text-muted">{item.sub}</div>}
-                  </div>
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Total Offers</p>
+                  <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.total}</p>
+                  <p className="text-xs text-gray-400 mt-1">All statuses</p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FiBriefcase className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Filters - structured like JobList filters */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-header bg-transparent border-bottom py-3">
-          <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-            <Icon icon="heroicons:funnel" style={{ fontSize: 18 }} />
-            Filter offers
-          </h6>
-        </div>
-        <div className="card-body">
-          <div className="row g-3 align-items-end">
-            <div className="col-12 col-md-4">
-              <label className="form-label small text-muted mb-1">Status</label>
+            <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Sent</p>
+                  <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.sent}</p>
+                  <p className="text-xs text-gray-400 mt-1">Offers sent to candidates</p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                  <FiSend className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Accepted</p>
+                  <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.accepted}</p>
+                  <p className="text-xs text-gray-400 mt-1">Candidates who accepted</p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <FiCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Acceptance Rate</p>
+                  <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.acceptance_rate}%</p>
+                  <p className="text-xs text-gray-400 mt-1">Accepted / Sent</p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <FiTrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Status</label>
               <select
-                className="form-select"
                 value={filters.status}
                 onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
               >
                 <option value="">All Statuses</option>
                 <option value="Draft">Draft</option>
@@ -661,126 +509,135 @@ const OfferTracking = () => {
                 <option value="Expired">Expired</option>
               </select>
             </div>
-            <div className="col-12 col-md-4">
-              <label className="form-label small text-muted mb-1">Position</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Filter by position..."
-                value={filters.position}
-                onChange={(e) => setFilters((prev) => ({ ...prev, position: e.target.value }))}
-              />
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Position</label>
+              <div className="relative">
+                <FiBriefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Filter by position..."
+                  value={filters.position}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, position: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+                />
+              </div>
             </div>
-            <div className="col-12 col-md-4 d-flex justify-content-md-end">
+            <div className="flex items-end">
               <button
-                className="sync-btn d-inline-flex align-items-center gap-2 w-100 w-md-auto justify-content-center"
                 onClick={fetchOffers}
                 disabled={loading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
               >
-                <Filter size={16} />
-                Apply
+                <FiFilter className="h-4 w-4" />
+                Apply Filters
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Offers Table */}
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+        {/* Offers Table */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+            <p className="text-gray-500 text-sm">Loading offers...</p>
           </div>
-        </div>
-      ) : offers.length === 0 ? (
-        <div className="card">
-          <div className="card-body text-center py-5">
-            <div className="d-flex justify-content-center align-items-center gap-2 mb-3">
-              <FileText size={48} className="text-muted" />
-              <div>
-                <h5 className="text-muted mb-1">No offers found</h5>
-                <p className="text-muted mb-0">Create your first offer to get started</p>
-              </div>
-            </div>
+        ) : offers.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-8 text-center">
+            <FiFileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-midnight_text mb-1">No offers found</h3>
+            <p className="text-sm text-gray-500 mb-4">Create your first offer to get started</p>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
+            >
+              <FiPlus className="h-4 w-4" />
+              Create Offer
+            </button>
           </div>
-        </div>
-      ) : (
-        <div className="card">
-          <div className="card-body">
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th>Candidate</th>
-                    <th>Position</th>
-                    <th>Salary</th>
-                    <th>Status</th>
-                    <th>Sent Date</th>
-                    <th>Expiry Date</th>
-                    <th>Actions</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Candidate</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Position</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Salary</th>
+                    <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Status</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Sent Date</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Expiry Date</th>
+                    <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {offers.map(offer => (
-                    <tr key={offer.id}>
-                      <td>
-                        <div>
-                          <strong>{offer.candidate_name}</strong>
-                          <br />
-                          <small className="text-muted">{offer.candidate_email}</small>
+                    <tr key={offer.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FiUser className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-midnight_text">{offer.candidate_name}</p>
+                            <p className="text-xs text-gray-500">{offer.candidate_email}</p>
+                          </div>
                         </div>
                       </td>
-                      <td>
-                        {offer.position}
+                      <td className="px-4 py-3">
+                        <p className="text-sm text-gray-700">{offer.position}</p>
                         {offer.department && (
-                          <><br /><small className="text-muted">{offer.department}</small></>
+                          <p className="text-xs text-gray-500">{offer.department}</p>
                         )}
                       </td>
-                      <td>
-                        {offer.salary_offered ? `$${offer.salary_offered.toLocaleString()}` : '-'}
+                      <td className="px-4 py-3">
+                        <p className="text-sm text-gray-700">
+                          {offer.salary_offered ? `$${offer.salary_offered.toLocaleString()}` : '-'}
+                        </p>
                       </td>
-                      <td>{getStatusBadge(offer.status)}</td>
-                      <td>
-                        {offer.sent_date ? new Date(offer.sent_date).toLocaleDateString() : '-'}
+                      <td className="px-4 py-3 text-center">
+                        {getStatusBadge(offer.status)}
                       </td>
-                      <td>
-                        {offer.expiry_date ? new Date(offer.expiry_date).toLocaleDateString() : '-'}
+                      <td className="px-4 py-3">
+                        <p className="text-sm text-gray-600">
+                          {offer.sent_date ? new Date(offer.sent_date).toLocaleDateString() : '-'}
+                        </p>
                       </td>
-                      <td className="text-center">
-                        <div className="d-flex gap-2 justify-content-center">
+                      <td className="px-4 py-3">
+                        <p className="text-sm text-gray-600">
+                          {offer.expiry_date ? new Date(offer.expiry_date).toLocaleDateString() : '-'}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
                           <button
-                            type="button"
-                            className="w-32-px h-32-px d-inline-flex justify-content-center align-items-center bg-primary-100 text-primary-600 bg-hover-primary-600 text-hover-white text-md rounded-circle border-0"
                             onClick={() => viewOffer(offer)}
+                            className="p-1.5 text-gray-500 hover:text-primary rounded-lg hover:bg-primary/10 transition-all"
                             title="View"
                           >
-                            <Eye size={16} />
+                            <FiEye className="h-4 w-4" />
                           </button>
                           <button
-                            type="button"
-                            className="w-32-px h-32-px d-inline-flex justify-content-center align-items-center bg-warning-100 text-warning-600 bg-hover-warning-600 text-hover-white text-md rounded-circle border-0"
                             onClick={() => openEditModal(offer)}
+                            className="p-1.5 text-gray-500 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition-all"
                             title="Edit"
                           >
-                            <Edit size={16} />
+                            <FiEdit2 className="h-4 w-4" />
                           </button>
                           {offer.status === 'Draft' && (
                             <button
-                              type="button"
-                              className="w-32-px h-32-px d-inline-flex justify-content-center align-items-center bg-success-100 text-success-600 bg-hover-success-600 text-hover-white text-md rounded-circle border-0"
                               onClick={() => updateStatus(offer.id, 'Sent')}
+                              className="p-1.5 text-gray-500 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all"
                               title="Send Offer"
                             >
-                              <Send size={16} />
+                              <FiSend className="h-4 w-4" />
                             </button>
                           )}
                           <button
-                            type="button"
-                            className="w-32-px h-32-px d-inline-flex justify-content-center align-items-center bg-danger-100 text-danger-600 bg-hover-danger-600 text-hover-white text-md rounded-circle border-0"
                             onClick={() => deleteOffer(offer.id)}
+                            className="p-1.5 text-gray-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all"
                             title="Delete"
                           >
-                            <Trash2 size={16} />
+                            <FiTrash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -790,354 +647,290 @@ const OfferTracking = () => {
               </table>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div 
-          className="modal fade show d-block" 
-          style={{ 
-            backgroundColor: 'rgba(0, 0, 0, 0.5)', 
-            zIndex: 1050,
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            overflow: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }} 
-          tabIndex="-1"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowModal(false);
-            }
-          }}
-        >
-          <div className="modal-dialog modal-lg modal-dialog-scrollable" style={{ 
-            maxWidth: '800px', 
-            width: '95%', 
-            margin: '0 auto'
-          }}>
-            <div className="modal-content" style={{ borderRadius: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold">
-                  {editingOffer ? 'Edit Offer' : 'Create Offer'}
-                </h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Template (Optional)</label>
-                    <select
-                      className="form-select"
-                      value={formData.template_id}
-                      onChange={(e) => handleInputChange('template_id', e.target.value)}
-                    >
-                      <option value="">Select a template...</option>
-                      {templates.map(template => (
-                        <option key={template.id} value={template.id}>
-                          {template.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Candidate *</label>
-                    <select
-                      className="form-select"
-                      value={formData.candidate_id}
-                      onChange={(e) => handleInputChange('candidate_id', e.target.value)}
-                    >
-                      <option value="">Select a candidate...</option>
-                      {candidates.map(candidate => (
-                        <option key={candidate.id} value={candidate.id}>
-                          {candidate.name} ({candidate.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Candidate Name *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.candidate_name}
-                      onChange={(e) => handleInputChange('candidate_name', e.target.value)}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Candidate Email *</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      value={formData.candidate_email}
-                      onChange={(e) => handleInputChange('candidate_email', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Position *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.position}
-                      onChange={(e) => handleInputChange('position', e.target.value)}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Department</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.department}
-                      onChange={(e) => handleInputChange('department', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Salary Offered</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={formData.salary_offered}
-                      onChange={(e) => handleInputChange('salary_offered', parseFloat(e.target.value))}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Expiry Date</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={formData.expiry_date}
-                      onChange={(e) => handleInputChange('expiry_date', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Offer Content *</label>
-                  <textarea
-                    className="form-control"
-                    rows="8"
-                    value={formData.offer_content}
-                    onChange={(e) => handleInputChange('offer_content', e.target.value)}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Benefits</label>
-                  <div className="input-group mb-2">
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={newBenefit}
-                      onChange={(e) => setNewBenefit(e.target.value)}
-                      placeholder="e.g., Health Insurance"
-                      onKeyPress={(e) => e.key === 'Enter' && addBenefit()}
-                    />
-                    <button className="btn btn-outline-primary d-inline-flex align-items-center" onClick={addBenefit}>
-                      <Plus size={16} className="me-1" />
-                      <span>Add</span>
-                    </button>
-                  </div>
-                  <div className="d-flex flex-wrap gap-2">
-                    {formData.benefits.map((benefit, index) => (
-                      <span key={index} className="badge bg-primary">
-                        {benefit}
-                        <span
-                          className="ms-1"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => removeBenefit(index)}
-                        >
-                          ×
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Notes</label>
-                  <textarea
-                    className="form-control"
-                    rows="3"
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    placeholder="Internal notes about this offer..."
-                  />
-                </div>
-              </div>
-              <div className="modal-footer border-top">
-                <button className="btn btn-secondary d-inline-flex align-items-center" onClick={() => setShowModal(false)}>
-                  <X size={16} className="me-2" />
-                  <span>Cancel</span>
-                </button>
-                <button className="btn btn-primary d-inline-flex align-items-center" onClick={saveOffer}>
-                  <Save size={16} className="me-2" />
-                  <span>{editingOffer ? 'Update' : 'Create'}</span>
-                </button>
-              </div>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingOffer ? 'Edit Offer' : 'Create Offer'}
+        size="lg"
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Template (Optional)</label>
+              <select
+                value={formData.template_id}
+                onChange={(e) => handleInputChange('template_id', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+              >
+                <option value="">Select a template...</option>
+                {templates.map(template => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Candidate <span className="text-rose-500">*</span></label>
+              <select
+                value={formData.candidate_id}
+                onChange={(e) => handleInputChange('candidate_id', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+              >
+                <option value="">Select a candidate...</option>
+                {candidates.map(candidate => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.name} ({candidate.email})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Candidate Name <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={formData.candidate_name}
+                onChange={(e) => handleInputChange('candidate_name', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Candidate Email <span className="text-rose-500">*</span></label>
+              <input
+                type="email"
+                value={formData.candidate_email}
+                onChange={(e) => handleInputChange('candidate_email', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Position <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={formData.position}
+                onChange={(e) => handleInputChange('position', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => handleInputChange('department', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Salary Offered</label>
+              <input
+                type="number"
+                value={formData.salary_offered}
+                onChange={(e) => handleInputChange('salary_offered', parseFloat(e.target.value))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+              <input
+                type="date"
+                value={formData.expiry_date}
+                onChange={(e) => handleInputChange('expiry_date', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Offer Content <span className="text-rose-500">*</span></label>
+            <textarea
+              rows="6"
+              value={formData.offer_content}
+              onChange={(e) => handleInputChange('offer_content', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Benefits</label>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={newBenefit}
+                onChange={(e) => setNewBenefit(e.target.value)}
+                placeholder="e.g., Health Insurance"
+                onKeyPress={(e) => e.key === 'Enter' && addBenefit()}
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+              <button onClick={addBenefit} className="px-3 py-2 bg-white border border-gray-200 hover:border-primary/50 text-gray-600 hover:text-primary rounded-lg text-sm font-medium transition-all">
+                <FiPlus className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.benefits.map((benefit, index) => (
+                <span key={index} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
+                  {benefit}
+                  <button onClick={() => removeBenefit(index)} className="hover:text-rose-500">
+                    <FiX className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+            <textarea
+              rows="2"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Internal notes about this offer..."
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveOffer}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-all"
+            >
+              <FiSave className="h-4 w-4" />
+              {editingOffer ? 'Update' : 'Create'}
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Detail Modal */}
-      {showDetailModal && selectedOffer && (
-        <div 
-          className="modal fade show d-block" 
-          style={{ 
-            backgroundColor: 'rgba(0, 0, 0, 0.5)', 
-            zIndex: 1050,
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            overflow: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }} 
-          tabIndex="-1"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowDetailModal(false);
-            }
-          }}
-        >
-          <div className="modal-dialog modal-lg modal-dialog-scrollable" style={{ 
-            maxWidth: '900px', 
-            width: '95%', 
-            margin: '0 auto'
-          }}>
-            <div className="modal-content" style={{ borderRadius: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold">Offer Details</h5>
-                <button type="button" className="btn-close" onClick={() => setShowDetailModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <h6>Candidate Information</h6>
-                  <p><strong>Name:</strong> {selectedOffer.candidate_name}</p>
-                  <p><strong>Email:</strong> {selectedOffer.candidate_email}</p>
-                </div>
-                
-                <div className="mb-3">
-                  <h6>Position Details</h6>
-                  <p><strong>Position:</strong> {selectedOffer.position}</p>
-                  {selectedOffer.department && <p><strong>Department:</strong> {selectedOffer.department}</p>}
-                  {selectedOffer.salary_offered && (
-                    <p><strong>Salary:</strong> ${selectedOffer.salary_offered.toLocaleString()}</p>
-                  )}
-                </div>
-
-                {selectedOffer.benefits && selectedOffer.benefits.length > 0 && (
-                  <div className="mb-3">
-                    <h6>Benefits</h6>
-                    <div className="d-flex flex-wrap gap-2">
-                      {selectedOffer.benefits.map((benefit, idx) => (
-                        <span key={idx} className="badge bg-secondary">{benefit}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mb-3">
-                  <h6>Offer Letter</h6>
-                  <div className="border rounded p-3" style={{ whiteSpace: 'pre-wrap' }}>
-                    {selectedOffer.offer_content}
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <h6>Status & Dates</h6>
-                  <p><strong>Status:</strong> {getStatusBadge(selectedOffer.status)}</p>
-                  {selectedOffer.sent_date && (
-                    <p><strong>Sent Date:</strong> {new Date(selectedOffer.sent_date).toLocaleString()}</p>
-                  )}
-                  {selectedOffer.expiry_date && (
-                    <p><strong>Expiry Date:</strong> {new Date(selectedOffer.expiry_date).toLocaleDateString()}</p>
-                  )}
-                  {selectedOffer.response_date && (
-                    <p><strong>Response Date:</strong> {new Date(selectedOffer.response_date).toLocaleString()}</p>
-                  )}
-                </div>
-
-                {selectedOffer.notes && (
-                  <div className="mb-3">
-                    <h6>Notes</h6>
-                    <p>{selectedOffer.notes}</p>
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div>
-                  {selectedOffer.status === 'Sent' && (
-                    <div className="d-flex gap-2">
-                      <button
-                        className="btn btn-success d-inline-flex align-items-center"
-                        onClick={() => {
-                          updateStatus(selectedOffer.id, 'Accepted');
-                          setShowDetailModal(false);
-                        }}
-                      >
-                        <CheckCircle size={16} className="me-2" />
-                        <span>Mark as Accepted</span>
-                      </button>
-                      <button
-                        className="btn btn-danger d-inline-flex align-items-center"
-                        onClick={() => {
-                          updateStatus(selectedOffer.id, 'Rejected');
-                          setShowDetailModal(false);
-                        }}
-                      >
-                        <XCircle size={16} className="me-2" />
-                        <span>Mark as Rejected</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button className="btn btn-secondary d-inline-flex align-items-center" onClick={() => setShowDetailModal(false)}>
-                  <X size={16} className="me-2" />
-                  <span>Close</span>
-                </button>
+      <Modal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        title="Offer Details"
+        size="lg"
+      >
+        {selectedOffer && (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h6 className="text-sm font-semibold text-midnight_text mb-3">Candidate Information</h6>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-gray-500">Name:</span> {selectedOffer.candidate_name}</p>
+                <p><span className="text-gray-500">Email:</span> {selectedOffer.candidate_email}</p>
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      <style jsx>{`
-        .spinner {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h6 className="text-sm font-semibold text-midnight_text mb-3">Position Details</h6>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-gray-500">Position:</span> {selectedOffer.position}</p>
+                {selectedOffer.department && <p><span className="text-gray-500">Department:</span> {selectedOffer.department}</p>}
+                {selectedOffer.salary_offered && (
+                  <p><span className="text-gray-500">Salary:</span> ${selectedOffer.salary_offered.toLocaleString()}</p>
+                )}
+              </div>
+            </div>
+
+            {selectedOffer.benefits && selectedOffer.benefits.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h6 className="text-sm font-semibold text-midnight_text mb-3">Benefits</h6>
+                <div className="flex flex-wrap gap-2">
+                  {selectedOffer.benefits.map((benefit, idx) => (
+                    <span key={idx} className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
+                      {benefit}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h6 className="text-sm font-semibold text-midnight_text mb-3">Offer Letter</h6>
+              <div className="bg-white rounded-lg p-3 border border-gray-200 whitespace-pre-wrap text-sm text-gray-700">
+                {selectedOffer.offer_content}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h6 className="text-sm font-semibold text-midnight_text mb-3">Status & Dates</h6>
+              <div className="space-y-1 text-sm">
+                <p className="flex items-center gap-2">
+                  <span className="text-gray-500">Status:</span>
+                  {getStatusBadge(selectedOffer.status)}
+                </p>
+                {selectedOffer.sent_date && (
+                  <p><span className="text-gray-500">Sent Date:</span> {new Date(selectedOffer.sent_date).toLocaleString()}</p>
+                )}
+                {selectedOffer.expiry_date && (
+                  <p><span className="text-gray-500">Expiry Date:</span> {new Date(selectedOffer.expiry_date).toLocaleDateString()}</p>
+                )}
+                {selectedOffer.response_date && (
+                  <p><span className="text-gray-500">Response Date:</span> {new Date(selectedOffer.response_date).toLocaleString()}</p>
+                )}
+              </div>
+            </div>
+
+            {selectedOffer.notes && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h6 className="text-sm font-semibold text-midnight_text mb-3">Notes</h6>
+                <p className="text-sm text-gray-700">{selectedOffer.notes}</p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-gray-100">
+              {selectedOffer.status === 'Sent' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      updateStatus(selectedOffer.id, 'Accepted');
+                      setShowDetailModal(false);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all"
+                  >
+                    <FiCheckCircle className="h-4 w-4" />
+                    Mark as Accepted
+                  </button>
+                  <button
+                    onClick={() => {
+                      updateStatus(selectedOffer.id, 'Rejected');
+                      setShowDetailModal(false);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition-all"
+                  >
+                    <FiXCircle className="h-4 w-4" />
+                    Mark as Rejected
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
 
 export default OfferTracking;
-

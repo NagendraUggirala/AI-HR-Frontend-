@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+import { FiUser, FiBriefcase, FiMail, FiGlobe, FiLock, FiEye, FiEyeOff, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { BASE_URL, API_ENDPOINTS } from "../../shared/constants/api.config";
 
@@ -37,7 +37,6 @@ const Signup = () => {
     setError('');
     setSuccess('');
 
-    // Validation
     if (!formData.name || !formData.email || !formData.password || !formData.companyName) {
       setError('Please fill in all required fields');
       setLoading(false);
@@ -63,7 +62,6 @@ const Signup = () => {
     }
 
     try {
-      // Call backend API
       const response = await fetch(`${BASE_URL}${API_ENDPOINTS.AUTH.SIGNUP}`, {
         method: 'POST',
         headers: {
@@ -74,7 +72,7 @@ const Signup = () => {
           username: formData.username || formData.name,
           email: formData.email,
           password: formData.password,
-          role: 'recruiter', // Default role for company signup
+          role: 'recruiter',
           company_name: formData.companyName,
           company_website: formData.companyWebsite || null,
           company_id: formData.companyId || null
@@ -84,16 +82,11 @@ const Signup = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Signup successful
         setSuccess('Account created successfully! Redirecting to login...');
-        console.log('Signup successful:', data);
-        
-        // Redirect to login after 2 seconds
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       } else {
-        // Handle error response
         setError(data.detail || 'Signup failed. Please try again.');
       }
     } catch (err) {
@@ -105,426 +98,278 @@ const Signup = () => {
   };
 
   return (
-    <section className='auth bg-base d-flex flex-wrap min-vh-100' style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-      <div className='auth-left d-lg-block d-none flex-grow-1 position-relative' style={{ 
-        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%)',
-        overflow: 'hidden'
+    <div className="min-h-screen flex">
+      {/* Left Side - Branding Section */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       }}>
-        <div className='d-flex align-items-center flex-column h-100 justify-content-center p-5 position-relative' style={{ zIndex: 2 }}>
-          <div className='text-center text-white mb-4'>
-            <h2 className='display-4 fw-bold mb-3' style={{ textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>Join Us Today!</h2>
-            <p className='lead' style={{ opacity: 0.9 }}>Create your account and start your journey with AI Recruitment</p>
+        <div className="absolute inset-0">
+          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] bg-white/10 rounded-full" />
+          <div className="absolute bottom-[-150px] left-[-150px] w-[500px] h-[500px] bg-white/5 rounded-full" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center w-full p-8 text-center">
+          <div className="mb-6">
+            <h2 className="text-4xl font-bold text-white mb-3" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
+              Join Us Today!
+            </h2>
+            <p className="text-white/90 text-lg">
+              Create your account and start your journey with AI Recruitment
+            </p>
           </div>
           <img 
             src='/assets/images/leviticalogo.png' 
             alt='Signup' 
-            className='img-fluid login-image rounded-4 shadow-lg' 
-            style={{ 
-              maxWidth: '600px', 
-              width: '100%',
-              borderRadius: '1rem',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-            }}
+            className="max-w-[500px] w-full rounded-2xl shadow-2xl"
           />
         </div>
-        {/* Decorative elements */}
-        <div className='position-absolute' style={{ 
-          top: '-100px', 
-          right: '-100px', 
-          width: '400px', 
-          height: '400px', 
-          background: 'rgba(255,255,255,0.1)', 
-          borderRadius: '50%',
-          zIndex: 1
-        }}></div>
-        <div className='position-absolute' style={{ 
-          bottom: '-150px', 
-          left: '-150px', 
-          width: '500px', 
-          height: '500px', 
-          background: 'rgba(255,255,255,0.08)', 
-          borderRadius: '50%',
-          zIndex: 1
-        }}></div>
       </div>
-      <div className='auth-right py-5 px-4 px-lg-5 d-flex flex-column justify-content-center' style={{ 
-        backgroundColor: '#ffffff',
-        minHeight: '100vh',
-        boxShadow: '-10px 0 30px rgba(0,0,0,0.1)',
-        overflowY: 'auto'
-      }}>
-        <div className='mx-auto w-100' style={{ maxWidth: '800px' }}>
-          <div className='mb-4 mb-md-5'>
-            <div className='d-flex align-items-center gap-3 mb-3'>
+
+      {/* Right Side - Form Section */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-10 bg-white overflow-y-auto">
+        <div className="w-full max-w-2xl mx-auto">
+          {/* Logo and Header */}
+          <div className="mb-6 md:mb-8">
+            <div className="flex items-center gap-3 mb-4">
               <img 
                 src='/assets/images/leviticalogo.png' 
                 alt='Logo' 
-                className='img-fluid' 
-                style={{ height: '40px', width: 'auto' }}
+                className="h-10 w-auto"
               />
-              <span className='text-primary fw-bold fs-5'>AI Recruitment</span>
+              <span className="text-primary font-bold text-lg">AI Recruitment</span>
             </div>
-            <h2 className='fw-bold mb-2' style={{ fontSize: '2rem', color: '#1a1a1a' }}>Company Signup</h2>
-            <p className='text-muted mb-0' style={{ fontSize: '1rem' }}>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Company Signup</h2>
+            <p className="text-gray-500 text-sm md:text-base">
               Register your company! Please enter your details to get started
             </p>
           </div>
-          <form onSubmit={handleSignup}>
+
+          <form onSubmit={handleSignup} className="space-y-4 md:space-y-5">
+            {/* Error Alert */}
             {error && (
-              <div className='alert alert-danger d-flex align-items-center mb-3 mb-md-4' role='alert' style={{ 
-                borderRadius: '0.5rem',
-                border: 'none',
-                boxShadow: '0 2px 8px rgba(220, 53, 69, 0.2)'
-              }}>
-                <Icon icon='heroicons:exclamation-circle' className='me-2' style={{ fontSize: '20px' }} />
-                <span>{error}</span>
+              <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700">
+                <FiAlertCircle className="h-5 w-5 text-rose-500 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
               </div>
             )}
             
+            {/* Success Alert */}
             {success && (
-              <div className='alert alert-success d-flex align-items-center mb-3 mb-md-4' role='alert' style={{ 
-                borderRadius: '0.5rem',
-                border: 'none',
-                boxShadow: '0 2px 8px rgba(25, 135, 84, 0.2)'
-              }}>
-                <Icon icon='heroicons:check-circle' className='me-2' style={{ fontSize: '20px' }} />
-                <span>{success}</span>
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700">
+                <FiCheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                <span className="text-sm">{success}</span>
               </div>
             )}
 
             {/* Row 1: Full Name | Company Name */}
-            <div className='row g-3 mb-3 mb-md-4'>
-              <div className='col-md-6'>
-                <label className='form-label fw-semibold mb-2' style={{ color: '#495057', fontSize: '0.9rem' }}>Full Name <span className='text-danger'>*</span></label>
-                <div className='position-relative'>
-                  <span className='position-absolute top-50 start-0 translate-middle-y ms-3' style={{ zIndex: 5, color: '#6c757d' }}>
-                    <Icon icon='f7:person' style={{ fontSize: '20px' }} />
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
-                    type='text'
-                    name='name'
+                    type="text"
+                    name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className='form-control ps-5 py-3'
-                    style={{ 
-                      borderRadius: '0.5rem',
-                      border: '1px solid #dee2e6',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.3s ease'
-                    }}
-                    placeholder='Enter your full name'
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter your full name"
                     required
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 0.2rem rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dee2e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
                 </div>
               </div>
-              <div className='col-md-6'>
-                <label className='form-label fw-semibold mb-2' style={{ color: '#495057', fontSize: '0.9rem' }}>Company Name <span className='text-danger'>*</span></label>
-                <div className='position-relative'>
-                  <span className='position-absolute top-50 start-0 translate-middle-y ms-3' style={{ zIndex: 5, color: '#6c757d' }}>
-                    <Icon icon='mdi:office-building' style={{ fontSize: '20px' }} />
-                  </span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiBriefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
-                    type='text'
-                    name='companyName'
+                    type="text"
+                    name="companyName"
                     value={formData.companyName}
                     onChange={handleInputChange}
-                    className='form-control ps-5 py-3'
-                    style={{ 
-                      borderRadius: '0.5rem',
-                      border: '1px solid #dee2e6',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.3s ease'
-                    }}
-                    placeholder='Enter your company name'
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter your company name"
                     required
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 0.2rem rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dee2e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
                 </div>
               </div>
             </div>
 
             {/* Row 2: Company Email | Company Website */}
-            <div className='row g-3 mb-3 mb-md-4'>
-              <div className='col-md-6'>
-                <label className='form-label fw-semibold mb-2' style={{ color: '#495057', fontSize: '0.9rem' }}>Company Email <span className='text-danger'>*</span></label>
-                <div className='position-relative'>
-                  <span className='position-absolute top-50 start-0 translate-middle-y ms-3' style={{ zIndex: 5, color: '#6c757d' }}>
-                    <Icon icon='mage:email' style={{ fontSize: '20px' }} />
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company Email <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
-                    type='email'
-                    name='email'
+                    type="email"
+                    name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className='form-control ps-5 py-3'
-                    style={{ 
-                      borderRadius: '0.5rem',
-                      border: '1px solid #dee2e6',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.3s ease'
-                    }}
-                    placeholder='Enter company email'
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter company email"
                     required
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 0.2rem rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dee2e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
                 </div>
               </div>
-              <div className='col-md-6'>
-                <label className='form-label fw-semibold mb-2' style={{ color: '#495057', fontSize: '0.9rem' }}>Company Website <span className='text-muted' style={{ fontSize: '0.8rem' }}>(optional)</span></label>
-                <div className='position-relative'>
-                  <span className='position-absolute top-50 start-0 translate-middle-y ms-3' style={{ zIndex: 5, color: '#6c757d' }}>
-                    <Icon icon='heroicons:globe-alt' style={{ fontSize: '20px' }} />
-                  </span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company Website <span className="text-gray-400 text-xs">(optional)</span>
+                </label>
+                <div className="relative">
+                  <FiGlobe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
-                    type='text'
-                    name='companyWebsite'
+                    type="text"
+                    name="companyWebsite"
                     value={formData.companyWebsite}
                     onChange={handleInputChange}
-                    className='form-control ps-5 py-3'
-                    style={{ 
-                      borderRadius: '0.5rem',
-                      border: '1px solid #dee2e6',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.3s ease'
-                    }}
-                    placeholder='Enter company website'
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 0.2rem rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dee2e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter company website"
                   />
                 </div>
               </div>
             </div>
 
             {/* Row 3: Company ID */}
-            <div className='row g-3 mb-3 mb-md-4'>
-              <div className='col-md-6'>
-                <label className='form-label fw-semibold mb-2' style={{ color: '#495057', fontSize: '0.9rem' }}>Company ID <span className='text-muted' style={{ fontSize: '0.8rem' }}>(optional)</span></label>
-                <div className='position-relative'>
-                  <span className='position-absolute top-50 start-0 translate-middle-y ms-3' style={{ zIndex: 5, color: '#6c757d' }}>
-                    <Icon icon='mdi:card-account-details' style={{ fontSize: '20px' }} />
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company ID <span className="text-gray-400 text-xs">(optional)</span>
+                </label>
+                <div className="relative">
+                  <FiBriefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
-                    type='text'
-                    name='companyId'
+                    type="text"
+                    name="companyId"
                     value={formData.companyId}
                     onChange={handleInputChange}
-                    className='form-control ps-5 py-3'
-                    style={{ 
-                      borderRadius: '0.5rem',
-                      border: '1px solid #dee2e6',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.3s ease'
-                    }}
-                    placeholder='Enter company ID'
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 0.2rem rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dee2e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter company ID"
                   />
                 </div>
               </div>
             </div>
 
             {/* Row 4: Password | Confirm Password */}
-            <div className='row g-3 mb-3 mb-md-4'>
-              <div className='col-md-6'>
-                <label className='form-label fw-semibold mb-2' style={{ color: '#495057', fontSize: '0.9rem' }}>Password <span className='text-danger'>*</span></label>
-                <div className='position-relative'>
-                  <span className='position-absolute top-50 start-0 translate-middle-y ms-3' style={{ zIndex: 5, color: '#6c757d' }}>
-                    <Icon icon='solar:lock-password-outline' style={{ fontSize: '20px' }} />
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    name='password'
+                    name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className='form-control ps-5 pe-5 py-3'
-                    style={{ 
-                      borderRadius: '0.5rem',
-                      border: '1px solid #dee2e6',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.3s ease'
-                    }}
-                    id='your-password'
-                    placeholder='Enter password'
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter password"
                     required
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 0.2rem rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dee2e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
-                  <span
-                    className='position-absolute top-50 end-0 translate-middle-y me-3'
+                  <button
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ 
-                      cursor: 'pointer', 
-                      zIndex: 10,
-                      color: '#6c757d',
-                      transition: 'color 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => e.target.style.color = '#3b82f6'}
-                    onMouseLeave={(e) => e.target.style.color = '#6c757d'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    <Icon icon={showPassword ? 'solar:eye-closed-outline' : 'solar:eye-outline'} style={{ fontSize: '20px' }} />
-                  </span>
+                    {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
-              <div className='col-md-6'>
-                <label className='form-label fw-semibold mb-2' style={{ color: '#495057', fontSize: '0.9rem' }}>Confirm Password <span className='text-danger'>*</span></label>
-                <div className='position-relative'>
-                  <span className='position-absolute top-50 start-0 translate-middle-y ms-3' style={{ zIndex: 5, color: '#6c757d' }}>
-                    <Icon icon='solar:lock-password-outline' style={{ fontSize: '20px' }} />
-                  </span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    name='confirmPassword'
+                    name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className='form-control ps-5 pe-5 py-3'
-                    style={{ 
-                      borderRadius: '0.5rem',
-                      border: '1px solid #dee2e6',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.3s ease'
-                    }}
-                    id='confirm-password'
-                    placeholder='Re-enter password'
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Re-enter password"
                     required
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 0.2rem rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dee2e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
-                  <span
-                    className='position-absolute top-50 end-0 translate-middle-y me-3'
+                  <button
+                    type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{ 
-                      cursor: 'pointer', 
-                      zIndex: 10,
-                      color: '#6c757d',
-                      transition: 'color 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => e.target.style.color = '#3b82f6'}
-                    onMouseLeave={(e) => e.target.style.color = '#6c757d'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    <Icon icon={showConfirmPassword ? 'solar:eye-closed-outline' : 'solar:eye-outline'} style={{ fontSize: '20px' }} />
-                  </span>
+                    {showConfirmPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
             </div>
 
- {/* Terms and Conditions - Custom Checkbox */}
-<div className='mb-4 mb-md-5'>
-  <div className='d-flex align-items-start'>
-    <div 
-      className={`custom-checkbox ${agreed ? 'checked' : ''}`}
-      onClick={() => setAgreed(!agreed)}
-    >
-      <div className='checkbox-box'>
-        {agreed && <span className='checkmark'>✓</span>}
-      </div>
-      <span className='checkbox-label'>
-        By creating an account means you agree to the{" "}
-        <Link to='#' className='text-primary fw-semibold text-decoration-none'>Terms &amp; Conditions</Link>
-        {" "}and our{" "}
-        <Link to='#' className='text-primary fw-semibold text-decoration-none'>Privacy Policy</Link>
-      </span>
-    </div>
-  </div>
-</div>
+            {/* Terms and Conditions - Custom Checkbox */}
+            <div className="py-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <div 
+                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all mt-0.5 ${
+                    agreed 
+                      ? 'bg-primary border-primary' 
+                      : 'border-gray-300 hover:border-primary'
+                  }`}
+                  onClick={() => setAgreed(!agreed)}
+                >
+                  {agreed && <FiCheckCircle className="h-4 w-4 text-white" />}
+                </div>
+                <span className="text-sm text-gray-600">
+                  By creating an account means you agree to the{" "}
+                  <Link to="#" className="text-primary font-medium hover:underline">
+                    Terms & Conditions
+                  </Link>
+                  {" "}and our{" "}
+                  <Link to="#" className="text-primary font-medium hover:underline">
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+              {!agreed && error && error.includes('Terms') && (
+                <p className="text-xs text-rose-500 mt-1">Please agree to the Terms & Conditions</p>
+              )}
+            </div>
+
+            {/* Submit Button */}
             <button
-              type='submit'
-              className='btn btn-primary w-100 py-3 mb-4'
-              style={{ 
-                borderRadius: '0.5rem',
-                fontSize: '1rem',
-                fontWeight: '600',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                transition: 'all 0.3s ease',
-                border: 'none'
-              }}
+              type="submit"
               disabled={loading}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                }
-              }}
+              className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <>
-                  <span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'></span>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                   Creating account...
-                </>
+                </div>
               ) : (
                 'Sign Up'
               )}
             </button>
 
-            <div className='position-relative my-4'>
-              <hr className='my-0' />
-              <span className='position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted' style={{ fontSize: '0.85rem' }}>
-                Or sign up with
-              </span>
+            {/* Divider */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-3 bg-white text-gray-500">Or sign up with</span>
+              </div>
             </div>
 
-            <div className='text-center'>
-              <p className='mb-0 text-muted' style={{ fontSize: '0.95rem' }}>
+            {/* Sign In Link */}
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
                 Already have an account?{" "}
                 <Link 
-                  to='/login' 
-                  className='text-primary fw-bold text-decoration-none'
-                  style={{ 
-                    transition: 'color 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = '#2563eb'}
-                  onMouseLeave={(e) => e.target.style.color = '#3b82f6'}
+                  to="/login" 
+                  className="text-primary font-medium hover:underline"
                 >
                   Sign In
                 </Link>
@@ -533,7 +378,7 @@ const Signup = () => {
           </form>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

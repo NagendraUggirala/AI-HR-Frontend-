@@ -1,7 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Icon } from '@iconify/react/dist/iconify.js';
-import { CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import { 
+  FiGrid, 
+  FiUsers, 
+  FiUserPlus, 
+  FiMessageCircle, 
+  FiCheckCircle, 
+  FiXCircle,
+  FiSearch,
+  FiRefreshCw,
+  FiAlertCircle,
+  FiEye,
+  FiChevronRight,
+  FiClock,
+  FiMail,
+  FiUser,
+  FiAward,
+  FiBarChart2
+} from 'react-icons/fi';
 import { BASE_URL } from "../../../shared/constants/api.config";
 
 const PipelineOverview = () => {
@@ -12,10 +28,8 @@ const PipelineOverview = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStage, setSelectedStage] = useState('all');
-  /** Backend SCORE_THRESHOLD — never assume 25% */
   const [screeningThreshold, setScreeningThreshold] = useState(null);
 
-  // Fetch candidates data
   const fetchCandidates = async () => {
     const token = localStorage.getItem('token');
     
@@ -26,7 +40,6 @@ const PipelineOverview = () => {
     }
 
     try {
-      // Load both: pipeline candidates + AI screening candidates (for Screening stage card)
       const [candidatesRes, screeningRes, configRes] = await Promise.all([
         fetch(`${BASE_URL}/api/recruiter_dashboard/candidates`, {
           method: 'GET',
@@ -61,7 +74,7 @@ const PipelineOverview = () => {
             setScreeningThreshold(t);
           }
         } catch {
-          /* ignore */
+          // ignore
         }
       }
 
@@ -98,7 +111,6 @@ const PipelineOverview = () => {
         setResumeCandidates([]);
       }
 
-      // If both endpoints fail, show error; otherwise clear.
       if (!candidatesRes.ok && !screeningRes.ok) {
         setError('Failed to fetch candidates');
       } else {
@@ -130,7 +142,6 @@ const PipelineOverview = () => {
   const mergedCandidates = () => {
     const byKey = new Map();
 
-    // Prefer recruiter dashboard candidate rows as primary source.
     candidates.forEach((candidate) => {
       const key = candidate.email?.toLowerCase().trim() || `candidate-id-${candidate.id}`;
       byKey.set(key, {
@@ -139,7 +150,6 @@ const PipelineOverview = () => {
       });
     });
 
-    // Fill in missing candidates from resume screening without overwriting recruiter rows.
     resumeCandidates.forEach((candidate) => {
       const key = candidate.email?.toLowerCase().trim() || `resume-id-${candidate.id}`;
       const resumeStage = normalizeStage(candidate.stage);
@@ -156,8 +166,6 @@ const PipelineOverview = () => {
           stage: resumeStage
         });
       } else if (resumeIsRejected) {
-        // If resume screening marks candidate as rejected, prefer that stage
-        // to avoid stale recruiter endpoint stage showing under non-rejected cards.
         const existing = byKey.get(key);
         byKey.set(key, {
           ...existing,
@@ -169,7 +177,6 @@ const PipelineOverview = () => {
     return Array.from(byKey.values());
   };
 
-  // Group candidates by stage
   const groupCandidatesByStage = () => {
     const allCandidates = mergedCandidates();
     const stages = {
@@ -191,7 +198,6 @@ const PipelineOverview = () => {
     return stages;
   };
 
-  // Filter candidates based on search and stage
   const getFilteredCandidates = () => {
     let filtered = mergedCandidates();
 
@@ -212,109 +218,90 @@ const PipelineOverview = () => {
 
   const stages = groupCandidatesByStage();
   const filteredCandidates = getFilteredCandidates();
+  const totalCandidates = Object.values(stages).reduce((sum, stageCandidates) => sum + stageCandidates.length, 0);
 
-  const stageIconMap = {
-    Applied: 'heroicons:user-group',
-    Screening: 'heroicons:clock',
-    Interview: 'heroicons:chat-bubble-left-right',
-    Offer: 'heroicons:envelope',
-    Hired: 'heroicons:check-badge',
-    Rejected: 'heroicons:x-circle'
+  const getStageColor = (stage) => {
+    const colors = {
+      'Applied': 'bg-primary/10 text-primary border-primary/20',
+      'Screening': 'bg-amber-50 text-amber-700 border-amber-200',
+      'Interview': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'Offer': 'bg-primary/10 text-primary border-primary/20',
+      'Hired': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'Rejected': 'bg-rose-50 text-rose-700 border-rose-200'
+    };
+    return colors[stage] || 'bg-gray-100 text-gray-600';
   };
 
-  const stageBgMap = {
-    Applied: 'kpi-primary',
-    Screening: 'kpi-warning',
-    Interview: 'kpi-info',
-    Offer: 'bg-primary',
-    Hired: 'kpi-success',
-    Rejected: 'bg-danger'
-  };
-
-  const stageColorMap = {
-    Applied: 'kpi-primary-text',
-    Screening: 'kpi-warning-text',
-    Interview: 'kpi-info-text',
-    Offer: 'text-white',
-    Hired: 'kpi-success-text',
-    Rejected: 'text-white'
-  };
-
-  const StageCard = ({ stage, candidates, bgClass }) => (
+  const StageCard = ({ stage, candidates: stageCandidates }) => (
     <div
-      className="card border shadow-none h-100"
-      role="button"
-      tabIndex={0}
+      className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4 hover:shadow-property transition-all cursor-pointer"
       onClick={() => {
         setSelectedStage(stage);
         navigate('/candidates', { state: { stage } });
       }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          setSelectedStage(stage);
-          navigate('/candidates', { state: { stage } });
-        }
-      }}
-      style={{ cursor: 'pointer' }}
     >
-      <div className="card-body">
-        <div className="d-flex align-items-center justify-content-between mb-3">
-          <div className="d-flex align-items-center gap-2">
-            <div className={`kpi-icon ${bgClass} rounded-2`} style={{ width: 40, height: 40 }}>
-              <Icon icon={stageIconMap[stage] || 'heroicons:user'} className={`kpi-icon-style ${stageColorMap[stage] || 'kpi-primary-text'}`} style={{ fontSize: 20 }} />
-            </div>
-            <h6 className="fw-semibold mb-0 text-dark">{stage}</h6>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+            stage === 'Applied' ? 'bg-primary/10' :
+            stage === 'Screening' ? 'bg-amber-50' :
+            stage === 'Interview' ? 'bg-indigo-50' :
+            stage === 'Offer' ? 'bg-primary/10' :
+            stage === 'Hired' ? 'bg-emerald-50' : 'bg-rose-50'
+          }`}>
+            {stage === 'Applied' && <FiUsers className="h-5 w-5 text-primary" />}
+            {stage === 'Screening' && <FiClock className="h-5 w-5 text-amber-600" />}
+            {stage === 'Interview' && <FiMessageCircle className="h-5 w-5 text-indigo-600" />}
+            {stage === 'Offer' && <FiMail className="h-5 w-5 text-primary" />}
+            {stage === 'Hired' && <FiCheckCircle className="h-5 w-5 text-emerald-600" />}
+            {stage === 'Rejected' && <FiXCircle className="h-5 w-5 text-rose-600" />}
           </div>
-          <span className="badge bg-secondary">{candidates.length}</span>
+          <h6 className="font-semibold text-midnight_text">{stage}</h6>
         </div>
-        <div className="d-grid gap-2">
-          {candidates.slice(0, 3).map((candidate) => (
-            <div key={candidate.id} className="p-2 bg-light rounded-2">
-              <p className="small fw-medium mb-0 text-dark">{candidate.name}</p>
-              <p className="small text-muted mb-0">{candidate.role}</p>
-            </div>
-          ))}
-          {candidates.length > 3 && (
-            <button
-              type="button"
-              className="btn btn-link btn-sm p-0 text-primary text-start"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedStage(stage);
-                navigate('/candidates', { state: { stage } });
-              }}
-            >
-              View {candidates.length - 3} more
-            </button>
-          )}
-        </div>
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+          {stageCandidates.length}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {stageCandidates.slice(0, 3).map((candidate) => (
+          <div key={candidate.id} className="p-2 bg-gray-50 rounded-lg">
+            <p className="text-sm font-medium text-midnight_text">{candidate.name}</p>
+            <p className="text-xs text-gray-500">{candidate.role}</p>
+          </div>
+        ))}
+        {stageCandidates.length > 3 && (
+          <button
+            className="text-xs text-primary hover:text-primary/80 font-medium mt-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedStage(stage);
+              navigate('/candidates', { state: { stage } });
+            }}
+          >
+            View {stageCandidates.length - 3} more
+          </button>
+        )}
       </div>
     </div>
   );
 
   if (loading) {
     return (
-      <div className="container-fluid py-4">
-        <div className="card border shadow-none">
-          <div className="card-body text-center py-5">
-            <div className="spinner-border text-primary mb-3" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="text-secondary-light mb-0">Loading pipeline...</p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[500px] px-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+        <p className="text-gray-500 text-sm">Loading pipeline...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
-          <AlertCircle size={20} className="me-2" />
-          <div className="flex-grow-1">{error}</div>
-          <button type="button" className="btn refresh-btn d-inline-flex align-items-center gap-2" onClick={fetchCandidates}>
-            <Icon icon="heroicons:arrow-path" style={{ width: 16, height: 16 }} />
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-lg p-4 text-rose-700">
+          <FiAlertCircle className="h-5 w-5 text-rose-500 flex-shrink-0" />
+          <div className="flex-1 text-sm">{error}</div>
+          <button onClick={fetchCandidates} className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-medium transition-all">
+            <FiRefreshCw className="h-4 w-4" />
             Retry
           </button>
         </div>
@@ -323,159 +310,183 @@ const PipelineOverview = () => {
   }
 
   return (
-    <div className="container-fluid py-4">
-      {/* Page Header - ref JobList */}
-      <div className="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:view-columns" className="text-black" style={{ fontSize: 28 }} />
-            Recruitment Pipeline
-          </h4>
-          <p className="text-secondary-light mb-0 mt-1">Track candidates through each stage</p>
+    <div>
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiGrid className="text-gray-700 text-xl sm:text-2xl" />
+              Recruitment Pipeline
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Track candidates through each stage</p>
+          </div>
+          <button
+            onClick={fetchCandidates}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all w-full sm:w-auto"
+          >
+            <FiRefreshCw className="h-4 w-4" />
+            Refresh
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn refresh-btn d-flex align-items-center gap-2"
-          onClick={fetchCandidates}
-        >
-          <Icon icon="heroicons:arrow-path" style={{ width: 16, height: 16 }} />
-          Refresh
-        </button>
-      </div>
 
-      {/* KPI row - ref JobList */}
-      <div className="kpi-row mb-4">
-        {[
-          { title: 'Total Candidates', value: Object.values(stages).reduce((sum, stageCandidates) => sum + stageCandidates.length, 0), icon: 'heroicons:user-group', bg: 'kpi-primary', color: 'kpi-primary-text' },
-          { title: 'Applied', value: stages.Applied.length, icon: 'heroicons:user-plus', bg: 'kpi-info', color: 'kpi-info-text' },
-          { title: 'In Interview', value: stages.Interview.length, icon: 'heroicons:chat-bubble-left-right', bg: 'kpi-warning', color: 'kpi-warning-text' },
-          { title: 'Hired', value: stages.Hired.length, icon: 'heroicons:check-badge', bg: 'kpi-success', color: 'kpi-success-text' }
-        ].map((item, index) => (
-          <div className="kpi-col" key={index}>
-            <div className="kpi-card">
-              <div className="kpi-card-body">
-                <div className={`kpi-icon ${item.bg}`}>
-                  <Icon icon={item.icon} className={`kpi-icon-style ${item.color}`} />
-                </div>
-                <div className="kpi-content">
-                  <div className="kpi-title">{item.title}</div>
-                  <div className="kpi-value">{item.value}</div>
-                </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Total Candidates</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{totalCandidates}</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FiUsers className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Search and Filter - ref JobList: card */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-body d-flex flex-wrap gap-3 align-items-center">
-          <div className="position-relative flex-fill" style={{ minWidth: '260px' }}>
-            <Icon icon="heroicons:magnifying-glass" className="position-absolute top-50 translate-middle-y text-muted ms-3" style={{ pointerEvents: 'none', fontSize: 18 }} />
-            <input
-              type="text"
-              className="form-control ps-5"
-              placeholder="Search candidates..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Applied</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stages.Applied.length}</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <FiUserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+              </div>
+            </div>
           </div>
-          <select
-            className="form-select w-auto"
-            value={selectedStage}
-            onChange={(e) => setSelectedStage(e.target.value)}
-          >
-            <option value="all">All Stages</option>
-            <option value="Applied">Applied</option>
-            <option value="Screening">Screening</option>
-            <option value="Interview">Interview</option>
-            <option value="Offer">Offer</option>
-            <option value="Hired">Hired</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">In Interview</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stages.Interview.length}</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                <FiMessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Hired</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stages.Hired.length}</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <FiCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Pipeline Stages - cards in grid */}
-      <div className="row g-3 mb-4">
-        {['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected'].map((stage) => (
-          <div key={stage} className="col-12 col-sm-6 col-lg-4">
-            <StageCard stage={stage} candidates={stages[stage]} bgClass={stageBgMap[stage] || 'kpi-primary'} />
+        {/* Search and Filter */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search candidates..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+            <select
+              value={selectedStage}
+              onChange={(e) => setSelectedStage(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white w-full sm:w-auto"
+            >
+              <option value="all">All Stages</option>
+              <option value="Applied">Applied</option>
+              <option value="Screening">Screening</option>
+              <option value="Interview">Interview</option>
+              <option value="Offer">Offer</option>
+              <option value="Hired">Hired</option>
+              <option value="Rejected">Rejected</option>
+            </select>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Pipeline Flow - card */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-body">
-          <h5 className="fw-semibold mb-4 text-dark">Pipeline Flow</h5>
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        {/* Pipeline Stages Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected'].map((stage) => (
+            <StageCard key={stage} stage={stage} candidates={stages[stage]} />
+          ))}
+        </div>
+
+        {/* Pipeline Flow */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4 sm:p-6">
+          <h5 className="font-semibold text-midnight_text mb-4">Pipeline Flow</h5>
+          <div className="flex flex-wrap items-center justify-center gap-4">
             {Object.entries(stages).map(([stage, stageCandidates], index) => (
               <React.Fragment key={stage}>
                 <div className="text-center">
-                  <div className={`rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold mb-2 ${
-                    stage === 'Applied' ? 'bg-primary' : stage === 'Screening' ? 'bg-warning' : stage === 'Interview' ? 'bg-info' :
-                    stage === 'Offer' ? 'bg-primary' : stage === 'Hired' ? 'bg-success' : 'bg-danger'
-                  }`} style={{ width: 48, height: 48 }}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mb-2 ${
+                    stage === 'Applied' ? 'bg-primary' :
+                    stage === 'Screening' ? 'bg-amber-500' :
+                    stage === 'Interview' ? 'bg-indigo-500' :
+                    stage === 'Offer' ? 'bg-primary' :
+                    stage === 'Hired' ? 'bg-emerald-500' : 'bg-rose-500'
+                  }`}>
                     {stageCandidates.length}
                   </div>
-                  <p className="small fw-medium mb-0 text-dark">{stage}</p>
-                  <p className="small text-muted mb-0">{stageCandidates.length} candidates</p>
+                  <p className="text-sm font-medium text-midnight_text">{stage}</p>
+                  <p className="text-xs text-gray-500">{stageCandidates.length} candidates</p>
                 </div>
                 {index < Object.keys(stages).length - 1 && (
-                  <Icon icon="heroicons:chevron-right" className="text-muted" style={{ fontSize: 20 }} />
+                  <FiChevronRight className="text-gray-400 h-5 w-5 hidden sm:block" />
                 )}
               </React.Fragment>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Candidate List - card */}
-      {selectedStage !== 'all' && (
-        <div className="card border shadow-none">
-          <div className="card-body">
-            <h5 className="fw-semibold mb-4 text-dark">
+        {/* Candidate List for Selected Stage */}
+        {selectedStage !== 'all' && (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4 sm:p-6">
+            <h5 className="font-semibold text-midnight_text mb-4">
               {selectedStage} Candidates ({filteredCandidates.length})
             </h5>
-            <div className="d-grid gap-2">
+            <div className="space-y-2">
               {filteredCandidates.map((candidate) => (
-                <div key={candidate.id} className="d-flex align-items-center justify-content-between p-3 bg-light rounded-3">
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center" style={{ width: 36, height: 36 }}>
-                      <span className="small fw-medium text-primary">{candidate.name?.charAt(0) || '?'}</span>
+                <div key={candidate.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary">{candidate.name?.charAt(0) || '?'}</span>
                     </div>
                     <div>
-                      <p className="small fw-medium mb-0 text-dark">{candidate.name}</p>
-                      <p className="small text-muted mb-0">{candidate.role}</p>
-                      <p className="small text-secondary mb-0">{candidate.email}</p>
+                      <p className="text-sm font-medium text-midnight_text">{candidate.name}</p>
+                      <p className="text-xs text-gray-500">{candidate.role}</p>
+                      <p className="text-xs text-gray-400">{candidate.email}</p>
                     </div>
                   </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <span className={`badge ${
-                      candidate.stage === 'Applied' ? 'bg-primary-subtle text-primary' :
-                      candidate.stage === 'Screening' ? 'bg-warning-subtle text-warning' :
-                      candidate.stage === 'Interview' ? 'bg-info-subtle text-info' :
-                      candidate.stage === 'Offer' ? 'bg-primary-subtle text-primary' :
-                      candidate.stage === 'Hired' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'
-                    }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${getStageColor(candidate.stage)}`}>
                       {candidate.stage}
                     </span>
                     <button
-                      type="button"
-                      className="job-listings-btn"
-                      title="View"
                       onClick={() => navigate('/candidates', { state: { stage: selectedStage } })}
+                      className="p-1.5 text-gray-500 hover:text-primary rounded-lg hover:bg-primary/10 transition-all"
+                      title="View"
                     >
-                      <Icon icon="heroicons:eye" />
+                      <FiEye className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               ))}
+              {filteredCandidates.length === 0 && (
+                <div className="text-center py-8">
+                  <FiUsers className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">No candidates found in {selectedStage} stage</p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

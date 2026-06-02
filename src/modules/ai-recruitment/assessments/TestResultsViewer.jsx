@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Users,
-  Search,
-  Download,
-  Calendar,
-  RefreshCw
-} from 'lucide-react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+  FiUsers,
+  FiSearch,
+  FiDownload,
+  FiCalendar,
+  FiRefreshCw,
+  FiPieChart,
+  FiFilter,
+  FiAward,
+  FiCheckCircle,
+  FiXCircle,
+  FiUser,
+  FiMail,
+  FiBarChart2
+} from 'react-icons/fi';
 import { assessmentAPI } from "../../../shared/utils/api";
 import { BASE_URL } from "../../../shared/constants/api.config";
+import Modal from '../../../shared/components/Modal';
 
 const TestResultsViewer = () => {
   const [candidateResults, setCandidateResults] = useState([]);
@@ -20,15 +28,13 @@ const TestResultsViewer = () => {
     minScore: 0,
     maxScore: 100,
     status: '',
-    stage: '' // Filter by assessment stage
+    stage: ''
   });
 
-  // Fetch all assessment results directly from result tables
   const fetchResults = async () => {
     setLoading(true);
     try {
       const resultsData = await assessmentAPI.getAllResults();
-      console.log('📊 TestResultsViewer - All Results Data:', resultsData);
       setCandidateResults(resultsData || []);
     } catch (error) {
       console.error('Error fetching test results:', error);
@@ -41,10 +47,8 @@ const TestResultsViewer = () => {
     fetchResults();
   }, []);
 
-  // Get candidate stages (already grouped by email from backend)
   const candidateStages = candidateResults;
 
-  // Calculate statistics from all results
   const stats = {
     totalCandidates: candidateStages.length,
     completed: candidateStages.filter(c => 
@@ -74,8 +78,7 @@ const TestResultsViewer = () => {
           allScores.push((c.communication.score / qCount) * 100);
         }
         if (c.coding?.score !== null && c.coding?.score !== undefined) {
-          // Coding score is already a count, so we'll use it as percentage
-          allScores.push(c.coding.score * 20); // Assuming max 5 questions = 100%
+          allScores.push(c.coding.score * 20);
         }
       });
       return allScores.length > 0 
@@ -84,7 +87,6 @@ const TestResultsViewer = () => {
     })()
   };
 
-  // Filter candidate stages
   const filteredCandidateStages = candidateStages.filter(candidateStage => {
     const matchesCandidate = 
       candidateStage.candidate_name?.toLowerCase().includes(filters.candidate.toLowerCase()) ||
@@ -92,7 +94,6 @@ const TestResultsViewer = () => {
     
     if (!matchesCandidate) return false;
     
-    // Check if any stage matches the assessment filter
     if (filters.assessment && filters.assessment !== 'all') {
       const assessmentType = filters.assessment.toLowerCase();
       if (assessmentType === 'aptitude' && !candidateStage.aptitude) return false;
@@ -100,7 +101,6 @@ const TestResultsViewer = () => {
       if (assessmentType === 'coding' && !candidateStage.coding) return false;
     }
     
-    // Check if any stage matches the status filter
     if (filters.status && filters.status !== 'all') {
       const statusLower = filters.status.toLowerCase();
       const hasMatchingStatus = 
@@ -111,7 +111,6 @@ const TestResultsViewer = () => {
       if (!hasMatchingStatus) return false;
     }
     
-    // Check score range (if any stage has a score)
     if (filters.minScore > 0 || filters.maxScore < 100) {
       const hasScoreInRange = 
         (candidateStage.aptitude?.score !== null && candidateStage.aptitude?.score !== undefined &&
@@ -129,33 +128,31 @@ const TestResultsViewer = () => {
     return true;
   });
 
-  // Get status badge
   const getStatusBadge = (status) => {
-    if (!status) return <span className="badge bg-secondary-subtle text-secondary">Not Assigned</span>;
+    if (!status) return <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">Not Assigned</span>;
     
     switch (status?.toLowerCase()) {
       case 'completed':
       case 'passed':
       case 'qualified':
-        return <span className="badge bg-success-subtle text-success">Completed</span>;
+        return <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700">Completed</span>;
       case 'in progress':
-        return <span className="badge bg-info-subtle text-info">In Progress</span>;
+        return <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700">In Progress</span>;
       case 'assigned':
-        return <span className="badge bg-warning-subtle text-warning">Assigned</span>;
+        return <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700">Assigned</span>;
       case 'failed':
       case 'regret':
-        return <span className="badge bg-danger-subtle text-danger">Failed</span>;
+        return <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700">Failed</span>;
       default:
-        return <span className="badge bg-secondary-subtle text-secondary">{status}</span>;
+        return <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">{status}</span>;
     }
   };
 
-  // Helper function to render stage status in table
   const renderStageStatus = (stage) => {
     if (!stage) {
       return (
         <div className="text-center">
-          <span className="badge bg-secondary-subtle text-secondary">Not Completed</span>
+          <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">Not Completed</span>
         </div>
       );
     }
@@ -163,19 +160,19 @@ const TestResultsViewer = () => {
     const status = stage.status || 'Completed';
     return (
       <div className="text-center">
-        <div>
-          {getStatusBadge(status)}
-        </div>
+        <div>{getStatusBadge(status)}</div>
         {stage.score !== null && stage.score !== undefined && (
           <div className="mt-1">
-            <small className="text-secondary-light">
+            <span className="text-xs text-gray-500">
               {stage.score}{stage.question_count ? `/${stage.question_count}` : ''}
-            </small>
+            </span>
           </div>
         )}
         {stage.test_status && (
           <div className="mt-1">
-            <span className={`badge ${stage.test_status === 'Qualified' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} text-xs`}>
+            <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${
+              stage.test_status === 'Qualified' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+            }`}>
               {stage.test_status}
             </span>
           </div>
@@ -184,7 +181,6 @@ const TestResultsViewer = () => {
     );
   };
 
-  // Export to CSV
   const exportToCSV = () => {
     const headers = ['Candidate Name', 'Email', 'Aptitude Status', 'Aptitude Score', 'Communication Status', 'Communication Score', 'Coding Status', 'Coding Score'];
     const rows = filteredCandidateStages.map(candidateStage => [
@@ -212,115 +208,102 @@ const TestResultsViewer = () => {
   };
 
   return (
-    <div className="container-fluid py-4">
-      {/* Page Header - aligned with JobList/CreateJob */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:chart-pie" className="text-black" style={{ fontSize: 28 }} />
-            Test Results
-          </h4>
-          <p className="text-secondary mb-0 mt-1">
-            Review candidate scores, performance, and detailed breakdowns.
-          </p>
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated:{' '}
-            <span className="fw-medium text-body">
-              {new Date().toLocaleDateString()}
-            </span>
-          </span>
-          <div className="d-flex flex-wrap align-items-center gap-2 justify-content-end">
-            <button
-              className="btn refresh-btn d-inline-flex align-items-center gap-2"
-              onClick={fetchResults}
-              disabled={loading}
-            >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
-            <button
-              type="button"
-              className="sync-btn d-inline-flex align-items-center gap-2"
-              onClick={exportToCSV}
-            >
-              <Download size={16} />
-              <span>Export CSV</span>
-            </button>
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiPieChart className="text-gray-600 text-xl sm:text-2xl" />
+              Test Results
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Review candidate scores, performance, and detailed breakdowns</p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={fetchResults}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+              >
+                <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Refreshing...' : 'Refresh'}
+              </button>
+              <button
+                onClick={exportToCSV}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+              >
+                <FiDownload className="h-4 w-4" />
+                Export CSV
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* KPI Summary - kpi-row layout */}
-      <div className="kpi-row mb-4">
-        {[
-          {
-            title: 'Average Score',
-            value: `${stats.avgScore}%`,
-            sub: 'Across all tests',
-            icon: 'heroicons:sparkles',
-            bg: 'kpi-primary',
-            color: 'kpi-primary-text'
-          },
-          {
-            title: 'Total Candidates',
-            value: stats.totalCandidates,
-            sub: 'With any test result',
-            icon: 'heroicons:user-group',
-            bg: 'kpi-info',
-            color: 'kpi-info-text'
-          },
-          {
-            title: 'Passed',
-            value: stats.passed,
-            sub: 'Qualified status',
-            icon: 'heroicons:check-badge',
-            bg: 'kpi-success',
-            color: 'kpi-success-text'
-          },
-          {
-            title: 'Failed',
-            value: stats.failed,
-            sub: 'Regret status',
-            icon: 'heroicons:x-circle',
-            bg: 'kpi-warning',
-            color: 'kpi-warning-text'
-          }
-        ].map((item, index) => (
-          <div className="kpi-col" key={index}>
-            <div className="kpi-card">
-              <div className="kpi-card-body">
-                <div className={`kpi-icon ${item.bg}`}>
-                  <Icon icon={item.icon} className={`kpi-icon-style ${item.color}`} />
-                </div>
-                <div className="kpi-content">
-                  <div className="kpi-title">{item.title}</div>
-                  <div className="kpi-value">{item.value}</div>
-                  {item.sub && <div className="kpi-sub text-muted">{item.sub}</div>}
-                </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Average Score</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.avgScore}%</p>
+                <p className="text-xs text-gray-400 mt-1">Across all tests</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FiBarChart2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Filters - structured like JobList filters */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-header bg-transparent border-bottom py-3">
-          <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-            <Icon icon="heroicons:funnel" style={{ fontSize: 18 }} />
-            Filter & search
-          </h6>
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Total Candidates</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.totalCandidates}</p>
+                <p className="text-xs text-gray-400 mt-1">With any test result</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <FiUsers className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Passed</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.passed}</p>
+                <p className="text-xs text-gray-400 mt-1">Qualified status</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <FiCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Failed</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{stats.failed}</p>
+                <p className="text-xs text-gray-400 mt-1">Regret status</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+                <FiXCircle className="h-4 w-4 sm:h-5 sm:w-5 text-rose-600" />
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="card-body">
-          <div className="row g-3 align-items-end">
-            <div className="col-12 col-md-3">
-              <label className="form-label small text-muted mb-1">Assessment</label>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Assessment</label>
               <select
-                className="form-select"
                 value={filters.assessment}
                 onChange={(e) => setFilters({ ...filters, assessment: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
               >
                 <option value="all">All Assessments</option>
                 <option value="aptitude">Aptitude</option>
@@ -328,49 +311,45 @@ const TestResultsViewer = () => {
                 <option value="coding">Coding</option>
               </select>
             </div>
-            <div className="col-12 col-md-3">
-              <label className="form-label small text-muted mb-1">Candidate</label>
-              <div className="position-relative">
-                <Search size={16} className="position-absolute top-50 translate-middle-y ms-3 text-muted" />
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Candidate</label>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
-                  className="form-control ps-5"
                   placeholder="Search by name or email..."
                   value={filters.candidate}
                   onChange={(e) => setFilters({ ...filters, candidate: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
-            <div className="col-6 col-md-2">
-              <label className="form-label small text-muted mb-1">Min score (%)</label>
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Min score (%)</label>
               <input
                 type="number"
-                className="form-control"
                 placeholder="0"
                 value={filters.minScore}
-                onChange={(e) =>
-                  setFilters({ ...filters, minScore: parseInt(e.target.value, 10) || 0 })
-                }
+                onChange={(e) => setFilters({ ...filters, minScore: parseInt(e.target.value, 10) || 0 })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>
-            <div className="col-6 col-md-2">
-              <label className="form-label small text-muted mb-1">Max score (%)</label>
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Max score (%)</label>
               <input
                 type="number"
-                className="form-control"
                 placeholder="100"
                 value={filters.maxScore}
-                onChange={(e) =>
-                  setFilters({ ...filters, maxScore: parseInt(e.target.value, 10) || 100 })
-                }
+                onChange={(e) => setFilters({ ...filters, maxScore: parseInt(e.target.value, 10) || 100 })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>
-            <div className="col-12 col-md-2">
-              <label className="form-label small text-muted mb-1">Status</label>
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Status</label>
               <select
-                className="form-select"
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
               >
                 <option value="all">All Status</option>
                 <option value="completed">Completed</option>
@@ -381,44 +360,50 @@ const TestResultsViewer = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Results Table */}
-      <div className="card border shadow-none">
-        <div className="card-body p-0">
+        {/* Results Table */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow overflow-hidden">
           {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+              <p className="text-gray-500 text-sm">Loading results...</p>
             </div>
           ) : filteredCandidateStages.length === 0 ? (
-          <div className="text-center py-5">
-            <div className="d-flex align-items-center justify-content-center gap-2">
-              <Users size={48} className="text-muted" />
-              <p className="text-muted mb-0">No results found</p>
+            <div className="text-center py-12">
+              <FiUsers className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">No results found</p>
             </div>
-          </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead className="table-light">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="px-4 py-3">Candidate Name</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3 text-center">Aptitude Stage</th>
-                    <th className="px-4 py-3 text-center">Communication Stage</th>
-                    <th className="px-4 py-3 text-center">Coding Stage</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Candidate Name</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Email</th>
+                    <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Aptitude Stage</th>
+                    <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Communication Stage</th>
+                    <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Coding Stage</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {filteredCandidateStages.map((candidateStage) => (
-                    <tr key={candidateStage.candidate_email}>
+                    <tr 
+                      key={candidateStage.candidate_email} 
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedCandidate(candidateStage)}
+                    >
                       <td className="px-4 py-3">
-                        <div className="fw-medium">{candidateStage.candidate_name}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">
+                              {candidateStage.candidate_name?.charAt(0) || '?'}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium text-midnight_text">{candidateStage.candidate_name}</span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-secondary-light">
-                        <small>{candidateStage.candidate_email}</small>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-gray-500">{candidateStage.candidate_email}</span>
                       </td>
                       <td className="px-4 py-3">
                         {renderStageStatus(candidateStage.aptitude)}
@@ -439,198 +424,147 @@ const TestResultsViewer = () => {
       </div>
 
       {/* Detail Modal */}
-      {selectedCandidate && (
-        <div
-          className="modal fade show d-block"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-          tabIndex="-1"
-        >
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              {/* Modal Header */}
-              <div className="modal-header bg-primary text-white py-3">
-                <div>
-                  <h5 className="modal-title mb-0">Assessment Details</h5>
-                  <p className="mb-0 text-primary-subtle small">Performance breakdown</p>
-                </div>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setSelectedCandidate(null)}
-                ></button>
+      <Modal
+        isOpen={!!selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+        title="Assessment Details"
+        size="lg"
+      >
+        {selectedCandidate && (
+          <div className="space-y-4">
+            {/* Candidate Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Candidate Name</p>
+                <p className="text-sm font-semibold text-midnight_text">{selectedCandidate.candidate_name || 'Unknown'}</p>
               </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Email</p>
+                <p className="text-sm font-semibold text-midnight_text">{selectedCandidate.candidate_email || 'N/A'}</p>
+              </div>
+            </div>
 
-              {/* Modal Content */}
-              <div className="modal-body">
-                {/* Candidate Info */}
-                <div className="row g-3 mb-4">
-                  <div className="col-md-6">
-                    <div className="card bg-light border-0">
-                      <div className="card-body py-3">
-                        <p className="text-secondary-light small mb-1">Candidate Name</p>
-                        <p className="fw-semibold mb-0">{selectedCandidate.candidate_name || 'Unknown'}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="card bg-light border-0">
-                      <div className="card-body py-3">
-                        <p className="text-secondary-light small mb-1">Email</p>
-                        <p className="fw-semibold mb-0">{selectedCandidate.candidate_email || 'N/A'}</p>
-                      </div>
-                    </div>
-                  </div>
+            {/* All Assessment Stages */}
+            <div>
+              <h6 className="text-sm font-semibold text-midnight_text mb-3">All Assessment Stages</h6>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Aptitude Stage */}
+                <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 text-center">
+                  <p className="text-xs text-gray-500 font-semibold mb-2">Aptitude Stage</p>
+                  {selectedCandidate.aptitude ? (
+                    <>
+                      {getStatusBadge(selectedCandidate.aptitude.status)}
+                      {selectedCandidate.aptitude.score !== null && selectedCandidate.aptitude.score !== undefined && (
+                        <div className="mt-2">
+                          <p className="text-sm font-bold text-primary">
+                            {selectedCandidate.aptitude.score}/{selectedCandidate.aptitude.question_count || 25}
+                          </p>
+                          <span className="text-xs text-gray-500">
+                            {Math.round((selectedCandidate.aptitude.score / (selectedCandidate.aptitude.question_count || 25)) * 100)}%
+                          </span>
+                        </div>
+                      )}
+                      {selectedCandidate.aptitude.test_status && (
+                        <div className="mt-2">
+                          <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${
+                            selectedCandidate.aptitude.test_status === 'Qualified' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                          }`}>
+                            {selectedCandidate.aptitude.test_status}
+                          </span>
+                        </div>
+                      )}
+                      {selectedCandidate.aptitude.completed_at && (
+                        <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
+                          <FiCalendar className="h-3 w-3" />
+                          {new Date(selectedCandidate.aptitude.completed_at).toLocaleDateString()}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">Not Assigned</span>
+                  )}
                 </div>
 
-                {/* All Assessment Stages */}
-                <div className="mb-4">
-                  <h6 className="mb-3 fw-semibold">All Assessment Stages</h6>
-                  <div className="row g-3">
-                    {/* Aptitude Stage */}
-                    <div className="col-md-4">
-                      <div className="card border h-100">
-                        <div className="card-body text-center">
-                          <p className="text-secondary-light small mb-2 fw-semibold">Aptitude Stage</p>
-                          {selectedCandidate.aptitude ? (
-                            <>
-                              {getStatusBadge(selectedCandidate.aptitude.status)}
-                              {selectedCandidate.aptitude.score !== null && selectedCandidate.aptitude.score !== undefined && (
-                                <div className="mt-2">
-                                  <p className="mb-0">
-                                    <span className="fw-bold text-primary">
-                                      {selectedCandidate.aptitude.score}/{selectedCandidate.aptitude.question_count || 25}
-                                    </span>
-                                  </p>
-                                  <small className="text-secondary-light">
-                                    {Math.round((selectedCandidate.aptitude.score / (selectedCandidate.aptitude.question_count || 25)) * 100)}%
-                                  </small>
-                                </div>
-                              )}
-                              {selectedCandidate.aptitude.test_status && (
-                                <div className="mt-2">
-                                  <span className={`badge ${selectedCandidate.aptitude.test_status === 'Qualified' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
-                                    {selectedCandidate.aptitude.test_status}
-                                  </span>
-                                </div>
-                              )}
-                              {selectedCandidate.aptitude.completed_at && (
-                                <div className="mt-2">
-                                  <small className="text-secondary-light">
-                                    <Calendar size={12} className="me-1" />
-                                    {new Date(selectedCandidate.aptitude.completed_at).toLocaleDateString()}
-                                  </small>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <span className="badge bg-secondary-subtle text-secondary">Not Assigned</span>
-                          )}
+                {/* Communication Stage */}
+                <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 text-center">
+                  <p className="text-xs text-gray-500 font-semibold mb-2">Communication Stage</p>
+                  {selectedCandidate.communication ? (
+                    <>
+                      {getStatusBadge(selectedCandidate.communication.status)}
+                      {selectedCandidate.communication.score !== null && selectedCandidate.communication.score !== undefined && (
+                        <div className="mt-2">
+                          <p className="text-sm font-bold text-primary">
+                            {selectedCandidate.communication.score}/{selectedCandidate.communication.question_count || 20}
+                          </p>
+                          <span className="text-xs text-gray-500">
+                            {Math.round((selectedCandidate.communication.score / (selectedCandidate.communication.question_count || 20)) * 100)}%
+                          </span>
                         </div>
-                      </div>
-                    </div>
+                      )}
+                      {selectedCandidate.communication.test_status && (
+                        <div className="mt-2">
+                          <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${
+                            selectedCandidate.communication.test_status === 'Qualified' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                          }`}>
+                            {selectedCandidate.communication.test_status}
+                          </span>
+                        </div>
+                      )}
+                      {selectedCandidate.communication.completed_at && (
+                        <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
+                          <FiCalendar className="h-3 w-3" />
+                          {new Date(selectedCandidate.communication.completed_at).toLocaleDateString()}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">Not Assigned</span>
+                  )}
+                </div>
 
-                    {/* Communication Stage */}
-                    <div className="col-md-4">
-                      <div className="card border h-100">
-                        <div className="card-body text-center">
-                          <p className="text-secondary-light small mb-2 fw-semibold">Communication Stage</p>
-                          {selectedCandidate.communication ? (
-                            <>
-                              {getStatusBadge(selectedCandidate.communication.status)}
-                              {selectedCandidate.communication.score !== null && selectedCandidate.communication.score !== undefined && (
-                                <div className="mt-2">
-                                  <p className="mb-0">
-                                    <span className="fw-bold text-primary">
-                                      {selectedCandidate.communication.score}/{selectedCandidate.communication.question_count || 20}
-                                    </span>
-                                  </p>
-                                  <small className="text-secondary-light">
-                                    {Math.round((selectedCandidate.communication.score / (selectedCandidate.communication.question_count || 20)) * 100)}%
-                                  </small>
-                                </div>
-                              )}
-                              {selectedCandidate.communication.test_status && (
-                                <div className="mt-2">
-                                  <span className={`badge ${selectedCandidate.communication.test_status === 'Qualified' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
-                                    {selectedCandidate.communication.test_status}
-                                  </span>
-                                </div>
-                              )}
-                              {selectedCandidate.communication.completed_at && (
-                                <div className="mt-2">
-                                  <small className="text-secondary-light">
-                                    <Calendar size={12} className="me-1" />
-                                    {new Date(selectedCandidate.communication.completed_at).toLocaleDateString()}
-                                  </small>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <span className="badge bg-secondary-subtle text-secondary">Not Assigned</span>
+                {/* Coding Stage */}
+                <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 text-center">
+                  <p className="text-xs text-gray-500 font-semibold mb-2">Coding Stage</p>
+                  {selectedCandidate.coding ? (
+                    <>
+                      {getStatusBadge(selectedCandidate.coding.status)}
+                      {selectedCandidate.coding.score !== null && selectedCandidate.coding.score !== undefined && (
+                        <div className="mt-2">
+                          <p className="text-sm font-bold text-primary">
+                            {selectedCandidate.coding.score} successful
+                          </p>
+                          {selectedCandidate.coding.question_count && (
+                            <span className="text-xs text-gray-500">
+                              out of {selectedCandidate.coding.question_count}
+                            </span>
                           )}
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Coding Stage */}
-                    <div className="col-md-4">
-                      <div className="card border h-100">
-                        <div className="card-body text-center">
-                          <p className="text-secondary-light small mb-2 fw-semibold">Coding Stage</p>
-                          {selectedCandidate.coding ? (
-                            <>
-                              {getStatusBadge(selectedCandidate.coding.status)}
-                              {selectedCandidate.coding.score !== null && selectedCandidate.coding.score !== undefined && (
-                                <div className="mt-2">
-                                  <p className="mb-0">
-                                    <span className="fw-bold text-primary">
-                                      {selectedCandidate.coding.score} successful
-                                    </span>
-                                  </p>
-                                  <small className="text-secondary-light">
-                                    {selectedCandidate.coding.question_count ? `out of ${selectedCandidate.coding.question_count}` : ''}
-                                  </small>
-                                </div>
-                              )}
-                              {selectedCandidate.coding.test_status && (
-                                <div className="mt-2">
-                                  <span className={`badge ${selectedCandidate.coding.test_status === 'Qualified' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
-                                    {selectedCandidate.coding.test_status}
-                                  </span>
-                                </div>
-                              )}
-                              {selectedCandidate.coding.completed_at && (
-                                <div className="mt-2">
-                                  <small className="text-secondary-light">
-                                    <Calendar size={12} className="me-1" />
-                                    {new Date(selectedCandidate.coding.completed_at).toLocaleDateString()}
-                                  </small>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <span className="badge bg-secondary-subtle text-secondary">Not Assigned</span>
-                          )}
+                      )}
+                      {selectedCandidate.coding.test_status && (
+                        <div className="mt-2">
+                          <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${
+                            selectedCandidate.coding.test_status === 'Qualified' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                          }`}>
+                            {selectedCandidate.coding.test_status}
+                          </span>
                         </div>
-                      </div>
-                    </div>
-                  </div>
+                      )}
+                      {selectedCandidate.coding.completed_at && (
+                        <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
+                          <FiCalendar className="h-3 w-3" />
+                          {new Date(selectedCandidate.coding.completed_at).toLocaleDateString()}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">Not Assigned</span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        .spinner {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+        )}
+      </Modal>
     </div>
   );
 };

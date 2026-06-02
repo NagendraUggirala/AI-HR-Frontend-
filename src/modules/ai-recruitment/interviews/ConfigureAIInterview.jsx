@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Save,
-  X,
-  ClipboardList,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  Settings,
-  MessageSquare,
-  Link,
-  Copy
-} from 'lucide-react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiSave,
+  FiX,
+  FiClipboard,
+  FiClock,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiSettings,
+  FiMessageSquare,
+  FiLink,
+  FiCopy,
+  FiCpu,
+  FiBarChart2,
+  FiList
+} from 'react-icons/fi';
 import { BASE_URL } from "../../../shared/constants/api.config";
+import Modal from '../../../shared/components/Modal';
 
 const ConfigureAIInterview = () => {
   const [templates, setTemplates] = useState([]);
@@ -33,7 +36,6 @@ const ConfigureAIInterview = () => {
   const [newQuestion, setNewQuestion] = useState({ q: '', a: '' });
   const [alert, setAlert] = useState(null);
 
-  // Fetch interview questions (from AI_Interview_Bot)
   const fetchQuestions = async () => {
     try {
       const response = await fetch(`${BASE_URL}/api/interviews/get_questions`);
@@ -46,7 +48,6 @@ const ConfigureAIInterview = () => {
     }
   };
 
-  // Fetch all templates from backend
   const fetchTemplates = async () => {
     setLoading(true);
     try {
@@ -60,7 +61,6 @@ const ConfigureAIInterview = () => {
         const data = await response.json();
         setTemplates(data || []);
       } else {
-        console.error('Error fetching templates:', response.statusText);
         setTemplates([]);
       }
     } catch (error) {
@@ -76,18 +76,15 @@ const ConfigureAIInterview = () => {
     fetchTemplates();
   }, []);
 
-  // Show alert
   const showAlert = (message, type = 'success') => {
     setAlert({ message, type });
     setTimeout(() => setAlert(null), 5000);
   };
 
-  // Handle form input
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Add question to template
   const addQuestion = () => {
     if (newQuestion.q.trim()) {
       setFormData(prev => ({
@@ -98,7 +95,6 @@ const ConfigureAIInterview = () => {
     }
   };
 
-  // Remove question from template
   const removeQuestion = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -106,7 +102,6 @@ const ConfigureAIInterview = () => {
     }));
   };
 
-  // Open create modal
   const openCreateModal = () => {
     setEditingTemplate(null);
     setFormData({
@@ -119,7 +114,6 @@ const ConfigureAIInterview = () => {
     setShowModal(true);
   };
 
-  // Open edit modal
   const openEditModal = (template) => {
     setEditingTemplate(template);
     setFormData({
@@ -132,16 +126,11 @@ const ConfigureAIInterview = () => {
     setShowModal(true);
   };
 
-  // Save template
   const saveTemplate = async () => {
     try {
-      // created_by is now automatically set by backend from authenticated user
-      const payload = {
-        ...formData
-      };
+      const payload = { ...formData };
 
       if (editingTemplate) {
-        // Update existing
         const response = await fetch(`${BASE_URL}/ai-interviews/${editingTemplate.id}`, {
           method: 'PUT',
           headers: {
@@ -154,13 +143,12 @@ const ConfigureAIInterview = () => {
         if (response.ok) {
           showAlert('Template updated successfully!');
           setShowModal(false);
-          fetchTemplates(); // Refresh templates from backend
+          fetchTemplates();
         } else {
           const errorData = await response.json().catch(() => ({ detail: 'Failed to update template' }));
           showAlert(errorData.detail || 'Failed to update template', 'danger');
         }
       } else {
-        // Create new
         const response = await fetch(`${BASE_URL}/ai-interviews/`, {
           method: 'POST',
           headers: {
@@ -173,7 +161,7 @@ const ConfigureAIInterview = () => {
         if (response.ok) {
           showAlert('Template created successfully!');
           setShowModal(false);
-          fetchTemplates(); // Refresh templates from backend
+          fetchTemplates();
         } else {
           const errorData = await response.json().catch(() => ({ detail: 'Failed to create template' }));
           showAlert(errorData.detail || 'Failed to create template', 'danger');
@@ -185,7 +173,6 @@ const ConfigureAIInterview = () => {
     }
   };
 
-  // Delete template
   const deleteTemplate = async (templateId) => {
     if (!window.confirm('Are you sure you want to delete this template?')) {
       return;
@@ -201,7 +188,7 @@ const ConfigureAIInterview = () => {
 
       if (response.ok) {
         showAlert('Template deleted successfully!');
-        fetchTemplates(); // Refresh templates from backend
+        fetchTemplates();
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Failed to delete template' }));
         showAlert(errorData.detail || 'Failed to delete template', 'danger');
@@ -212,17 +199,15 @@ const ConfigureAIInterview = () => {
     }
   };
 
-  // Get difficulty badge color
   const getDifficultyColor = (difficulty) => {
     const colors = {
-      easy: 'bg-success-subtle text-success',
-      medium: 'bg-warning-subtle text-warning',
-      hard: 'bg-danger-subtle text-danger'
+      easy: 'bg-emerald-50 text-emerald-700',
+      medium: 'bg-amber-50 text-amber-700',
+      hard: 'bg-rose-50 text-rose-700'
     };
     return colors[difficulty] || colors.medium;
   };
 
-  // Copy interview link with template ID
   const copyInterviewLink = (templateId, templateName) => {
     const link = `${window.location.origin}/ai-interview?template_id=${templateId}&name=Candidate&email=candidate@example.com`;
     navigator.clipboard.writeText(link).then(() => {
@@ -233,114 +218,115 @@ const ConfigureAIInterview = () => {
     });
   };
 
+  const getInterviewTypeColor = (type) => {
+    const colors = {
+      technical: 'bg-indigo-50 text-indigo-700',
+      behavioral: 'bg-purple-50 text-purple-700',
+      hr: 'bg-emerald-50 text-emerald-700',
+      mixed: 'bg-primary/10 text-primary'
+    };
+    return colors[type] || colors.mixed;
+  };
+
   return (
-    <div className="container-fluid py-4">
-      {/* Page Header - align with JobList/CreateJob */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:cog-8-tooth" className="text-black" style={{ fontSize: 28 }} />
-            Configure AI Interview
-          </h4>
-          <p className="text-secondary mb-0 mt-1">
-            Create and manage AI interview templates.
-          </p>
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated:{' '}
-            <span className="fw-medium text-body">
-              {new Date().toLocaleDateString()}
-            </span>
-          </span>
-          <button
-            onClick={openCreateModal}
-            className="btn create-job-btn d-inline-flex align-items-center gap-2"
-          >
-            <Icon icon="heroicons:plus" style={{ width: 16, height: 16 }} />
-            Create Template
-          </button>
-        </div>
-      </div>
-
-      {/* Alert */}
-      {alert && (
-        <div className={`alert alert-${alert.type} alert-dismissible fade show mb-24`} role="alert">
-          <div className="d-flex align-items-center gap-2">
-            {alert.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-            {alert.message}
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiCpu className="text-gray-600 text-xl sm:text-2xl" />
+              Configure AI Interview
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Create and manage AI interview templates</p>
           </div>
-          <button type="button" className="btn-close" onClick={() => setAlert(null)}></button>
-        </div>
-      )}
-
-
-      {/* Templates List */}
-      {loading ? (
-        <div className="d-flex justify-content-center align-items-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={openCreateModal}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
+            >
+              <FiPlus className="h-4 w-4" />
+              Create Template
+            </button>
           </div>
         </div>
-      ) : templates.length === 0 ? (
-        <div className="card shadow-none border">
-          <div className="card-body text-center py-5">
-            <div className="d-flex flex-column align-items-center justify-content-center gap-2 mb-3">
-              <Settings size={48} className="text-secondary-light" />
 
-              <h6 className="text-secondary-light mb-1">No Templates Yet</h6>
-              <p className="text-secondary-light text-sm mb-0">
-                Create your first AI interview template to get started.
-              </p>
-
+        {/* Alert */}
+        {alert && (
+          <div className={`flex items-center justify-between gap-3 p-3 rounded-lg ${
+            alert.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-rose-50 border border-rose-200 text-rose-700'
+          }`}>
+            <div className="flex items-center gap-2">
+              {alert.type === 'success' ? <FiCheckCircle className="h-5 w-5" /> : <FiAlertCircle className="h-5 w-5" />}
+              <span className="text-sm">{alert.message}</span>
             </div>
+            <button onClick={() => setAlert(null)} className="text-gray-400 hover:text-gray-600">
+              <FiX className="h-4 w-4" />
+            </button>
           </div>
-        </div>
-      ) : (
-        <div className="row g-3">
-          {templates.map((template) => (
-            <div key={template.id} className="col-md-6 col-lg-4">
-              <div className="card shadow-none border h-100">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="flex-grow-1">
-                      <h6 className="mb-2 text-truncate" title={template.name}>
+        )}
+
+        {/* Templates List */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+            <p className="text-gray-500 text-sm">Loading templates...</p>
+          </div>
+        ) : templates.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-8 text-center">
+            <FiSettings className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-midnight_text mb-1">No Templates Yet</h3>
+            <p className="text-sm text-gray-500 mb-4">Create your first AI interview template to get started</p>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
+            >
+              <FiPlus className="h-4 w-4" />
+              Create Template
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {templates.map((template) => (
+              <div key={template.id} className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow hover:shadow-property transition-all">
+                <div className="p-4">
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-midnight_text truncate" title={template.name}>
                         {template.name}
-                      </h6>
-                      <div className="d-flex flex-wrap gap-2">
-                        <span className="badge bg-primary-subtle text-primary text-capitalize">
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium capitalize ${getInterviewTypeColor(template.interview_type)}`}>
                           {template.interview_type}
                         </span>
-                        <span
-                          className={`badge ${getDifficultyColor(
-                            template.difficulty
-                          )} text-capitalize`}
-                        >
+                        <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium capitalize ${getDifficultyColor(template.difficulty)}`}>
                           {template.difficulty}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mb-3">
-                    <div className="d-flex align-items-center gap-2 text-sm text-secondary-light mb-2">
-                      <ClipboardList size={16} />
+                  {/* Details */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <FiClipboard className="h-4 w-4" />
                       <span>{template.questions?.length || 0} Questions</span>
                     </div>
                     {template.time_limit && (
-                      <div className="d-flex align-items-center gap-2 text-sm text-secondary-light">
-                        <Clock size={16} />
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <FiClock className="h-4 w-4" />
                         <span>{template.time_limit} minutes</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Questions Preview */}
+                  {/* Preview */}
                   {template.questions && template.questions.length > 0 && (
                     <div className="mb-3">
-                      <p className="text-xs text-secondary-light mb-2">Preview:</p>
-                      <div className="bg-neutral-50 p-2 rounded">
-                        <p className="text-xs mb-0 text-truncate">
+                      <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                      <div className="bg-gray-50 rounded-lg p-2">
+                        <p className="text-xs text-gray-600 truncate">
                           {template.questions[0].q}
                         </p>
                       </div>
@@ -348,204 +334,201 @@ const ConfigureAIInterview = () => {
                   )}
 
                   {/* Interview Link */}
-                  <div className="mb-3 p-2 bg-info-subtle rounded">
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <Link size={14} className="text-info" />
-                      <span className="text-xs fw-semibold text-info">Interview Link</span>
+                  <div className="mb-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FiLink className="h-3 w-3 text-primary" />
+                      <span className="text-xs font-semibold text-primary">Interview Link</span>
                     </div>
                     <button
                       onClick={() => copyInterviewLink(template.id, template.name)}
-                      className="btn btn-sm btn-info w-100 d-flex align-items-center justify-content-center"
-                      title="Copy interview link with this template"
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-primary/30 hover:bg-primary/5 text-primary rounded-md text-xs font-medium transition-all"
                     >
-                      <Copy size={14} className="me-1" />
+                      <FiCopy className="h-3 w-3" />
                       Copy Link
                     </button>
                   </div>
 
-                  <div className="d-flex gap-2">
+                  {/* Actions */}
+                  <div className="flex gap-2">
                     <button
                       onClick={() => openEditModal(template)}
-                      className="btn btn-sm btn-outline-primary flex-fill d-inline-flex align-items-center justify-content-center"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 hover:border-primary/50 text-gray-600 hover:text-primary rounded-lg text-sm font-medium transition-all"
                     >
-                      <Edit size={14} className="me-1" />
+                      <FiEdit2 className="h-4 w-4" />
                       Edit
                     </button>
                     <button
                       onClick={() => deleteTemplate(template.id)}
-                      className="btn btn-sm btn-outline-danger flex-fill d-inline-flex align-items-center justify-content-center"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 hover:border-rose-500/50 text-gray-600 hover:text-rose-600 rounded-lg text-sm font-medium transition-all"
                     >
-                      <Trash2 size={14} className="me-1" />
+                      <FiTrash2 className="h-4 w-4" />
                       Delete
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Create/Edit Template Modal */}
-      {showModal && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setShowModal(false)}>
-          <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editingTemplate ? 'Edit' : 'Create'} Interview Template
-                </h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                {/* Template Name */}
-                <div className="mb-3">
-                  <label className="form-label">Template Name *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g., Senior Developer Interview"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                  />
-                </div>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingTemplate ? 'Edit Interview Template' : 'Create Interview Template'}
+        size="lg"
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+          {/* Template Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Template Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Senior Developer Interview"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            />
+          </div>
 
-                {/* Interview Type */}
-                <div className="mb-3">
-                  <label className="form-label">Interview Type *</label>
-                  <select
-                    className="form-select"
-                    value={formData.interview_type}
-                    onChange={(e) => handleInputChange('interview_type', e.target.value)}
-                  >
-                    <option value="technical">Technical</option>
-                    <option value="behavioral">Behavioral</option>
-                    <option value="hr">HR</option>
-                    <option value="mixed">Mixed</option>
-                  </select>
-                </div>
+          {/* Interview Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Interview Type <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={formData.interview_type}
+              onChange={(e) => handleInputChange('interview_type', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+            >
+              <option value="technical">Technical</option>
+              <option value="behavioral">Behavioral</option>
+              <option value="hr">HR</option>
+              <option value="mixed">Mixed</option>
+            </select>
+          </div>
 
-                {/* Difficulty */}
-                <div className="mb-3">
-                  <label className="form-label">Difficulty Level</label>
-                  <select
-                    className="form-select"
-                    value={formData.difficulty}
-                    onChange={(e) => handleInputChange('difficulty', e.target.value)}
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
+          {/* Difficulty */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Level</label>
+            <select
+              value={formData.difficulty}
+              onChange={(e) => handleInputChange('difficulty', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+            >
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
 
-                {/* Time Limit */}
-                <div className="mb-3">
-                  <label className="form-label">Time Limit (minutes)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min="5"
-                    max="120"
-                    value={formData.time_limit}
-                    onChange={(e) => handleInputChange('time_limit', parseInt(e.target.value))}
-                  />
-                </div>
+          {/* Time Limit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Time Limit (minutes)</label>
+            <input
+              type="number"
+              min="5"
+              max="120"
+              value={formData.time_limit}
+              onChange={(e) => handleInputChange('time_limit', parseInt(e.target.value))}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            />
+          </div>
 
-                {/* Questions */}
-                <div className="mb-3">
-                  <label className="form-label">Questions</label>
+          {/* Questions */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Questions <span className="text-rose-500">*</span>
+            </label>
 
-                  {/* Question List */}
-                  {formData.questions.length > 0 && (
-                    <div className="mb-3">
-                      {formData.questions.map((q, idx) => (
-                        <div key={idx} className="bg-neutral-50 p-3 rounded mb-2">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div className="flex-grow-1">
-                              <p className="mb-1 fw-medium">{idx + 1}. {q.q}</p>
-                              {q.a && (
-                                <p className="text-sm text-secondary-light mb-0">
-                                  Sample Answer: {q.a}
-                                </p>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => removeQuestion(idx)}
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add Question Form */}
-                  <div className="card border">
-                    <div className="card-body">
-                      <h6 className="mb-3">Add Question</h6>
-                      <div className="mb-3">
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Enter question..."
-                          value={newQuestion.q}
-                          onChange={(e) => setNewQuestion({ ...newQuestion, q: e.target.value })}
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <textarea
-                          className="form-control"
-                          rows="2"
-                          placeholder="Sample answer (optional)..."
-                          value={newQuestion.a}
-                          onChange={(e) => setNewQuestion({ ...newQuestion, a: e.target.value })}
-                        />
+            {/* Question List */}
+            {formData.questions.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {formData.questions.map((q, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-midnight_text mb-1">
+                          {idx + 1}. {q.q}
+                        </p>
+                        {q.a && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            <span className="font-medium">Sample Answer:</span> {q.a}
+                          </p>
+                        )}
                       </div>
                       <button
-                        type="button"
-                        className="btn btn-sm btn-outline-primary d-flex align-items-center"
-                        onClick={addQuestion}
-                        disabled={!newQuestion.q.trim()}
+                        onClick={() => removeQuestion(idx)}
+                        className="p-1 text-gray-400 hover:text-rose-500 rounded-lg transition-colors"
                       >
-                        <Plus size={14} className="me-1" />
-                        Add Question
+                        <FiTrash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-              <div className="modal-footer">
+            )}
+
+            {/* Add Question Form */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <h6 className="text-sm font-semibold text-midnight_text mb-3 flex items-center gap-2">
+                <FiMessageSquare className="h-4 w-4 text-primary" />
+                Add Question
+              </h6>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Enter question..."
+                  value={newQuestion.q}
+                  onChange={(e) => setNewQuestion({ ...newQuestion, q: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                <textarea
+                  rows="2"
+                  placeholder="Sample answer (optional)..."
+                  value={newQuestion.a}
+                  onChange={(e) => setNewQuestion({ ...newQuestion, a: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
                 <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
+                  onClick={addQuestion}
+                  disabled={!newQuestion.q.trim()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 hover:border-primary/50 text-gray-600 hover:text-primary rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary d-flex align-items-center"
-                  onClick={saveTemplate}
-                  disabled={!formData.name.trim() || formData.questions.length === 0}
-                >
-                  <Save size={18} className="me-2" />
-                  {editingTemplate ? 'Update' : 'Create'} Template
+                  <FiPlus className="h-4 w-4" />
+                  Add Question
                 </button>
               </div>
             </div>
+
+            {formData.questions.length === 0 && (
+              <p className="text-xs text-amber-600 mt-2">At least one question is required</p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveTemplate}
+              disabled={!formData.name.trim() || formData.questions.length === 0}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiSave className="h-4 w-4" />
+              {editingTemplate ? 'Update' : 'Create'} Template
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };
 
 export default ConfigureAIInterview;
-
-

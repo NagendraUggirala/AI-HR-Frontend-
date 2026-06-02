@@ -1,8 +1,30 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, Calendar, Clock, TrendingUp, Award, Download, Filter, Eye, ArrowUp, ArrowDown, CalendarCheck, Timer, Target, Trophy, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { 
+  FiUsers, 
+  FiCalendar, 
+  FiClock, 
+  FiTrendingUp, 
+  FiAward, 
+  FiDownload, 
+  FiFilter, 
+  FiEye, 
+  FiArrowUp, 
+  FiArrowDown, 
+  FiTarget, 
+  FiX, 
+  FiRefreshCw, 
+  FiAlertCircle,
+  FiChevronLeft,
+  FiChevronRight,
+  FiUser,
+  FiBarChart2,
+  FiPieChart
+} from 'react-icons/fi';
 import { BASE_URL } from "../../../shared/constants/api.config";
+import Modal from '../../../shared/components/Modal';
+import { FaTrophy } from 'react-icons/fa';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -22,6 +44,8 @@ export default function RecruiterPerformance() {
   const [selectedRecruiterDetails, setSelectedRecruiterDetails] = useState(null);
   const [sortBy, setSortBy] = useState('hires');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Fetch all data from backend
   const fetchData = async () => {
@@ -37,7 +61,6 @@ export default function RecruiterPerformance() {
       setRefreshing(true);
       setError(null);
 
-      // Fetch recruiters (users with recruiter role)
       const recruitersResponse = await fetch(`${BASE_URL}/api/admin/users`, {
         method: 'GET',
         headers: {
@@ -54,7 +77,6 @@ export default function RecruiterPerformance() {
         setRecruiters(recruiterUsers);
       }
 
-      // Fetch jobs
       const jobsResponse = await fetch(`${BASE_URL}/api/jobs/list`, {
         method: 'GET',
         headers: {
@@ -68,7 +90,6 @@ export default function RecruiterPerformance() {
         setJobs(Array.isArray(jobsData) ? jobsData : []);
       }
 
-      // Fetch candidates
       const candidatesResponse = await fetch(`${BASE_URL}/api/recruiter_dashboard/candidates`, {
         method: 'GET',
         headers: {
@@ -95,7 +116,6 @@ export default function RecruiterPerformance() {
     fetchData();
   }, []);
 
-  // Calculate date range filter
   const getDateFilter = () => {
     const days = parseInt(dateRange);
     if (days) {
@@ -106,7 +126,6 @@ export default function RecruiterPerformance() {
     return null;
   };
 
-  // Calculate recruiter performance metrics
   const recruiterPerformanceData = useMemo(() => {
     if (!recruiters.length || !jobs.length || !candidates.length) {
       return [];
@@ -115,16 +134,13 @@ export default function RecruiterPerformance() {
     const startDate = getDateFilter();
     
     return recruiters.map(recruiter => {
-      // Get jobs for this recruiter
       const recruiterJobs = jobs.filter(job => 
         job.recruiter_id === recruiter.id || 
         (job.recruiter && job.recruiter.id === recruiter.id)
       );
 
-      // Get job IDs
       const jobIds = recruiterJobs.map(job => job.id);
 
-      // Filter candidates by recruiter's jobs and date range
       let recruiterCandidates = candidates.filter(candidate => 
         jobIds.includes(candidate.job_id) || 
         (candidate.job && jobIds.includes(candidate.job.id))
@@ -137,7 +153,6 @@ export default function RecruiterPerformance() {
         });
       }
 
-      // Filter by job role if selected
       if (jobRole !== 'all') {
         recruiterCandidates = recruiterCandidates.filter(candidate => {
           const candidateJob = recruiterJobs.find(j => j.id === (candidate.job_id || candidate.job?.id));
@@ -145,7 +160,6 @@ export default function RecruiterPerformance() {
         });
       }
 
-      // Calculate metrics
       const candidatesAdded = recruiterCandidates.length;
       const interviewsScheduled = recruiterCandidates.filter(c => 
         c.stage === 'Interview' || c.stage === 'Offer' || c.stage === 'Hired'
@@ -154,7 +168,6 @@ export default function RecruiterPerformance() {
       const hiredCandidates = recruiterCandidates.filter(c => c.stage === 'Hired');
       const hires = hiredCandidates.length;
 
-      // Calculate time to hire (average days from application to hire)
       let timeToHire = 0;
       if (hiredCandidates.length > 0) {
         const timeToHireValues = hiredCandidates
@@ -172,13 +185,11 @@ export default function RecruiterPerformance() {
         }
       }
 
-      // Calculate offer acceptance rate
       const offersSent = recruiterCandidates.filter(c => c.stage === 'Offer' || c.stage === 'Hired').length;
       const offerAcceptanceRate = offersSent > 0 
         ? Math.round((hires / offersSent) * 100) 
         : 0;
 
-      // Pipeline data
       const pipelineData = {
         applied: recruiterCandidates.filter(c => c.stage === 'Applied' || !c.stage).length,
         screening: recruiterCandidates.filter(c => c.stage === 'Screening').length,
@@ -187,7 +198,6 @@ export default function RecruiterPerformance() {
         hired: hires
       };
 
-      // Monthly hires (last 4 months)
       const monthlyHires = [];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const now = new Date();
@@ -237,10 +247,9 @@ export default function RecruiterPerformance() {
         pipelineData,
         monthlyHires
       };
-    }).filter(r => r.candidatesAdded > 0); // Only show recruiters with candidates
+    }).filter(r => r.candidatesAdded > 0);
   }, [recruiters, jobs, candidates, dateRange, jobRole]);
 
-  // Filter and sort data
   const filteredData = useMemo(() => {
     let data = [...recruiterPerformanceData];
     
@@ -248,7 +257,6 @@ export default function RecruiterPerformance() {
       data = data.filter(r => r.id === parseInt(selectedRecruiter));
     }
 
-    // Sort data
     data.sort((a, b) => {
       const aVal = a[sortBy] || 0;
       const bVal = b[sortBy] || 0;
@@ -258,15 +266,21 @@ export default function RecruiterPerformance() {
     return data;
   }, [recruiterPerformanceData, selectedRecruiter, sortBy, sortOrder]);
 
-  // Calculate total metrics
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentData = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
+  };
+
   const totalMetrics = useMemo(() => {
     if (filteredData.length === 0) {
-      return {
-        activeJobs: 0,
-        avgTimeToHire: 0,
-        applicationsThisWeek: 0,
-        totalHires: 0
-      };
+      return { activeJobs: 0, avgTimeToHire: 0, applicationsThisWeek: 0, totalHires: 0 };
     }
 
     const activeJobs = jobs.filter(job => 
@@ -286,15 +300,9 @@ export default function RecruiterPerformance() {
 
     const totalHires = filteredData.reduce((sum, r) => sum + (r.hires || 0), 0);
 
-    return {
-      activeJobs,
-      avgTimeToHire,
-      applicationsThisWeek,
-      totalHires
-    };
+    return { activeJobs, avgTimeToHire, applicationsThisWeek, totalHires };
   }, [filteredData, jobs, candidates]);
 
-  // Get unique job roles for filter
   const uniqueJobRoles = useMemo(() => {
     const roles = new Set();
     jobs.forEach(job => {
@@ -303,7 +311,6 @@ export default function RecruiterPerformance() {
     return Array.from(roles).sort();
   }, [jobs]);
 
-  // Chart data
   const barChartData = useMemo(() => filteredData.map(r => ({
     name: r.name.split(' ')[0],
     candidates: r.candidatesAdded,
@@ -340,10 +347,9 @@ export default function RecruiterPerformance() {
 
   const getSortIcon = (field) => {
     if (sortBy !== field) return null;
-    return sortOrder === 'desc' ? <ArrowDown size={14} /> : <ArrowUp size={14} />;
+    return sortOrder === 'desc' ? <FiArrowDown className="h-3 w-3 inline ml-1" /> : <FiArrowUp className="h-3 w-3 inline ml-1" />;
   };
 
-  // Export functions
   const exportRecruiterDetails = (details) => {
     if (!details) return;
     const csvEscape = (val) => {
@@ -359,18 +365,6 @@ export default function RecruiterPerformance() {
     parts.push(['Avg Time To Hire (days)', details.timeToHire].map(csvEscape).join(','));
     parts.push(['Offer Acceptance Rate (%)', details.offerAcceptanceRate].map(csvEscape).join(','));
     parts.push(['Hires', details.hires].map(csvEscape).join(','));
-
-    parts.push('');
-    parts.push('Pipeline Stage,Count');
-    Object.entries(details.pipelineData).forEach(([stage, count]) => {
-      parts.push([stage, count].map(csvEscape).join(','));
-    });
-
-    parts.push('');
-    parts.push('Month,Hires,TimeToHire');
-    (details.monthlyHires || []).forEach(m => {
-      parts.push([m.month, m.hires, m.timeToHire].map(csvEscape).join(','));
-    });
 
     const csv = parts.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -394,14 +388,11 @@ export default function RecruiterPerformance() {
     const parts = [];
     parts.push(`Filters,Date Range=${dateRange},Recruiter=${selectedRecruiter},JobRole=${jobRole}`);
     parts.push('');
-
     parts.push('Summary,Value');
     parts.push(['Total Recruiters', filteredData.length].map(csvEscape).join(','));
     parts.push(['Total Candidates (sum)', filteredData.reduce((s, r) => s + r.candidatesAdded, 0)].map(csvEscape).join(','));
-    parts.push(['Total Interviews (sum)', filteredData.reduce((s, r) => s + r.interviewsScheduled, 0)].map(csvEscape).join(','));
     parts.push(['Total Hires (sum)', filteredData.reduce((s, r) => s + r.hires, 0)].map(csvEscape).join(','));
     parts.push('');
-
     parts.push('Recruiter,Candidates,Interviews,TimeToHire,OfferAcceptanceRate,Hires');
     filteredData.forEach(r => {
       parts.push([
@@ -413,17 +404,6 @@ export default function RecruiterPerformance() {
         r.hires
       ].map(csvEscape).join(','));
     });
-
-    parts.push('');
-    parts.push('Pipeline Stage,Count');
-    const pipelineTotals = {
-      applied: filteredData.reduce((s, r) => s + (r.pipelineData?.applied || 0), 0),
-      screening: filteredData.reduce((s, r) => s + (r.pipelineData?.screening || 0), 0),
-      interview: filteredData.reduce((s, r) => s + (r.pipelineData?.interview || 0), 0),
-      offer: filteredData.reduce((s, r) => s + (r.pipelineData?.offer || 0), 0),
-      hired: filteredData.reduce((s, r) => s + (r.pipelineData?.hired || 0), 0)
-    };
-    Object.entries(pipelineTotals).forEach(([k, v]) => parts.push([k, v].map(csvEscape).join(',')));
 
     const csv = parts.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -440,26 +420,21 @@ export default function RecruiterPerformance() {
 
   if (loading) {
     return (
-      <div className="container-fluid py-4">
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-          <div className="text-center">
-            <RefreshCw className="h-8 w-8 animate-spin text-primary mb-3" />
-            <p className="text-secondary-light">Loading recruiter performance data...</p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[500px] px-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+        <p className="text-gray-500 text-sm">Loading recruiter performance data...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger d-flex align-items-center">
-          <AlertCircle className="h-5 w-5 me-2" />
-          <div>
-            <strong>Error:</strong> {error}
-          </div>
-          <button className="btn btn-sm btn-outline-danger ms-auto" onClick={fetchData}>
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-lg p-4 text-rose-700">
+          <FiAlertCircle className="h-5 w-5 text-rose-500 flex-shrink-0" />
+          <div className="flex-1 text-sm">{error}</div>
+          <button onClick={fetchData} className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-medium transition-all">
+            <FiRefreshCw className="h-4 w-4" />
             Retry
           </button>
         </div>
@@ -468,108 +443,91 @@ export default function RecruiterPerformance() {
   }
 
   return (
-    <div className="container-fluid py-4">
-      {/* Page Header - aligned like JobList/CreateJob */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Users className="text-black" size={24} />
-            Recruiter Performance
-          </h4>
-          <p className="text-secondary mb-0 mt-1">
-            Track performance and efficiency of recruiters.
-          </p>
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated:{' '}
-            <span className="fw-medium text-body">
-              {new Date().toLocaleDateString()}
-            </span>
-          </span>
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiUsers className="text-gray-700 text-xl sm:text-2xl" />
+              Recruiter Performance
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Track performance and efficiency of recruiters</p>
+          </div>
           <button
             onClick={fetchData}
-            className="btn refresh-btn d-inline-flex align-items-center gap-2"
             disabled={refreshing}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all w-full sm:w-auto"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <FiRefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
-      </div>
 
-      {/* KPI Summary - kpi-row layout like JobList */}
-      <div className="kpi-row mb-4">
-        {[
-          {
-            title: 'Active Jobs',
-            value: totalMetrics.activeJobs,
-            sub: 'Open or active',
-            icon: Target,
-            bg: 'kpi-primary',
-            color: 'kpi-primary-text'
-          },
-          {
-            title: 'Avg. Time-to-Hire',
-            value: `${totalMetrics.avgTimeToHire} days`,
-            sub: 'Across selected range',
-            icon: Timer,
-            bg: 'kpi-info',
-            color: 'kpi-info-text'
-          },
-          {
-            title: 'Applications This Week',
-            value: totalMetrics.applicationsThisWeek,
-            sub: 'Last 7 days',
-            icon: CalendarCheck,
-            bg: 'kpi-success',
-            color: 'kpi-success-text'
-          },
-          {
-            title: 'Total Hires',
-            value: totalMetrics.totalHires,
-            sub: 'In current view',
-            icon: Trophy,
-            bg: 'kpi-warning',
-            color: 'kpi-warning-text'
-          }
-        ].map((item, index) => {
-          const IconComp = item.icon;
-          return (
-            <div className="kpi-col" key={index}>
-              <div className="kpi-card">
-                <div className="kpi-card-body">
-                  <div className={`kpi-icon ${item.bg}`}>
-                    <IconComp className={`kpi-icon-style ${item.color}`} size={18} />
-                  </div>
-                  <div className="kpi-content">
-                    <div className="kpi-title">{item.title}</div>
-                    <div className="kpi-value">{item.value}</div>
-                    {item.sub && <div className="kpi-sub text-muted">{item.sub}</div>}
-                  </div>
-                </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Active Jobs</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{totalMetrics.activeJobs}</p>
+                <p className="text-xs text-gray-400 mt-1">Open or active</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FiTarget className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* Filters - structured like JobList filters */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-header bg-transparent border-bottom py-3">
-          <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-            <Filter className="text-secondary-light" size={16} />
-            Filters
-          </h6>
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Avg. Time-to-Hire</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{totalMetrics.avgTimeToHire} days</p>
+                <p className="text-xs text-gray-400 mt-1">Across selected range</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <FiClock className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Applications This Week</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{totalMetrics.applicationsThisWeek}</p>
+                <p className="text-xs text-gray-400 mt-1">Last 7 days</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <FiCalendar className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Total Hires</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{totalMetrics.totalHires}</p>
+                <p className="text-xs text-gray-400 mt-1">In current view</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                <FaTrophy className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="card-body">
-          <div className="row g-3 align-items-end">
-            <div className="col-12 col-md-4 col-lg-3">
-              <label className="form-label small text-muted mb-1">Date range</label>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Date range</label>
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="form-select"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
               >
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
@@ -577,12 +535,12 @@ export default function RecruiterPerformance() {
                 <option value="180">Last 6 months</option>
               </select>
             </div>
-            <div className="col-12 col-md-4 col-lg-3">
-              <label className="form-label small text-muted mb-1">Recruiter</label>
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Recruiter</label>
               <select
                 value={selectedRecruiter}
                 onChange={(e) => setSelectedRecruiter(e.target.value)}
-                className="form-select"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
               >
                 <option value="all">All Recruiters</option>
                 {recruiterPerformanceData.map((recruiter) => (
@@ -592,205 +550,186 @@ export default function RecruiterPerformance() {
                 ))}
               </select>
             </div>
-            <div className="col-12 col-md-4 col-lg-3">
-              <label className="form-label small text-muted mb-1">Job role</label>
+            <div>
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Job role</label>
               <select
                 value={jobRole}
                 onChange={(e) => setJobRole(e.target.value)}
-                className="form-select"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
               >
                 <option value="all">All Job Roles</option>
                 {uniqueJobRoles.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
+                  <option key={role} value={role}>{role}</option>
                 ))}
               </select>
             </div>
-            <div className="col-12 col-lg-3 d-flex justify-content-lg-end">
+            <div className="flex items-end">
               <button
-                className="sync-btn d-inline-flex align-items-center gap-2 w-100 w-lg-auto justify-content-center"
                 onClick={exportReport}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
               >
-                <Download size={16} />
-                <span>Export Report</span>
+                <FiDownload className="h-4 w-4" />
+                Export Report
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {filteredData.length === 0 ? (
-        <div className="card border shadow-none">
-          <div className="card-body text-center py-5">
-            <Users className="h-16 w-16 text-gray-300 mx-auto mb-3" />
-            <h6 className="mb-2">No Data Available</h6>
-            <p className="text-secondary-light mb-0">
-              No recruiter performance data found for the selected filters.
-            </p>
+        {filteredData.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-8 text-center">
+            <FiUsers className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-midnight_text mb-1">No Data Available</h3>
+            <p className="text-sm text-gray-500">No recruiter performance data found for the selected filters.</p>
           </div>
-        </div>
-      ) : (
-        <>
-          {/* Charts */}
-          <div className="row g-3 mb-4">
-            <div className="col-12 col-lg-6">
-              <div className="card border shadow-none h-100">
-                <div className="card-body p-24">
-                  <h6 className="mb-3">Candidates Processed by Recruiter</h6>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={barChartData}>
+        ) : (
+          <>
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <h6 className="font-semibold text-midnight_text mb-3">Candidates Processed by Recruiter</h6>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={barChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="candidates" fill="#3b82f6" name="Candidates" />
+                    <Bar dataKey="interviews" fill="#10b981" name="Interviews" />
+                    <Bar dataKey="hires" fill="#f59e0b" name="Hires" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <h6 className="font-semibold text-midnight_text mb-3">Time-to-Hire Trend</h6>
+                {timeToHireData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={timeToHireData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
+                      <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="candidates" fill="#3b82f6" name="Candidates" />
-                      <Bar dataKey="interviews" fill="#10b981" name="Interviews" />
-                      <Bar dataKey="hires" fill="#f59e0b" name="Hires" />
-                    </BarChart>
+                      <Line type="monotone" dataKey="timeToHire" stroke="#3b82f6" strokeWidth={2} name="Time to Hire (days)" />
+                    </LineChart>
                   </ResponsiveContainer>
-                </div>
+                ) : (
+                  <div className="text-center text-gray-400 py-8">No time-to-hire data available</div>
+                )}
               </div>
-            </div>
-            <div className="col-12 col-lg-6">
-              <div className="card border shadow-none h-100">
-                <div className="card-body p-24">
-                  <h6 className="mb-3">Time-to-Hire Trend</h6>
-                  {timeToHireData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={200}>
-                      <LineChart data={timeToHireData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="timeToHire" stroke="#3b82f6" strokeWidth={2} name="Time to Hire (days)" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="text-center text-secondary-light py-4">No time-to-hire data available</div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-lg-6">
-              <div className="card border shadow-none h-100">
-                <div className="card-body p-24">
-                  <h6 className="mb-3">Pipeline Distribution</h6>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie 
-                        data={pipelineData} 
-                        cx="50%" 
-                        cy="50%" 
-                        labelLine={false} 
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} 
-                        outerRadius={60} 
-                        dataKey="value"
-                      >
-                        {pipelineData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-lg-6">
-              <div className="card border shadow-none h-100">
-                <div className="card-body p-24">
-                  <h6 className="mb-3">Top Performers</h6>
-                  <div className="d-grid gap-2">
-                    {filteredData.slice(0, 3).map((recruiter, index) => (
-                      <div key={recruiter.id} className="d-flex align-items-center gap-2">
-                        <span className="w-24-px h-24-px bg-primary-600 text-white rounded-circle d-flex justify-content-center align-items-center text-xs fw-bold">{index + 1}</span>
-                        <div className="flex-grow-1 text-truncate">
-                          <div className="fw-medium text-sm text-truncate">{recruiter.name}</div>
-                          <div className="text-xs text-secondary-light">{recruiter.hires} hires • {recruiter.timeToHire}d avg</div>
-                        </div>
-                        <div className="text-end">
-                          <div className="fw-semibold text-success text-sm">{recruiter.offerAcceptanceRate}%</div>
-                          <div className="text-xs text-secondary-light">accept</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Recruiter Comparison Table */}
-          <div className="card border shadow-sm">
-            <div className="card-header bg-white border-bottom">
-              <h6 className="mb-0">Recruiter Comparison</h6>
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <h6 className="font-semibold text-midnight_text mb-3">Pipeline Distribution</h6>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie 
+                      data={pipelineData} 
+                      cx="50%" 
+                      cy="50%" 
+                      labelLine={false} 
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} 
+                      outerRadius={80} 
+                      dataKey="value"
+                    >
+                      {pipelineData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+                <h6 className="font-semibold text-midnight_text mb-3">Top Performers</h6>
+                <div className="space-y-2">
+                  {filteredData.slice(0, 3).map((recruiter, index) => (
+                    <div key={recruiter.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-midnight_text truncate">{recruiter.name}</p>
+                        <p className="text-xs text-gray-500">{recruiter.hires} hires • {recruiter.timeToHire}d avg</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-emerald-600">{recruiter.offerAcceptanceRate}%</p>
+                        <p className="text-xs text-gray-400">accept</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="card-body p-0">
-              <div className="table-responsive">
-                <table className="table table-hover mb-0">
-                  <thead className="table-light">
+
+            {/* Recruiter Comparison Table */}
+            <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/30">
+                <h6 className="font-semibold text-midnight_text">Recruiter Comparison</h6>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
-                      <th className="text-start fw-semibold">Recruiter</th>
-                      <th className="text-center fw-semibold" onClick={() => handleSort('candidatesAdded')} style={{cursor:'pointer'}}>
+                      <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Recruiter</th>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3 cursor-pointer" onClick={() => handleSort('candidatesAdded')}>
                         Candidates Added {getSortIcon('candidatesAdded')}
                       </th>
-                      <th className="text-center fw-semibold" onClick={() => handleSort('interviewsScheduled')} style={{cursor:'pointer'}}>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3 cursor-pointer" onClick={() => handleSort('interviewsScheduled')}>
                         Interviews {getSortIcon('interviewsScheduled')}
                       </th>
-                      <th className="text-center fw-semibold" onClick={() => handleSort('hires')} style={{cursor:'pointer'}}>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3 cursor-pointer" onClick={() => handleSort('hires')}>
                         Hires {getSortIcon('hires')}
                       </th>
-                      <th className="text-center fw-semibold" onClick={() => handleSort('timeToHire')} style={{cursor:'pointer'}}>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3 cursor-pointer" onClick={() => handleSort('timeToHire')}>
                         Time-to-Hire {getSortIcon('timeToHire')}
                       </th>
-                      <th className="text-center fw-semibold" onClick={() => handleSort('offerAcceptanceRate')} style={{cursor:'pointer'}}>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3 cursor-pointer" onClick={() => handleSort('offerAcceptanceRate')}>
                         Offer % {getSortIcon('offerAcceptanceRate')}
                       </th>
-                      <th className="text-center fw-semibold">Actions</th>
+                      <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {filteredData.map((recruiter) => (
-                      <tr key={recruiter.id}>
-                        <td className="text-start">
-                          <div className="d-flex align-items-center gap-3">
-                            <div className="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center fw-bold" style={{width: '40px', height: '40px'}}>
+                  <tbody className="divide-y divide-gray-100">
+                    {currentData.map((recruiter) => (
+                      <tr key={recruiter.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
                               {recruiter.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
                             </div>
-                            <span className="fw-medium">{recruiter.name}</span>
+                            <span className="text-sm font-medium text-midnight_text">{recruiter.name}</span>
                           </div>
                         </td>
-                        <td className="text-center">
-                          <span className="fw-semibold">{recruiter.candidatesAdded}</span>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-semibold text-midnight_text">{recruiter.candidatesAdded}</span>
                         </td>
-                        <td className="text-center">
-                          <span className="fw-semibold">{recruiter.interviewsScheduled}</span>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-semibold text-midnight_text">{recruiter.interviewsScheduled}</span>
                         </td>
-                        <td className="text-center">
-                          <span className="badge bg-success-subtle text-success px-3 py-2 fw-semibold">
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700">
                             {recruiter.hires}
                           </span>
                         </td>
-                        <td className="text-center">
-                          <span className="fw-semibold">{recruiter.timeToHire} days</span>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-semibold text-midnight_text">{recruiter.timeToHire} days</span>
                         </td>
-                        <td className="text-center">
-                          <div className="d-flex align-items-center justify-content-center gap-2">
-                            <div className="bg-light rounded-pill" style={{width:'80px', height:'8px'}}>
-                              <div className="bg-primary rounded-pill" style={{width: `${recruiter.offerAcceptanceRate}%`, height:'8px'}}></div>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="flex-1 max-w-[80px] bg-gray-200 rounded-full h-2">
+                              <div className="bg-primary h-2 rounded-full" style={{ width: `${recruiter.offerAcceptanceRate}%` }} />
                             </div>
-                            <span className="fw-semibold small">{recruiter.offerAcceptanceRate}%</span>
+                            <span className="text-sm font-semibold text-midnight_text">{recruiter.offerAcceptanceRate}%</span>
                           </div>
                         </td>
-                        <td className="text-center">
+                        <td className="px-4 py-3 text-center">
                           <button 
                             onClick={() => setSelectedRecruiterDetails(recruiter)} 
-                            className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:text-primary hover:border-primary transition-all"
                           >
-                            <Eye size={14} /> View Details
+                            <FiEye className="h-3.5 w-3.5" /> View
                           </button>
                         </td>
                       </tr>
@@ -798,170 +737,197 @@ export default function RecruiterPerformance() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        </>
-      )}
 
-      {/* Recruiter Details Modal */}
-      {selectedRecruiterDetails && (
-        <>
-          <div className="modal d-block" tabIndex="-1" role="dialog" style={{zIndex: 1050}}>
-            <div className="modal-dialog modal-xl" role="document">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <div className="d-flex align-items-center gap-3">
-                    <span className="w-48-px h-48-px bg-primary-600 text-white rounded-circle d-flex justify-content-center align-items-center fw-bold">
-                      {selectedRecruiterDetails.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                    </span>
-                    <div>
-                      <h6 className="mb-0">{selectedRecruiterDetails.name}</h6>
-                      <div className="text-secondary-light">Recruiter Performance Details</div>
-                    </div>
-                  </div>
-                  <button type="button" className="btn-close" aria-label="Close" onClick={() => setSelectedRecruiterDetails(null)}></button>
+              {/* Pagination */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-gray-100 bg-gray-50/30">
+                <div className="text-xs text-gray-500">
+                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} recruiters
                 </div>
-                <div className="modal-body">
-                  <div className="row g-3 mb-3">
-                    <div className="col-6 col-md-4 col-xl-2">
-                      <div className="border rounded p-16 text-center h-100">
-                        <div className="h5 mb-0 text-primary-600">{selectedRecruiterDetails.candidatesAdded}</div>
-                        <div className="text-secondary-light text-sm">Candidates</div>
-                      </div>
-                    </div>
-                    <div className="col-6 col-md-4 col-xl-2">
-                      <div className="border rounded p-16 text-center h-100">
-                        <div className="h5 mb-0 text-success">{selectedRecruiterDetails.interviewsScheduled}</div>
-                        <div className="text-secondary-light text-sm">Interviews</div>
-                      </div>
-                    </div>
-                    <div className="col-6 col-md-4 col-xl-2">
-                      <div className="border rounded p-16 text-center h-100">
-                        <div className="h5 mb-0 text-warning">{selectedRecruiterDetails.timeToHire}</div>
-                        <div className="text-secondary-light text-sm">Days Avg</div>
-                      </div>
-                    </div>
-                    <div className="col-6 col-md-4 col-xl-2">
-                      <div className="border rounded p-16 text-center h-100">
-                        <div className="h5 mb-0 text-primary-600">{selectedRecruiterDetails.offerAcceptanceRate}%</div>
-                        <div className="text-secondary-light text-sm">Acceptance</div>
-                      </div>
-                    </div>
-                    <div className="col-6 col-md-4 col-xl-2">
-                      <div className="border rounded p-16 text-center h-100">
-                        <div className="h5 mb-0 text-success">{selectedRecruiterDetails.hires}</div>
-                        <div className="text-secondary-light text-sm">Hires</div>
-                      </div>
-                    </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 text-sm border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <FiChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-3 py-1 text-sm rounded-lg transition-all ${
+                          currentPage === page
+                            ? 'bg-primary text-white'
+                            : 'border border-gray-200 hover:bg-white'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    {totalPages > 3 && currentPage > 2 && (
+                      <span className="px-2 py-1 text-sm text-gray-500">...</span>
+                    )}
                   </div>
-
-                  <div className="row g-3 mb-3">
-                    <div className="col-12 col-lg-6">
-                      <div className="border rounded p-16 h-100">
-                        <h6 className="mb-3">Pipeline Breakdown</h6>
-                        <div className="d-grid gap-2">
-                          {Object.entries(selectedRecruiterDetails.pipelineData).map(([stage, count]) => {
-                            const percentage = selectedRecruiterDetails.candidatesAdded > 0
-                              ? Math.round((count / selectedRecruiterDetails.candidatesAdded) * 100)
-                              : 0;
-                            return (
-                              <div key={stage} className="d-flex align-items-center justify-content-between">
-                                <div className="d-flex align-items-center gap-2">
-                                  <span className="text-sm text-capitalize">{stage}:</span>
-                                  <div className="bg-neutral-200 rounded-pill" style={{width:'120px', height:'6px'}}>
-                                    <div className="bg-primary-600 rounded-pill" style={{width: `${percentage}%`, height:'6px'}}></div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <span className="fw-semibold">{count}</span>
-                                  <span className="text-secondary-light text-xs ms-1">({percentage}%)</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-12 col-lg-6">
-                      <div className="border rounded p-16 h-100">
-                        <h6 className="mb-3">Monthly Performance</h6>
-                        {selectedRecruiterDetails.monthlyHires && selectedRecruiterDetails.monthlyHires.length > 0 ? (
-                          <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={selectedRecruiterDetails.monthlyHires}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="month" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend />
-                              <Bar dataKey="hires" fill="#3b82f6" name="Hires" />
-                              <Bar dataKey="timeToHire" fill="#10b981" name="Time to Hire (days)" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <div className="text-center text-secondary-light py-4">No monthly data available</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border rounded p-16">
-                    <h6 className="mb-3">Performance Insights</h6>
-                    <div className="row g-2">
-                      <div className="col-12 col-md-6 d-grid gap-2">
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="w-8-px h-8-px rounded-circle bg-success"></span>
-                          <span className="text-sm">
-                            <strong>Conversion Rate:</strong> {
-                              selectedRecruiterDetails.candidatesAdded > 0
-                                ? Math.round((selectedRecruiterDetails.hires / selectedRecruiterDetails.candidatesAdded) * 100)
-                                : 0
-                            }% from candidates to hires
-                          </span>
-                        </div>
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="w-8-px h-8-px rounded-circle bg-primary-600"></span>
-                          <span className="text-sm">
-                            <strong>Interview Success:</strong> {
-                              selectedRecruiterDetails.interviewsScheduled > 0
-                                ? Math.round((selectedRecruiterDetails.hires / selectedRecruiterDetails.interviewsScheduled) * 100)
-                                : 0
-                            }% of interviews lead to hires
-                          </span>
-                        </div>
-                      </div>
-                      <div className="col-12 col-md-6 d-grid gap-2">
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="w-8-px h-8-px rounded-circle bg-warning"></span>
-                          <span className="text-sm">
-                            <strong>Efficiency:</strong> {
-                              selectedRecruiterDetails.timeToHire < 15 ? 'Above Average' : 
-                              selectedRecruiterDetails.timeToHire === 15 ? 'Average' : 'Below Average'
-                            } time-to-hire
-                          </span>
-                        </div>
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="w-8-px h-8-px rounded-circle bg-purple"></span>
-                          <span className="text-sm">
-                            <strong>Offer Success:</strong> {
-                              selectedRecruiterDetails.offerAcceptanceRate > 80 ? 'Excellent' : 
-                              selectedRecruiterDetails.offerAcceptanceRate > 70 ? 'Good' : 'Needs Improvement'
-                            } offer acceptance rate
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button className="btn btn-outline-secondary" onClick={() => setSelectedRecruiterDetails(null)}>Close</button>
-                  <button className="btn btn-primary" onClick={() => exportRecruiterDetails(selectedRecruiterDetails)}>Export Details</button>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 text-sm border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <FiChevronRight className="h-4 w-4" />
+                  </button>
+                  <select
+                    value={itemsPerPage}
+                    onChange={e => handleItemsPerPageChange(Number(e.target.value))}
+                    className="px-2 py-1 text-sm border border-gray-200 rounded-lg bg-white"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
                 </div>
               </div>
             </div>
+          </>
+        )}
+      </div>
+
+      {/* Recruiter Details Modal */}
+      <Modal
+        isOpen={!!selectedRecruiterDetails}
+        onClose={() => setSelectedRecruiterDetails(null)}
+        title="Recruiter Performance Details"
+        size="xl"
+      >
+        {selectedRecruiterDetails && (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold text-primary">{selectedRecruiterDetails.candidatesAdded}</div>
+                <div className="text-xs text-gray-500">Candidates</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold text-emerald-600">{selectedRecruiterDetails.interviewsScheduled}</div>
+                <div className="text-xs text-gray-500">Interviews</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold text-amber-600">{selectedRecruiterDetails.timeToHire}</div>
+                <div className="text-xs text-gray-500">Days Avg</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold text-primary">{selectedRecruiterDetails.offerAcceptanceRate}%</div>
+                <div className="text-xs text-gray-500">Acceptance</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold text-emerald-600">{selectedRecruiterDetails.hires}</div>
+                <div className="text-xs text-gray-500">Hires</div>
+              </div>
+            </div>
+
+            <div>
+              <h6 className="font-semibold text-midnight_text mb-3">Pipeline Breakdown</h6>
+              <div className="space-y-2">
+                {Object.entries(selectedRecruiterDetails.pipelineData).map(([stage, count]) => {
+                  const percentage = selectedRecruiterDetails.candidatesAdded > 0
+                    ? Math.round((count / selectedRecruiterDetails.candidatesAdded) * 100)
+                    : 0;
+                  return (
+                    <div key={stage} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm capitalize text-gray-600 w-20">{stage}:</span>
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[200px]">
+                          <div className="bg-primary h-2 rounded-full" style={{ width: `${percentage}%` }} />
+                        </div>
+                      </div>
+                      <div className="text-sm font-semibold text-midnight_text">
+                        {count} <span className="text-xs text-gray-500">({percentage}%)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {selectedRecruiterDetails.monthlyHires && selectedRecruiterDetails.monthlyHires.length > 0 && (
+              <div>
+                <h6 className="font-semibold text-midnight_text mb-3">Monthly Performance</h6>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={selectedRecruiterDetails.monthlyHires}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="hires" fill="#3b82f6" name="Hires" />
+                    <Bar dataKey="timeToHire" fill="#10b981" name="Time to Hire (days)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h6 className="font-semibold text-midnight_text mb-3">Performance Insights</h6>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <p className="text-sm text-gray-600">
+                    <strong>Conversion Rate:</strong> {
+                      selectedRecruiterDetails.candidatesAdded > 0
+                        ? Math.round((selectedRecruiterDetails.hires / selectedRecruiterDetails.candidatesAdded) * 100)
+                        : 0
+                    }% from candidates to hires
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <p className="text-sm text-gray-600">
+                    <strong>Interview Success:</strong> {
+                      selectedRecruiterDetails.interviewsScheduled > 0
+                        ? Math.round((selectedRecruiterDetails.hires / selectedRecruiterDetails.interviewsScheduled) * 100)
+                        : 0
+                    }% of interviews lead to hires
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <p className="text-sm text-gray-600">
+                    <strong>Efficiency:</strong> {
+                      selectedRecruiterDetails.timeToHire < 15 ? 'Above Average' : 
+                      selectedRecruiterDetails.timeToHire === 15 ? 'Average' : 'Below Average'
+                    } time-to-hire
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-purple-500" />
+                  <p className="text-sm text-gray-600">
+                    <strong>Offer Success:</strong> {
+                      selectedRecruiterDetails.offerAcceptanceRate > 80 ? 'Excellent' : 
+                      selectedRecruiterDetails.offerAcceptanceRate > 70 ? 'Good' : 'Needs Improvement'
+                    } offer acceptance rate
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3">
+              <button
+                onClick={() => setSelectedRecruiterDetails(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => exportRecruiterDetails(selectedRecruiterDetails)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-all"
+              >
+                <FiDownload className="h-4 w-4" />
+                Export Details
+              </button>
+            </div>
           </div>
-          <div className="modal-backdrop fade show"></div>
-        </>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

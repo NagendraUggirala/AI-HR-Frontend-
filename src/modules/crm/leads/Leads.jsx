@@ -2,7 +2,34 @@ import React, { useState, useEffect, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { leadsAPI } from "../../../shared/utils/api";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import {
+  FiFilter,
+  FiDownload,
+  FiFileText,
+  FiFile,
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiMail,
+  FiPhone,
+  FiMapPin,
+  FiDollarSign,
+  FiUser,
+  FiBriefcase,
+  FiTag,
+  FiEye,
+  FiEyeOff,
+  FiUsers,
+  FiGlobe,
+  FiStar,
+  FiChevronDown,
+  FiX,
+  FiAlertTriangle,
+  FiMoreVertical,
+  FiCheckCircle,
+  FiXCircle
+} from 'react-icons/fi';
+import Modal from '../../../shared/components/Modal';
 
 const initialKanbanState = {
   Contacted: { leads: [], count: 0, amount: "₹0" },
@@ -11,18 +38,13 @@ const initialKanbanState = {
   Lost: { leads: [], count: 0, amount: "₹0" },
 };
 
-// Helper function to format amount
 const formatAmount = (value) => {
   if (!value || value === 0) return "₹0";
-  const numValue =
-    typeof value === "string"
-      ? parseFloat(value.replace(/[₹,]/g, ""))
-      : value;
+  const numValue = typeof value === "string" ? parseFloat(value.replace(/[₹,]/g, "")) : value;
   if (isNaN(numValue)) return "₹0";
   return "₹" + numValue.toLocaleString("en-IN");
 };
 
-// Helper function to make initials
 const makeInitials = (name) => {
   if (!name) return "";
   const parts = name.trim().split(/\s+/);
@@ -33,62 +55,42 @@ const makeInitials = (name) => {
 const Leads = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
-  const [showAddCompanyModal, setShowAddCompanyModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [modalType, setModalType] = useState("add"); // 'add' or 'edit'
+  const [modalType, setModalType] = useState("add");
   const [selectedLead, setSelectedLead] = useState(null);
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [leadsData, setLeadsData] = useState([]);
   const [leadsKanban, setLeadsKanban] = useState(initialKanbanState);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [sortBy, setSortBy] = useState("Last 7 Days");
 
   const [formData, setFormData] = useState({
-    leadName: "",
-    leadType: "organization",
-    company: "",
-    value: "",
-    currency: "Select",
-    customCurrency: "",
-    phone: "",
-    email: "",
-    source: "",
-    customSource: "",
-    industry: "",
-    customIndustry: "",
-    owner: "",
-    customOwner: "",
-    tags: "",
-    description: "",
-    visibility: "private",
-    status: "Not Contacted",
+    leadName: "", leadType: "organization", company: "", location: "", value: "",
+    currency: "Select", customCurrency: "", phone: "", email: "", source: "", customSource: "",
+    industry: "", customIndustry: "", owner: "", customOwner: "", tags: "", description: "",
+    visibility: "private", status: "Not Contacted",
   });
 
-  // Stage configuration for Kanban board
   const statusConfig = [
-    { status: "Contacted", color: "warning", displayName: "Contacted" },
-    { status: "Not Contacted", color: "purple", displayName: "Not Contacted" },
-    { status: "Closed", color: "success", displayName: "Closed" },
-    { status: "Lost", color: "danger", displayName: "Lost" },
+    { status: "Contacted", color: "amber", displayName: "Contacted", icon: FiUser },
+    { status: "Not Contacted", color: "gray", displayName: "Not Contacted", icon: FiEyeOff },
+    { status: "Closed", color: "emerald", displayName: "Closed", icon: FiCheckCircle },
+    { status: "Lost", color: "rose", displayName: "Lost", icon: FiXCircle },
   ];
 
-  // Transform API leads data to Kanban structure
   const transformLeadsToKanban = useCallback((leads) => {
     if (!Array.isArray(leads)) return initialKanbanState;
-
     const kanban = {
       Contacted: { leads: [], count: 0, amount: 0 },
       "Not Contacted": { leads: [], count: 0, amount: 0 },
       Closed: { leads: [], count: 0, amount: 0 },
       Lost: { leads: [], count: 0, amount: 0 },
     };
-
     leads.forEach((lead) => {
-      // Backend returns "Not_Contacted"; Kanban uses "Not Contacted"
-      const status =
-        lead.status === "Not_Contacted"
-          ? "Not Contacted"
-          : lead.status || "Not Contacted";
+      const status = lead.status === "Not_Contacted" ? "Not Contacted" : lead.status || "Not Contacted";
       if (kanban[status]) {
         kanban[status].leads.push({
           ...lead,
@@ -96,21 +98,16 @@ const Leads = () => {
           value: formatAmount(lead.value),
         });
         kanban[status].count += 1;
-        // Parse value for total amount calculation
         const val = parseFloat(String(lead.value).replace(/[₹,]/g, "")) || 0;
         kanban[status].amount += val;
       }
     });
-
-    // Format amounts
     Object.keys(kanban).forEach((status) => {
       kanban[status].amount = formatAmount(kanban[status].amount);
     });
-
     return kanban;
   }, []);
 
-  // Load leads from API
   const loadLeads = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -119,167 +116,34 @@ const Leads = () => {
       if (Array.isArray(data)) {
         setLeadsData(data);
         setLeadsKanban(transformLeadsToKanban(data));
-      } else if (data === null || data === undefined) {
+      } else {
         setLeadsData([]);
         setLeadsKanban(initialKanbanState);
-      } else {
-        console.warn("API returned non-array data:", data);
-        setLeadsData([]);
       }
     } catch (err) {
       console.error("Error loading leads:", err);
-      const status =
-        err.status || (err.message && err.message.includes("404") ? 404 : null);
-      let errorMessage = "Failed to load leads. ";
-
-      if (
-        status === 404 ||
-        err.message?.includes("404") ||
-        err.message?.includes("Not Found")
-      ) {
-        errorMessage +=
-          "The leads API endpoint is not available. Please ensure the backend leads endpoint is implemented.";
-      } else if (err.message) {
-        errorMessage += err.message;
-      } else {
-        errorMessage += "Please check if the backend API is running.";
-      }
-
-      setError(errorMessage);
+      setError("Failed to load leads. Please try again later.");
     } finally {
       setLoading(false);
     }
   }, [transformLeadsToKanban]);
 
-  // Load leads from API on component mount
-  useEffect(() => {
-    loadLeads();
-  }, [loadLeads]);
+  useEffect(() => { loadLeads(); }, [loadLeads]);
 
-  const sampleLeadsData = [
-    {
-      name: "Linda Craver",
-      company: "BrightWave Innovations",
-      email: "linda@gmail.com",
-      phone: "(193) 7839 748",
-      location: "Austin, United States",
-      value: "₹03,50,000",
-      status: "Contacted",
-    },
-    {
-      name: "Chris Johnson",
-      company: "Stellar Dynamics",
-      email: "chris@gmail.com",
-      phone: "(162) 8920 713",
-      location: "Atlanta, United States",
-      value: "₹3,50,000",
-      status: "Contacted",
-    },
-    {
-      name: "Emily Johnson",
-      company: "Quantum Nexus",
-      email: "emily@gmail.com",
-      phone: "(179) 7382 829",
-      location: "Newyork, United States",
-      value: "₹3,50,000",
-      status: "Not Contacted",
-    },
-    {
-      name: "Maria Garcia",
-      company: "EcoVision Enterprises",
-      email: "maria@gmail.com",
-       location: "Denver, United States",
-      value: "₹4,10,000",
-      status: "Not Contacted",
-    },
-    {
-      name: "John Smith",
-      company: "Aurora Technologies",
-      email: "john@gmail.com",
-      phone: "(123) 4567 890",
-      location: "Chester, United Kingdom",
-      value: "₹3,20,000",
-      status: "Closed",
-    },
-    {
-      name: "David Lee",
-      company: "BluSky Ventures",
-      email: "david@gmail.com",
-      phone: "(183) 9302 890",
-      location: "Charlotte, United States",
-      value: "₹3,10,000",
-      status: "Closed",
-    },
-    {
-      name: "Robert Martinez",
-      company: "TerraFusion Energy",
-      email: "robert@gmail.com",
-      phone: "(163) 2459 315",
-      location: "Bristol, United Kingdom",
-      value: "₹4,50,000",
-      status: "Closed",
-    },
-    {
-      name: "Michael Brown",
-      company: "UrbanPulse Design",
-      email: "micael@gmail.com",
-      phone: "(184) 2719 738",
-      location: "London, United Kingdom",
-      value: "₹4,10,000",
-      status: "Lost",
-    },
-    {
-      name: "Karen Davis",
-      company: "Nimbus Networks",
-      email: "darleeo@gmail.com",
-      phone: "(163) 2459 315",
-      location: "Detroit, United States",
-      value: "₹4,00,000",
-      status: "Lost",
-    },
-    {
-      name: "James Anderson",
-      company: "Epicurean Delights",
-      email: "james@gmail.com",
-      phone: "(168) 8392 823",
-      location: "Manchester, United Kingdom",
-      value: "₹3,40,000",
-      status: "Lost",
-    },
-  ];
-
-  // Handle form input change
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Reset form to initial state
   const resetForm = () => {
     setFormData({
-      leadName: "",
-      leadType: "organization",
-      company: "",
-      location: "",
-      value: "",
-      currency: "Select",
-      customCurrency: "",
-      phone: "",
-      email: "",
-      source: "",
-      customSource: "",
-      industry: "",
-      customIndustry: "",
-      owner: "",
-      customOwner: "",
-      tags: "",
-      description: "",
-      visibility: "private",
-      status: "Not Contacted",
+      leadName: "", leadType: "organization", company: "", location: "", value: "",
+      currency: "Select", customCurrency: "", phone: "", email: "", source: "", customSource: "",
+      industry: "", customIndustry: "", owner: "", customOwner: "", tags: "", description: "",
+      visibility: "private", status: "Not Contacted",
     });
   };
 
-  // Open Add Lead Modal
   const handleAddLeadClick = () => {
     setModalType("add");
     setSelectedLead(null);
@@ -287,7 +151,6 @@ const Leads = () => {
     setShowAddLeadModal(true);
   };
 
-  // Open Edit Lead Modal
   const handleEditLead = async (lead) => {
     const predefinedCurrencies = ["USD", "Euro", "INR"];
     const sources = ["Phone Calls", "Social Media", "Referral Sites"];
@@ -297,162 +160,73 @@ const Leads = () => {
     try {
       setModalType("edit");
       setSelectedLead(lead);
-
-      // Fetch full lead data from API if we have an ID
       let fullLeadData = lead;
       if (lead.id) {
-        try {
-          fullLeadData = await leadsAPI.getById(lead.id);
-        } catch (err) {
-          console.error("Error fetching lead details:", err);
-          // Use existing lead data if API call fails
-        }
+        try { fullLeadData = await leadsAPI.getById(lead.id); } catch (err) { console.error(err); }
       }
-
-      // Map backend enum values to form values (backend: "Not_Contacted", form: "Not Contacted")
-      const statusForForm =
-        fullLeadData.status === "Not_Contacted"
-          ? "Not Contacted"
-          : fullLeadData.status || "Not Contacted";
+      const statusForForm = fullLeadData.status === "Not_Contacted" ? "Not Contacted" : fullLeadData.status || "Not Contacted";
       const vis = fullLeadData.visibility || "Private";
-      const visibilityForForm =
-        vis === "Private"
-          ? "private"
-          : vis === "Public"
-            ? "public"
-            : "select_people";
-      const tagsForForm = Array.isArray(fullLeadData.tags)
-        ? fullLeadData.tags.join(", ")
-        : fullLeadData.tags || "";
+      const visibilityForForm = vis === "Private" ? "private" : vis === "Public" ? "public" : "select_people";
+      const tagsForForm = Array.isArray(fullLeadData.tags) ? fullLeadData.tags.join(", ") : fullLeadData.tags || "";
 
-      // Map backend field names to frontend form field names
       setFormData({
         leadName: fullLeadData.name || lead.name || "",
         company: fullLeadData.company || "",
         location: fullLeadData.location || "",
         value: fullLeadData.value != null ? String(fullLeadData.value) : "",
-        currency: predefinedCurrencies.includes(fullLeadData.currency)
-          ? fullLeadData.currency
-          : fullLeadData.currency
-            ? "Other"
-            : "",
-        customCurrency: predefinedCurrencies.includes(fullLeadData.currency)
-          ? ""
-          : fullLeadData.currency || "",
+        currency: predefinedCurrencies.includes(fullLeadData.currency) ? fullLeadData.currency : fullLeadData.currency ? "Other" : "",
+        customCurrency: predefinedCurrencies.includes(fullLeadData.currency) ? "" : fullLeadData.currency || "",
         phone: fullLeadData.phone || "",
         email: fullLeadData.email || "",
-        source: sources.includes(fullLeadData.source)
-          ? fullLeadData.source
-          : "Other",
-        customSource: sources.includes(fullLeadData.source)
-          ? ""
-          : fullLeadData.source || "",
-
-        industry: industries.includes(fullLeadData.industry)
-          ? fullLeadData.industry
-          : "Other",
-        customIndustry: industries.includes(fullLeadData.industry)
-          ? ""
-          : fullLeadData.industry || "",
-
-        owner: owners.includes(fullLeadData.owner)
-          ? fullLeadData.owner
-          : "Other",
-        customOwner: owners.includes(fullLeadData.owner)
-          ? ""
-          : fullLeadData.owner || "",
+        source: sources.includes(fullLeadData.source) ? fullLeadData.source : "Other",
+        customSource: sources.includes(fullLeadData.source) ? "" : fullLeadData.source || "",
+        industry: industries.includes(fullLeadData.industry) ? fullLeadData.industry : "Other",
+        customIndustry: industries.includes(fullLeadData.industry) ? "" : fullLeadData.industry || "",
+        owner: owners.includes(fullLeadData.owner) ? fullLeadData.owner : "Other",
+        customOwner: owners.includes(fullLeadData.owner) ? "" : fullLeadData.owner || "",
         tags: tagsForForm,
         description: fullLeadData.description || "",
         visibility: visibilityForForm,
         status: statusForForm,
       });
-
       setShowAddLeadModal(true);
     } catch (err) {
-      console.error("Error opening edit modal:", err);
       toast.error("Failed to load lead details.");
     }
   };
 
-  // Handle Delete Lead
   const handleDeleteLead = (lead) => {
     setLeadToDelete(lead);
     setShowDeleteModal(true);
   };
 
-  // Confirm Delete
   const confirmDelete = async () => {
     if (leadToDelete && leadToDelete.id) {
       try {
-        setError(null);
         await leadsAPI.delete(leadToDelete.id);
         await loadLeads();
         setShowDeleteModal(false);
         setLeadToDelete(null);
         toast.success("Lead deleted successfully!");
       } catch (err) {
-        console.error("Error deleting lead:", err);
-        const errorMessage =
-          err.message ||
-          err.detail ||
-          "Failed to delete lead. Please try again.";
-        setError(errorMessage);
-        toast.error(errorMessage);
+        toast.error("Failed to delete lead.");
       }
     }
   };
 
-  // Handle add/edit lead form submission
   const handleAddLead = async (e) => {
     e.preventDefault();
-
     try {
-      setError(null);
       setLoading(true);
-
-      // Map frontend status to backend enum (backend uses "Not_Contacted" with underscore)
-      const statusForApi =
-        formData.status === "Not Contacted"
-          ? "Not_Contacted"
-          : formData.status || "Not_Contacted";
-
-      // Map frontend visibility to backend enum (PascalCase: Private, Team, Public)
-      const visibilityMap = {
-        private: "Private",
-        public: "Public",
-        select_people: "Team",
-      };
-      const visibilityForApi =
-        visibilityMap[formData.visibility] ||
-        (formData.visibility ? formData.visibility.charAt(0).toUpperCase() + formData.visibility.slice(1).toLowerCase() : "Private");
-
-      // Parse value to number; backend expects Optional[int]
-      const rawValue = formData.value
-        ? String(formData.value).replace(/[^0-9.-]/g, "")
-        : "";
+      const statusForApi = formData.status === "Not Contacted" ? "Not_Contacted" : formData.status || "Not_Contacted";
+      const visibilityMap = { private: "Private", public: "Public", select_people: "Team" };
+      const visibilityForApi = visibilityMap[formData.visibility] || "Private";
+      const rawValue = formData.value ? String(formData.value).replace(/[^0-9.-]/g, "") : "";
       const numValue = rawValue === "" ? null : parseFloat(rawValue);
-      const valueForApi =
-        numValue != null && !isNaN(numValue) && numValue >= 0
-          ? Math.round(numValue)
-          : null;
+      const valueForApi = numValue != null && !isNaN(numValue) && numValue >= 0 ? Math.round(numValue) : null;
+      const tagsForApi = formData.tags ? formData.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
+      const currencyForApi = !formData.currency || formData.currency === "Select" ? null : formData.currency === "Other" ? formData.customCurrency || null : formData.currency;
 
-      // Tags: backend expects List[str]; convert comma-separated string to array
-      const tagsForApi = formData.tags
-        ? formData.tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean)
-        : [];
-
-      // Currency: send null when "Select" or empty
-      const currencyForApi =
-        !formData.currency || formData.currency === "Select"
-          ? null
-          : formData.currency === "Other"
-            ? formData.customCurrency || null
-            : formData.currency;
-
-      // Prepare lead data for API - map frontend fields to backend schema
       const leadData = {
         name: formData.leadName || "Untitled Lead",
         company: formData.company || null,
@@ -461,1906 +235,369 @@ const Leads = () => {
         currency: currencyForApi,
         phone: formData.phone || null,
         email: formData.email || null,
-        source:
-          formData.source === "Other" ? formData.customSource : formData.source,
-        industry:
-          formData.industry === "Other"
-            ? formData.customIndustry
-            : formData.industry,
-        owner:
-          formData.owner === "Other" ? formData.customOwner : formData.owner,
+        source: formData.source === "Other" ? formData.customSource : formData.source,
+        industry: formData.industry === "Other" ? formData.customIndustry : formData.industry,
+        owner: formData.owner === "Other" ? formData.customOwner : formData.owner,
         tags: tagsForApi,
         description: formData.description || null,
         visibility: visibilityForApi,
         status: statusForApi,
       };
 
-      // Remove empty strings and convert to null (do not overwrite value 0 or tags array)
-      Object.keys(leadData).forEach((key) => {
-        if (key !== "tags" && (leadData[key] === "" || leadData[key] === undefined)) {
-          leadData[key] = null;
-        }
-      });
+      Object.keys(leadData).forEach(key => { if (key !== "tags" && (leadData[key] === "" || leadData[key] === undefined)) leadData[key] = null; });
 
-      if (modalType === "add") {
-        await leadsAPI.create(leadData);
-        toast.success("Lead created successfully!");
-      } else if (selectedLead && selectedLead.id) {
-        await leadsAPI.update(selectedLead.id, leadData);
-        toast.success("Lead updated successfully!");
-      }
+      if (modalType === "add") await leadsAPI.create(leadData);
+      else if (selectedLead && selectedLead.id) await leadsAPI.update(selectedLead.id, leadData);
 
-      // Reload leads
       await loadLeads();
-
-      // Close modal and reset form
       setShowAddLeadModal(false);
       resetForm();
       setSelectedLead(null);
+      toast.success(modalType === "add" ? "Lead created successfully!" : "Lead updated successfully!");
     } catch (err) {
-      console.error("Error saving lead:", err);
-      const errorMessage =
-        err.message || err.detail || "Failed to save lead. Please try again.";
-      setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error("Failed to save lead.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Export to PDF function
   const exportToPDF = () => {
-    if (isExporting) return; // Prevent multiple calls
-
+    if (isExporting) return;
     setIsExporting(true);
+    const exportData = leadsData.length > 0 ? leadsData : [];
+    const htmlContent = `
+      <!DOCTYPE html><html><head><title>Leads Export</title>
+      <style>body{font-family:Arial;margin:20px;} h1{color:#0078d4;text-align:center;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background-color:#0078d4;color:white;}</style>
+      </head><body><h1>Leads Report</h1><p>Export Date: ${new Date().toLocaleDateString()}</p><p>Total Leads: ${exportData.length}</p>
+      <table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Phone</th><th>Location</th><th>Value</th><th>Status</th></tr></thead>
+      <tbody>${exportData.map(lead => `<tr><td>${lead.name || ""}</td><td>${lead.company || ""}</td><td>${lead.email || ""}</td><td>${lead.phone || ""}</td><td>${lead.location || ""}</td><td>${formatAmount(lead.value || 0)}</td><td>${lead.status || ""}</td></tr>`).join("")}</tbody></table></body></html>`;
+    const blob = new Blob([htmlContent], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads_export_${new Date().toISOString().split("T")[0]}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => { toast.success("PDF exported successfully!"); setIsExporting(false); }, 500);
+  };
 
-    try {
-      const exportData = leadsData.length > 0 ? leadsData : sampleLeadsData;
+  const exportToExcel = () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    const exportData = leadsData.length > 0 ? leadsData : [];
+    const headers = ["Name", "Company", "Email", "Phone", "Location", "Value", "Status"];
+    const csvContent = [headers.join(","), ...exportData.map(lead => [`"${lead.name || ""}"`, `"${lead.company || ""}"`, `"${lead.email || ""}"`, `"${lead.phone || ""}"`, `"${lead.location || ""}"`, `"${formatAmount(lead.value || 0)}"`, `"${lead.status || ""}"`].join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads_export_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => { toast.success("Excel exported successfully!"); setIsExporting(false); }, 500);
+  };
 
-      // Create simple PDF content
-      const pdfContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Leads Export</title>
-            <style>
-              body { 
-                font-family: Arial, sans-serif; 
-                margin: 20px; 
-                color: #333;
-              }
-              h1 { 
-                color: #0078d4; 
-                text-align: center;
-                margin-bottom: 20px;
-              }
-              .info {
-                margin-bottom: 20px;
-                padding: 10px;
-                background: #f8f9fa;
-                border-radius: 5px;
-              }
-              table { 
-                width: 100%; 
-                border-collapse: collapse; 
-                margin-top: 20px;
-              }
-              th, td { 
-                border: 1px solid #ddd; 
-                padding: 8px; 
-                text-align: left; 
-              }
-              th { 
-                background-color: #0078d4;
-                color: white;
-                font-weight: bold;
-              }
-              tr:nth-child(even) {
-                background-color: #f2f2f2;
-              }
-            </style>
-          </head>
-          <body>
-            <h1>Leads Report</h1>
-            
-            <div class="info">
-              <p><strong>Export Date:</strong> ${new Date().toLocaleDateString()}</p>
-              <p><strong>Total Leads:</strong> ${exportData.length}</p>
-            </div>
-            
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Company</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Location</th>
-                  <th>Value</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${exportData
-                  .map(
-                    (lead) => `
-                  <tr>
-                    <td>${lead.name || ""}</td>
-                    <td>${lead.company || ""}</td>
-                    <td>${lead.email || ""}</td>
-                    <td>${lead.phone || ""}</td>
-                    <td>${lead.location || ""}</td>
-                    <td>${lead.value || formatAmount(lead.value || 0)}</td>
-                    <td>${lead.status || ""}</td>
-                  </tr>
-                `,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </body>
-        </html>
-      `;
-
-      // Create blob and download directly
-      const blob = new Blob([pdfContent], { type: "text/html" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `leads_export_${new Date().toISOString().split("T")[0]}.html`,
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up the URL object
-      URL.revokeObjectURL(url);
-
-      // Show success toast and reset exporting state
-      setTimeout(() => {
-        toast.success("PDF file downloaded successfully!");
-        setIsExporting(false);
-      }, 500);
-    } catch (error) {
-      console.error("PDF Export Error:", error);
-      setIsExporting(false);
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case "Contacted": return <FiUser className="h-4 w-4" />;
+      case "Not Contacted": return <FiEyeOff className="h-4 w-4" />;
+      case "Closed": return <FiCheckCircle className="h-4 w-4" />;
+      case "Lost": return <FiXCircle className="h-4 w-4" />;
+      default: return <FiUser className="h-4 w-4" />;
     }
   };
 
-  // Export to Excel function
-  const exportToExcel = () => {
-    if (isExporting) return; // Prevent multiple calls
-
-    setIsExporting(true);
-
-    try {
-      const exportData = leadsData.length > 0 ? leadsData : sampleLeadsData;
-
-      // Create CSV content
-      const headers = [
-        "Name",
-        "Company",
-        "Email",
-        "Phone",
-        "Location",
-        "Value",
-        "Status",
-      ];
-      const csvContent = [
-        headers.join(","),
-        ...exportData.map((lead) =>
-          [
-            `"${lead.name || ""}"`,
-            `"${lead.company || ""}"`,
-            `"${lead.email || ""}"`,
-            `"${lead.phone || ""}"`,
-            `"${lead.location || ""}"`,
-            `"${lead.value || formatAmount(lead.value || 0)}"`,
-            `"${lead.status || ""}"`,
-          ].join(","),
-        ),
-      ].join("\n");
-
-      // Create and download Excel file
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `leads_export_${new Date().toISOString().split("T")[0]}.csv`,
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up the URL object
-      URL.revokeObjectURL(url);
-
-      // Show success toast and reset exporting state
-      setTimeout(() => {
-        toast.success("Excel file downloaded successfully!");
-        setIsExporting(false);
-      }, 500);
-    } catch (error) {
-      console.error("Excel Export Error:", error);
-      setIsExporting(false);
+  const getStatusColorClass = (status) => {
+    switch(status) {
+      case "Contacted": return "amber";
+      case "Not Contacted": return "gray";
+      case "Closed": return "emerald";
+      case "Lost": return "rose";
+      default: return "primary";
     }
   };
 
   return (
-    <div className="content">
-      {error && (
-        <div
-          className="alert alert-warning alert-dismissible fade show"
-          role="alert"
-        >
-          <strong>Note:</strong> {error}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setError(null)}
-          ></button>
-        </div>
-      )}
+    <div className="">
+      <div className="max-w-full mx-auto overflow-x-hidden">
+        <ToastContainer position="top-right" autoClose={3000} />
 
-      {loading && (
-        <div className="text-center p-4">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+        {/* Error Alert */}
+        {error && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-700">
+            <FiAlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+            <span className="text-sm flex-1">{error}</span>
           </div>
-        </div>
-      )}
+        )}
 
-<div className="d-flex justify-content-between align-items-start mb-3">
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+            <p className="text-gray-500 text-sm">Loading leads...</p>
+          </div>
+        )}
 
-  {/* Left Section */}
-  <div className="gap-2">
-    <h5 className="text-3xl fw-bold text-dark mb-1 d-flex align-items-center gap-2">
-      <span className="icon-circle">
-        <Icon icon="heroicons:funnel" className="primary" />
-      </span>
-      Leads
-    </h5>
-
-    <p className="text-muted mb-4">
-      Track potential customers, manage lead information, and convert prospects into opportunities.
-    </p>
-  </div>
-
-  {/* Right Section */}
-  <div className="d-flex gap-2 align-items-center">
-
-            <div className="dropdown">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiFilter className="text-gray-600 text-xl sm:text-2xl" />
+              Leads
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Track potential customers, manage lead information, and convert prospects into opportunities</p>
+          </div>
+          <div className="flex gap-2">
+            <div className="relative">
               <button
-                type="button"
-                className="create-job-btn dropdown-toggle"
-                data-bs-toggle="dropdown"
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
               >
-                <i className="ti ti-file-export me-1"></i>Export
+                <FiDownload className="h-4 w-4" />
+                Export
+                <FiChevronDown className="h-3 w-3" />
               </button>
-              <ul className="dropdown-menu dropdown-menu-end p-2">
-                <li>
-                  <button
-                    type="button"
-                    className="dropdown-item rounded-1 border-0 bg-transparent w-100 text-start"
-                    onClick={exportToPDF}
-                    disabled={isExporting}
-                    style={{
-                      cursor: isExporting ? "not-allowed" : "pointer",
-                      opacity: isExporting ? 0.6 : 1,
-                    }}
-                  >
-                    {isExporting ? "Exporting..." : "Export as PDF"}
+              {showExportDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
+                  <button onClick={() => { exportToPDF(); setShowExportDropdown(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 rounded-t-lg">
+                    <FiFileText className="h-4 w-4 text-rose-500" /> Export as PDF
                   </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    className="dropdown-item rounded-1 border-0 bg-transparent w-100 text-start"
-                    onClick={exportToExcel}
-                    disabled={isExporting}
-                    style={{
-                      cursor: isExporting ? "not-allowed" : "pointer",
-                      opacity: isExporting ? 0.6 : 1,
-                    }}
-                  >
-                    {isExporting ? "Exporting..." : "Export as Excel"}
+                  <button onClick={() => { exportToExcel(); setShowExportDropdown(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 rounded-b-lg">
+                    <FiFile className="h-4 w-4 text-emerald-500" /> Export as Excel
                   </button>
-                </li>
-              </ul>
+                </div>
+              )}
             </div>
-
-          <div className="mb-2">
-            <button
-              type="button"
-              className="add-employee gap-2"
-              onClick={handleAddLeadClick}
-            >
-              <Icon icon="heroicons:plus-circle" width="18" />
+            <button onClick={handleAddLeadClick} className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all">
+              <FiPlus className="h-4 w-4" />
               Add Lead
             </button>
           </div>
         </div>
-      </div>
-      {/* /Breadcrumb */}
 
-      {/* Leads Grid */}
-      <div className="card" style={{ width: "100%" }}>
-        <div className="card-body p-3">
-          <div className="d-flex align-items-center justify-content-between">
-            <h5 className="fs-6">
-              <b>Leads Grid</b>
-            </h5>
-            <div className="d-flex align-items-center gap-2">
-              <div className="dropdown">
-                <button
-                  type="button"
-                  className="close-btn dropdown-toggle gap-2"
-                  data-bs-toggle="dropdown"
-                >
-                  Sort By : Last 7 Days
-                </button>
-                <ul className="dropdown-menu dropdown-menu-end p-3">
-                  <li>
-                    <button type="button" className="dropdown-item rounded-1">
-                      Recent
-                    </button>
-                  </li>
-                  <li>
-                    <button type="button" className="dropdown-item rounded-1">
-                      Last Modified
-                    </button>
-                  </li>
-                  <li>
-                    <button type="button" className="dropdown-item rounded-1">
-                      Last 7 Days
-                    </button>
-                  </li>
-                  <li>
-                    <button type="button" className="dropdown-item rounded-1">
-                      Last 30 Days
-                    </button>
-                  </li>
-                  <li>
-                    <button type="button" className="dropdown-item rounded-1">
-                      Last Month
-                    </button>
-                  </li>
-                  <li>
-                    <button type="button" className="dropdown-item rounded-1">
-                      Last Year
-                    </button>
-                  </li>
-                </ul>
+        {/* Sort Bar */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h6 className="font-semibold text-midnight_text">Leads Grid</h6>
+          <div className="relative">
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="flex items-center justify-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+            >
+              <FiFilter className="h-3.5 w-3.5" />
+              Sort By: {sortBy}
+              <FiChevronDown className="h-3 w-3" />
+            </button>
+            {showSortDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-10">
+                {["Recent", "Last Modified", "Last 7 Days", "Last 30 Days", "Last Month", "Last Year"].map(option => (
+                  <button key={option} onClick={() => { setSortBy(option); setShowSortDropdown(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                    <FiChevronDown className="h-4 w-4" /> {option}
+                  </button>
+                ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Leads Kanban */}
-      {!loading && (
-        <div style={{ overflowX: "auto", overflowY: "visible" }}>
-          <div className="row g-4 mb-4" style={{ minWidth: "1400px" }}>
+        {/* Kanban Board */}
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {statusConfig.map((statusItem) => {
-              const statusData = leadsKanban[statusItem.status] || {
-                leads: [],
-                count: 0,
-                amount: "₹0",
-              };
-              const colorMap = {
-                warning: "warning",
-                purple: "purple",
-                success: "success",
-                danger: "danger",
-              };
-              const borderColor = colorMap[statusItem.color] || "warning";
-
+              const statusData = leadsKanban[statusItem.status] || { leads: [], count: 0, amount: "₹0" };
+              const statusColor = getStatusColorClass(statusItem.status);
               return (
-                <div
-                  key={statusItem.status}
-                  className="col-lg-3 col-md-6"
-                  style={{ minWidth: "320px" }}
-                >
-                  <div
-                    className="card"
-                    style={{
-                      borderTopWidth: "0px",
-                      borderRightWidth: "0px",
-                      paddingLeft: "0px",
-                      borderLeftWidth: "0px",
-                      paddingRight: "0px",
-                      paddingBottom: "0px",
-                      paddingTop: "0px",
-                      width: "100%",
-                      minWidth: "320px",
-                      height: "100%",
-                    }}
-                  >
-                    <div className="card-header bg-white border-bottom">
-                      <div className="d-flex justify-content-between align-items-center">
+                <div key={statusItem.status} className="space-y-2">
+                  {/* Stage Header */}
+                  <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow">
+                    <div className="p-3">
+                      <div className="flex justify-between items-center">
                         <div>
-                          <h4
-                            className="fw-semibold d-flex align-items-center mb-1"
-                            style={{ fontSize: "1rem" }}
-                          >
-                            <i
-                              className={`ti ti-circle-filled fs-6 text-${statusItem.color} me-2`}
-                            ></i>
+                          <h6 className="font-semibold text-midnight_text flex items-center gap-1 text-sm">
+                            <span className={`w-2 h-2 rounded-full bg-${statusColor}`} />
+                            <span className={`text-${statusColor}`}>{getStatusIcon(statusItem.status)}</span>
                             {statusItem.displayName}
-                          </h4>
-                          <span
-                            className="fw-bold"
-                            style={{ fontSize: "0.75rem", color: "#a0a0a0" }}
-                          >
+                          </h6>
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <FiDollarSign className="h-3 w-3" />
                             {statusData.count} Leads - {statusData.amount}
                           </span>
                         </div>
-                        <div className="d-flex align-items-center">
-                          <div className="action-icon d-inline-flex">
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-link p-0"
-                              onClick={handleAddLeadClick}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.color = "#0d6efd";
-                                e.currentTarget.style.transform = "scale(1.1)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.color = "#6c757d";
-                                e.currentTarget.style.transform = "scale(1)";
-                              }}
-                              style={{
-                                width: "auto",
-                                height: "auto",
-                                padding: "2px 4px",
-                                minWidth: "auto",
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                color: "#6c757d",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                transition: "all 0.2s ease",
-                              }}
-                              title="Add Lead"
-                            >
-                              <Icon
-                                icon="heroicons:ellipsis-vertical"
-                                width="18"
-                              />
-                            </button>
-                          </div>
-                        </div>
+                        <button onClick={handleAddLeadClick} className="text-gray-400 hover:text-gray-600">
+                          <FiMoreVertical className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
-                    <div className="card-body p-3">
-                      {statusData.leads.length === 0 ? (
-                        <div className="text-center text-muted small p-3">
-                          No leads
-                        </div>
-                      ) : (
-                        statusData.leads.map((lead) => (
-                          <div
-                            key={lead.id || lead.name}
-                            className="w-100 mb-3"
-                          >
-                            <div
-                              className="card border-0 shadow-sm"
-                              style={{
-                                width: "100%",
-                                minWidth: "0",
-                              }}
-                            >
-                              <div
-                                className="card-body p-3"
-                                style={{ fontSize: "0.95rem" }}
-                              >
-                                <div className="d-block">
-                                  <div
-                                    className={`border-${borderColor} mb-2`}
-                                  ></div>
-                                  <div className="d-flex align-items-center mb-2">
-                                    <div className="avatar avatar-lg bg-gray flex-shrink-0 me-2">
-                                      <span className="avatar-title text-dark">
-                                        {lead.initials}
-                                      </span>
-                                    </div>
-                                    <h6
-                                      className="fw-medium mb-0"
-                                      style={{ fontSize: "1rem" }}
-                                    >
-                                      <span className="text-decoration-none">
-                                        {lead.name}
-                                      </span>
-                                    </h6>
-                                  </div>
-                                </div>
-                                <div className="mb-2">
-                                  <div className="d-flex align-items-center mb-1">
-                                    <i
-                                      className={`ti ti-report-money text-${statusItem.color} me-2`}
-                                    ></i>
-                                    <span
-                                      className="text-muted"
-                                      style={{
-                                        fontSize: "0.9rem",
-                                        fontWeight: "500",
-                                      }}
-                                    >
-                                      {lead.value}
-                                    </span>
-                                  </div>
-                                  {lead.email && (
-                                    <div className="d-flex align-items-center mb-1">
-                                      <i className="ti ti-mail text-muted me-2"></i>
-                                      <span
-                                        className="text-muted text-truncate"
-                                        style={{ fontSize: "0.9rem" }}
-                                      >
-                                        {lead.email}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {lead.phone && (
-                                    <div className="d-flex align-items-center mb-1">
-                                      <i className="ti ti-phone text-muted me-2"></i>
-                                      <span
-                                        className="text-muted text-truncate"
-                                        style={{ fontSize: "0.9rem" }}
-                                      >
-                                        {lead.phone}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {lead.location && (
-                                    <div className="d-flex align-items-center mb-1">
-                                      <i className="ti ti-map-pin text-muted me-2"></i>
-                                      <span
-                                        className="text-muted text-truncate"
-                                        style={{ fontSize: "0.9rem" }}
-                                      >
-                                        {lead.location}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="d-flex align-items-center justify-content-end border-top pt-2">
-                                  <div className="d-flex align-items-center gap-2">
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-primary"
-                                      onClick={() => handleEditLead(lead)}
-                                      title="Edit Lead"
-                                      style={{
-                                        fontSize: "12px",
-                                        padding: "4px 10px",
-                                        minWidth: "78px",
-                                      }}
-                                    >
-                                      <i className="ti ti-edit me-1"></i>Edit
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-danger"
-                                      onClick={() => handleDeleteLead(lead)}
-                                      title="Delete Lead"
-                                      style={{
-                                        fontSize: "12px",
-                                        padding: "4px 10px",
-                                        minWidth: "78px",
-                                      }}
-                                    >
-                                      <i className="ti ti-trash me-1"></i>Delete
-                                    </button>
-                                  </div>
-                                </div>
+                  </div>
+
+                  {/* Leads Cards */}
+                  <div className="space-y-2">
+                    {statusData.leads.length === 0 ? (
+                      <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-100">
+                        <FiUser className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-xs text-gray-400">No leads</p>
+                      </div>
+                    ) : (
+                      statusData.leads.map((lead) => (
+                        <div key={lead.id || lead.name} className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow hover:shadow-property transition-all">
+                          <div className={`h-1 rounded-t-lg bg-${statusColor}`} />
+                          <div className="p-3">
+                            {/* Header with initials and name */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                <span className="text-xs font-bold text-gray-600">{lead.initials}</span>
                               </div>
+                              <h6 className="font-semibold text-midnight_text text-sm truncate flex-1">{lead.name}</h6>
+                            </div>
+
+                            {/* Details */}
+                            <div className="space-y-1.5 mb-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                <FiDollarSign className="h-3.5 w-3.5 text-gray-400" />
+                                <span className="text-gray-700 text-xs">{lead.value}</span>
+                              </div>
+                              {lead.email && (
+                                <div className="flex items-center gap-2">
+                                  <FiMail className="h-3.5 w-3.5 text-gray-400" />
+                                  <span className="text-gray-600 text-xs truncate">{lead.email}</span>
+                                </div>
+                              )}
+                              {lead.phone && (
+                                <div className="flex items-center gap-2">
+                                  <FiPhone className="h-3.5 w-3.5 text-gray-400" />
+                                  <span className="text-gray-600 text-xs truncate">{lead.phone}</span>
+                                </div>
+                              )}
+                              {lead.location && (
+                                <div className="flex items-center gap-2">
+                                  <FiMapPin className="h-3.5 w-3.5 text-gray-400" />
+                                  <span className="text-gray-600 text-xs truncate">{lead.location}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                              <button onClick={() => handleEditLead(lead)} className="p-1.5 text-gray-500 hover:text-primary rounded-lg hover:bg-primary/10 transition-all" title="Edit">
+                                <FiEdit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => handleDeleteLead(lead)} className="p-1.5 text-gray-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all" title="Delete">
+                                <FiTrash2 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           </div>
-                        ))
-                      )}
-                    </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* /Leads Kanban */}
-
-      {/* Add New Lead Modal */}
-      {showAddLeadModal && (
-        <div className="hrms-modal-overlay">
-          <div className="hrms-modal hrms-modal-offer-xl animate-scale-in d-flex flex-column">
-            {/* HEADER */}
-            <div className="hrms-modal-header">
-              <h5 className="hrms-modal-title d-flex align-items-center">
-                {modalType === "add" ? "Add New Lead" : "Edit Lead"}
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddLeadModal(false);
-                  resetForm();
-                  setSelectedLead(null);
-                }}
-              ></button>
-            </div>
-
-            {/* BODY */}
-            <div className="hrms-modal-body hrms-modal-body-scroll">
-              <form onSubmit={handleAddLead} id="add_leads">
-                <div className="row">
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label
-                        className="form-label fw-medium d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Lead Name<span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        name="leadName"
-                        value={formData.leadName}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <div className="d-flex align-items-center gap-4">
-                        {[
-                          { id: "person", label: "Person" },
-                          { id: "organization", label: "Organization" },
-                        ].map((option) => {
-                          const isChecked =
-                            formData.leadType === option.id ||
-                            (!formData.leadType &&
-                              option.id === "organization");
-
-                          return (
-                            <label
-                              key={option.id}
-                              htmlFor={`lead-${option.id}`}
-                              className="d-flex align-items-center"
-                              style={{ cursor: "pointer" }}
-                            >
-                              {/* Custom Radio Circle */}
-                              <div
-                                style={{
-                                  width: "20px",
-                                  height: "20px",
-                                  borderRadius: "50%",
-                                  border: `2px solid ${isChecked ? "#3B82F6" : "#9CA3AF"}`,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  marginRight: "8px",
-                                  transition: "all 0.3s ease",
-                                }}
-                              >
-                                {isChecked && (
-                                  <div
-                                    style={{
-                                      width: "10px",
-                                      height: "10px",
-                                      borderRadius: "50%",
-                                      background: "#3B82F6",
-                                    }}
-                                  />
-                                )}
-                              </div>
-
-                              {/* Hidden Native Radio */}
-                              <input
-                                type="radio"
-                                name="leadType"
-                                id={`lead-${option.id}`}
-                                value={option.id}
-                                checked={isChecked}
-                                onChange={handleFormChange}
-                                style={{ display: "none" }}
-                              />
-
-                              {/* Label */}
-                              <span className="text-dark fw-semibold">
-                                {option.label}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label
-                        className="col-form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Company<span className="text-danger">*</span>
-                      </label>
-                      <div className="d-flex align-items-center gap-2">
-                        <input
-                          type="text"
-                          className="form-control"
-                          style={{ height: "40px" }}
-                          placeholder="Enter company name"
-                          name="company"
-                          value={formData.company}
-                          onChange={handleFormChange}
-                          required
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-link text-primary text-nowrap p-0 text-decoration-none"
-                          style={{ fontSize: "14px" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowAddCompanyModal(true);
-                          }}
-                        >
-                          <i className="ti ti-plus text-primary me-1"></i>Add
-                          New
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Location
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        style={{ height: "40px" }}
-                        placeholder="Enter location"
-                        name="location"
-                        value={formData.location || ""}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Value<span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        style={{ height: "40px" }}
-                        name="value"
-                        value={formData.value}
-                        onChange={handleFormChange}
-                        placeholder="Enter value"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Currency<span className="text-danger">*</span>
-                      </label>
-
-                      {formData.currency === "Other" ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Enter Currency (e.g. JPY, AED)"
-                          value={formData.customCurrency || ""}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              customCurrency: e.target.value,
-                            }))
-                          }
-                        />
-                      ) : (
-                        <select
-                          className="form-select"
-                          style={{ height: "40px" }}
-                          name="currency"
-                          value={formData.currency}
-                          onChange={(e) => {
-                            const value = e.target.value;
-
-                            if (value === "Other") {
-                              setFormData((prev) => ({
-                                ...prev,
-                                currency: "Other",
-                                customCurrency: "",
-                              }));
-                            } else {
-                              handleFormChange(e);
-                            }
-                          }}
-                          required
-                        >
-                          <option value="Select">Select</option>
-                          <option value="USD">USD</option>
-                          <option value="Euro">Euro</option>
-                          <option value="INR">INR</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label className="form-label d-block mb-2">
-                        Phone Number<span className="text-danger">*</span>
-                      </label>
-                      <div className="d-flex gap-2">
-                        <input
-                          className="form-control"
-                          type="text"
-                          style={{ height: "40px" }}
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleFormChange}
-                          required
-                        />
-                        <select
-                          className="form-select"
-                          style={{ height: "40px", width: "120px" }}
-                        >
-                          <option defaultValue>Work</option>
-                          <option>Home</option>
-                        </select>
-                        <button
-                          type="button"
-                          className="btn btn-link text-primary p-0 d-flex align-items-center justify-content-center"
-                          style={{
-                            fontSize: "18px",
-                            width: "32px",
-                            height: "40px",
-                          }}
-                          title="Add another phone number"
-                        >
-                          <i className="ti ti-circle-plus"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label className="form-label d-block mb-2">
-                        Email<span className="text-danger">*</span>
-                      </label>
-                      <div className="d-flex gap-2">
-                        <input
-                          className="form-control"
-                          type="email"
-                          style={{ height: "40px" }}
-                          name="email"
-                          value={formData.email}
-                          onChange={handleFormChange}
-                          required
-                        />
-                        <select
-                          className="form-select"
-                          style={{ height: "40px", width: "120px" }}
-                        >
-                          <option defaultValue>Work</option>
-                          <option>Home</option>
-                        </select>
-                        <button
-                          type="button"
-                          className="btn btn-link text-primary p-0 d-flex align-items-center justify-content-center"
-                          style={{
-                            fontSize: "18px",
-                            width: "32px",
-                            height: "40px",
-                          }}
-                          title="Add another email"
-                        >
-                          <i className="ti ti-circle-plus"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Source<span className="text-danger">*</span>
-                      </label>
-
-                      {formData.source === "Other" ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Enter Source"
-                          value={formData.customSource || ""}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              customSource: e.target.value,
-                            }))
-                          }
-                        />
-                      ) : (
-                        <select
-                          className="form-select"
-                          style={{ height: "40px" }}
-                          name="source"
-                          value={formData.source}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "Other") {
-                              setFormData((prev) => ({
-                                ...prev,
-                                source: "Other",
-                                customSource: "",
-                              }));
-                            } else {
-                              handleFormChange(e);
-                            }
-                          }}
-                          required
-                        >
-                          <option value="">Select</option>
-                          <option value="Phone Calls">Phone Calls</option>
-                          <option value="Social Media">Social Media</option>
-                          <option value="Referral Sites">Referral Sites</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Industry<span className="text-danger">*</span>
-                      </label>
-
-                      {formData.industry === "Other" ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Enter Industry"
-                          value={formData.customIndustry || ""}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              customIndustry: e.target.value,
-                            }))
-                          }
-                        />
-                      ) : (
-                        <select
-                          className="form-select"
-                          style={{ height: "40px" }}
-                          name="industry"
-                          value={formData.industry}
-                          onChange={(e) => {
-                            const value = e.target.value;
-
-                            if (value === "Other") {
-                              setFormData((prev) => ({
-                                ...prev,
-                                industry: "Other",
-                                customIndustry: "",
-                              }));
-                            } else {
-                              handleFormChange(e);
-                            }
-                          }}
-                          required
-                        >
-                          <option value="">Select</option>
-                          <option value="Retail Industry">
-                            Retail Industry
-                          </option>
-                          <option value="Banking">Banking</option>
-                          <option value="Hotels">Hotels</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Owner<span className="text-danger">*</span>
-                      </label>
-
-                      {formData.owner === "Other" ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Enter Owner"
-                          value={formData.customOwner || ""}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              customOwner: e.target.value,
-                            }))
-                          }
-                        />
-                      ) : (
-                        <select
-                          className="form-select"
-                          style={{ height: "40px" }}
-                          name="owner"
-                          value={formData.owner}
-                          onChange={(e) => {
-                            const value = e.target.value;
-
-                            if (value === "Other") {
-                              setFormData((prev) => ({
-                                ...prev,
-                                owner: "Other",
-                                customOwner: "",
-                              }));
-                            } else {
-                              handleFormChange(e);
-                            }
-                          }}
-                          required
-                        >
-                          <option value="">Select</option>
-                          <option value="Darlee Robertson">
-                            Darlee Robertson
-                          </option>
-                          <option value="Sharon Roy">Sharon Roy</option>
-                          <option value="Vaughan Lewis">Vaughan Lewis</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Tags<span className="text-danger">*</span>
-                      </label>
-                      <div>
-                        <div className="bootstrap-tagsinput mb-2 d-none">
-                          <span className="tag label label-info">
-                            Collab<span data-role="remove"></span>
-                          </span>
-                          <input type="text" placeholder="Add new" />
-                        </div>
-                        <input
-                          className="form-control"
-                          placeholder="Add tags (comma separated)"
-                          type="text"
-                          style={{ height: "40px" }}
-                          name="tags"
-                          value={formData.tags}
-                          onChange={handleFormChange}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Description<span className="text-danger">*</span>
-                      </label>
-                      <div className="summernote d-none"></div>
-                      <textarea
-                        className="form-control"
-                        rows="4"
-                        placeholder="Enter description..."
-                        name="description"
-                        value={formData.description}
-                        onChange={handleFormChange}
-                        required
-                      ></textarea>
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label className="form-label mb-2">Visibility</label>
-
-                      <div className="d-flex flex-wrap gap-4">
-                        {[
-                          { id: "public", label: "Public" },
-                          { id: "private", label: "Private" },
-                          { id: "select_people", label: "Select People" },
-                        ].map((option) => {
-                          const isChecked = formData.visibility === option.id;
-
-                          return (
-                            <label
-                              key={option.id}
-                              htmlFor={`visibility-${option.id}`}
-                              className="d-flex align-items-center"
-                              style={{ cursor: "pointer" }}
-                            >
-                              {/* Custom Radio Circle */}
-                              <div
-                                style={{
-                                  width: "20px",
-                                  height: "20px",
-                                  borderRadius: "50%",
-                                  border: `2px solid ${isChecked ? "#3B82F6" : "#9CA3AF"}`,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  marginRight: "8px",
-                                  transition: "all 0.3s ease",
-                                }}
-                              >
-                                {isChecked && (
-                                  <div
-                                    style={{
-                                      width: "10px",
-                                      height: "10px",
-                                      borderRadius: "50%",
-                                      background: "#3B82F6",
-                                    }}
-                                  />
-                                )}
-                              </div>
-
-                              {/* Hidden Native Input */}
-                              <input
-                                type="radio"
-                                name="visibility"
-                                id={`visibility-${option.id}`}
-                                value={option.id}
-                                checked={isChecked}
-                                onChange={handleFormChange}
-                                style={{ display: "none" }}
-                              />
-
-                              {/* Label */}
-                              <span className="text-dark fw-semibold">
-                                {option.label}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label d-inline-block mb-2"
-                        style={{ minWidth: "120px" }}
-                      >
-                        Status<span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="form-select"
-                        style={{ height: "40px" }}
-                        name="status"
-                        value={formData.status}
-                        onChange={handleFormChange}
-                        required
-                      >
-                        <option value="">Select</option>
-                        <option value="Contacted">Contacted</option>
-                        <option value="Not Contacted">Not Contacted</option>
-                        <option value="Closed">Closed</option>
-                        <option value="Lost">Lost</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            {/* FOOTER */}
-            <div className="hrms-modal-footer d-flex justify-content-end gap-2">
-              <button
-                type="button"
-                className="cancel-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddLeadModal(false);
-                  resetForm();
-                  setSelectedLead(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                form="add_leads"
-                className="create-job-btn"
-                disabled={loading}
-              >
-                {modalType === "add" ? "Add Lead" : "Save Changes"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Backdrop for Add Lead */}
-      {showAddLeadModal && (
-        <div
-          className="modal-backdrop fade show"
-          style={{ zIndex: 1050 }}
-        ></div>
-      )}
-
-      {/* Add New Company Modal */}
-      {showAddCompanyModal && (
-        <div className="hrms-modal-overlay">
-          <div className="hrms-modal hrms-modal-offer-xl animate-scale-in d-flex flex-column">
-            {/* HEADER */}
-            <div className="hrms-modal-header">
-              <h5 className="hrms-modal-title d-flex align-items-center">
-                Add New Company
-              </h5>
-              <button
-                type="button"
-                className="btn-close "
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddCompanyModal(false);
-                }}
-              ></button>
-            </div>
-
-            <div className="hrms-modal-body hrms-modal-body-scroll">
-              <ul className="nav nav-tabs" role="tablist">
-                <li className="nav-item" role="presentation">
-                  <button
-                    className="nav-link active"
-                    id="basic-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#basic-info"
-                    type="button"
-                    role="tab"
-                    aria-controls="basic-info"
-                    aria-selected="true"
-                  >
-                    Basic Information
-                  </button>
-                </li>
-                <li className="nav-item" role="presentation">
-                  <button
-                    className="nav-link"
-                    id="address-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#address"
-                    type="button"
-                    role="tab"
-                    aria-controls="address"
-                    aria-selected="false"
-                  >
-                    Address
-                  </button>
-                </li>
-                <li className="nav-item" role="presentation">
-                  <button
-                    className="nav-link"
-                    id="social-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#social-profiles"
-                    type="button"
-                    role="tab"
-                    aria-controls="social-profiles"
-                    aria-selected="false"
-                  >
-                    Social Profiles
-                  </button>
-                </li>
-                <li className="nav-item" role="presentation">
-                  <button
-                    className="nav-link"
-                    id="access-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#access"
-                    type="button"
-                    role="tab"
-                    aria-controls="access"
-                    aria-selected="false"
-                  >
-                    Access
-                  </button>
-                </li>
-              </ul>
-
-              <div className="tab-content pt-4">
-                {/* Basic Information Tab */}
-                <div
-                  className="tab-pane fade show active"
-                  id="basic-info"
-                  role="tabpanel"
-                  aria-labelledby="basic-tab"
-                >
-                  <div className="mb-4 text-center">
-                    <div className="profile-upload mb-3">
-                      <div
-                        className="profile-upload-img mb-2"
-                        style={{
-                          width: "80px",
-                          height: "80px",
-                          margin: "0 auto",
-                          borderRadius: "50%",
-                          border: "2px dashed #ddd",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: "#f8f9fa",
-                        }}
-                      >
-                        <span>
-                          <i
-                            className="ti ti-photo"
-                            style={{ fontSize: "32px", color: "#adb5bd" }}
-                          ></i>
-                        </span>
-                      </div>
-                      <h6 className="mb-1">Upload Profile Image</h6>
-                      <p
-                        className="text-muted mb-3"
-                        style={{ fontSize: "13px" }}
-                      >
-                        Image should be below 4 mb
-                      </p>
-                      <div className="d-flex justify-content-center gap-2">
-                        <button type="button" className="create-job-btn">
-                          Upload
-                        </button>
-                        <button type="button" className="cancel-btn">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Company Name <span className="text-danger">*</span>
-                        </label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <label className="form-label mb-0">Email</label>
-                          <div className="form-check form-switch">
-                            <label
-                              className="form-check-label me-2"
-                              style={{ fontSize: "12px" }}
-                            >
-                              Option
-                            </label>
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              role="switch"
-                            />
-                          </div>
-                        </div>
-                        <input type="email" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Phone Number <span className="text-danger">*</span>
-                        </label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Phone Number 2</label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Fax</label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Website</label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Ratings <span className="text-danger">*</span>
-                        </label>
-
-                        <input
-                          type="number"
-                          className="form-control"
-                          name="ratings"
-                          value={formData.ratings}
-                          onChange={(e) => {
-                            const value = e.target.value;
-
-                            if (value === "" || (value >= 0 && value <= 5)) {
-                              handleFormChange(e);
-                            }
-                          }}
-                          min="0"
-                          max="5"
-                          step="0.1"
-                          placeholder="Enter rating (0 - 5)"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Owner <span className="text-danger">*</span>
-                        </label>
-
-                        <div className="d-flex align-items-center gap-2">
-                          {formData.owner === "Other" ? (
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="Enter Owner Name"
-                              value={formData.customOwner || ""}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  customOwner: e.target.value,
-                                }))
-                              }
-                            />
-                          ) : (
-                            <select
-                              className="form-select"
-                              name="owner"
-                              value={formData.owner}
-                              onChange={(e) => {
-                                const value = e.target.value;
-
-                                if (value === "Other") {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    owner: "Other",
-                                    customOwner: "",
-                                  }));
-                                } else {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    owner: value,
-                                    customOwner: "",
-                                  }));
-                                }
-                              }}
-                              required
-                            >
-                              <option value="">Select</option>
-                              <option value="Darlee Robertson">
-                                Darlee Robertson
-                              </option>
-                              <option value="Sharon Roy">Sharon Roy</option>
-                              <option value="Vaughan Lewis">
-                                Vaughan Lewis
-                              </option>
-                              <option value="Other">Other</option>
-                            </select>
-                          )}
-
-                          <button
-                            type="button"
-                            className="btn btn-light btn-icon"
-                          >
-                            <Icon
-                              icon="tabler:user-plus"
-                              width="20"
-                              height="20"
-                            />
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn btn-light btn-icon"
-                          >
-                            <Icon icon="tabler:phone" width="20" height="20" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Tags <span className="text-danger">*</span>
-                        </label>
-
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="tags"
-                          value={formData.tags}
-                          onChange={handleFormChange}
-                          placeholder="Add new tag and press Enter"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Deals <span className="text-danger">*</span>
-                        </label>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <select className="form-select">
-                            <option>Select</option>
-                            <option>Deal 1</option>
-                            <option>Deal 2</option>
-                          </select>
-                          <button
-                            type="button"
-                            className="btn btn-link text-primary ms-2 text-nowrap p-0 text-decoration-none"
-                            style={{ fontSize: "14px" }}
-                          >
-                            <i className="ti ti-plus me-1"></i>Add New
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Address Tab */}
-                <div
-                  className="tab-pane fade"
-                  id="address"
-                  role="tabpanel"
-                  aria-labelledby="address-tab"
-                >
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Street Address</label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">City</label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">State</label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Country</label>
-
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="country"
-                          onChange={handleFormChange}
-                          
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Zip Code</label>
-                        <input type="text" className="form-control" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Social Profiles Tab */}
-                <div
-                  className="tab-pane fade"
-                  id="social-profiles"
-                  role="tabpanel"
-                  aria-labelledby="social-tab"
-                >
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Facebook</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="https://www.facebook.com/"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Twitter</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="https://www.twitter.com/"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">LinkedIn</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="https://www.linkedin.com/"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Instagram</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="https://www.instagram.com/"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Access Tab */}
-                <div
-                  className="tab-pane fade"
-                  id="access"
-                  role="tabpanel"
-                  aria-labelledby="access-tab"
-                >
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Visibility</label>
-
-                        <div className="d-flex align-items-center gap-4">
-                          {[
-                            { id: "public", label: "Public" },
-                            { id: "private", label: "Private" },
-                            { id: "select_people", label: "Select People" },
-                          ].map((option) => {
-                            const isChecked =
-                              formData.companyVisibility === option.id;
-
-                            return (
-                              <label
-                                key={option.id}
-                                htmlFor={`company-${option.id}`}
-                                className="d-flex align-items-center"
-                                style={{ cursor: "pointer" }}
-                              >
-                                {/* Custom Radio Circle */}
-                                <div
-                                  style={{
-                                    width: "20px",
-                                    height: "20px",
-                                    borderRadius: "50%",
-                                    border: `2px solid ${isChecked ? "#3B82F6" : "#9CA3AF"}`,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    marginRight: "8px",
-                                    transition: "all 0.3s ease",
-                                  }}
-                                >
-                                  {isChecked && (
-                                    <div
-                                      style={{
-                                        width: "10px",
-                                        height: "10px",
-                                        borderRadius: "50%",
-                                        background: "#3B82F6",
-                                      }}
-                                    />
-                                  )}
-                                </div>
-
-                                {/* Hidden Radio Input */}
-                                <input
-                                  type="radio"
-                                  name="companyVisibility"
-                                  id={`company-${option.id}`}
-                                  value={option.id}
-                                  checked={formData.companyVisibility === option.id}
-                                  onChange={handleFormChange}
-                                  style={{ display: "none" }}
-                                />
-
-                                <span className="text-dark fw-semibold">
-                                  {option.label}
-                                </span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Status</label>
-                        <select className="form-select">
-                          <option>Select</option>
-                          <option>Active</option>
-                          <option>Inactive</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+      {/* Add/Edit Lead Modal */}
+      <Modal isOpen={showAddLeadModal} onClose={() => { setShowAddLeadModal(false); resetForm(); setSelectedLead(null); }} title={modalType === "add" ? "Add New Lead" : "Edit Lead"} size="lg">
+        <form onSubmit={handleAddLead} className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Lead Name <span className="text-rose-500">*</span></label><input name="leadName" value={formData.leadName} onChange={handleFormChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" required /></div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Lead Type</label>
+              <div className="flex gap-4">
+                {["person", "organization"].map(option => (
+                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="leadType" value={option} checked={formData.leadType === option} onChange={handleFormChange} className="text-primary focus:ring-primary" />
+                    <span className="text-sm text-gray-700 capitalize">{option}</span>
+                  </label>
+                ))}
               </div>
             </div>
-
-            <div className="modal-footer border-top">
-              <button
-                type="button"
-                className="cancel-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddCompanyModal(false);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="create-job-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddCompanyModal(false);
-                }}
-              >
-                Save
-              </button>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Company <span className="text-rose-500">*</span></label><input name="company" value={formData.company} onChange={handleFormChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" required /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Location</label><input name="location" value={formData.location} onChange={handleFormChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Value</label><input name="value" value={formData.value} onChange={handleFormChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" /></div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+              {formData.currency === "Other" ? (
+                <input type="text" placeholder="Enter Currency" value={formData.customCurrency} onChange={(e) => setFormData(prev => ({ ...prev, customCurrency: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" />
+              ) : (
+                <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white" value={formData.currency} onChange={(e) => { const value = e.target.value; if (value === "Other") setFormData(prev => ({ ...prev, currency: "Other", customCurrency: "" })); else setFormData(prev => ({ ...prev, currency: value, customCurrency: "" })); }}>
+                  <option value="Select">Select</option><option value="USD">USD</option><option value="Euro">Euro</option><option value="INR">INR</option><option value="Other">Other</option>
+                </select>
+              )}
+            </div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Phone</label><input name="phone" value={formData.phone} onChange={handleFormChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input name="email" value={formData.email} onChange={handleFormChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" /></div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+              {formData.source === "Other" ? (
+                <input type="text" placeholder="Enter Source" value={formData.customSource} onChange={(e) => setFormData(prev => ({ ...prev, customSource: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" />
+              ) : (
+                <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white" value={formData.source} onChange={(e) => { const value = e.target.value; if (value === "Other") setFormData(prev => ({ ...prev, source: "Other", customSource: "" })); else setFormData(prev => ({ ...prev, source: value, customSource: "" })); }}>
+                  <option value="">Select</option><option value="Phone Calls">Phone Calls</option><option value="Social Media">Social Media</option><option value="Referral Sites">Referral Sites</option><option value="Other">Other</option>
+                </select>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+              {formData.industry === "Other" ? (
+                <input type="text" placeholder="Enter Industry" value={formData.customIndustry} onChange={(e) => setFormData(prev => ({ ...prev, customIndustry: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" />
+              ) : (
+                <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white" value={formData.industry} onChange={(e) => { const value = e.target.value; if (value === "Other") setFormData(prev => ({ ...prev, industry: "Other", customIndustry: "" })); else setFormData(prev => ({ ...prev, industry: value, customIndustry: "" })); }}>
+                  <option value="">Select</option><option value="Retail Industry">Retail Industry</option><option value="Banking">Banking</option><option value="Hotels">Hotels</option><option value="Other">Other</option>
+                </select>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
+              {formData.owner === "Other" ? (
+                <input type="text" placeholder="Enter Owner" value={formData.customOwner} onChange={(e) => setFormData(prev => ({ ...prev, customOwner: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" />
+              ) : (
+                <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white" value={formData.owner} onChange={(e) => { const value = e.target.value; if (value === "Other") setFormData(prev => ({ ...prev, owner: "Other", customOwner: "" })); else setFormData(prev => ({ ...prev, owner: value, customOwner: "" })); }}>
+                  <option value="">Select</option><option value="Darlee Robertson">Darlee Robertson</option><option value="Sharon Roy">Sharon Roy</option><option value="Vaughan Lewis">Vaughan Lewis</option><option value="Other">Other</option>
+                </select>
+              )}
+            </div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Tags</label><input name="tags" value={formData.tags} onChange={handleFormChange} placeholder="Add tags (comma separated)" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary" /></div>
+            <div className="sm:col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" value={formData.description} onChange={handleFormChange} rows="3" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"></textarea></div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
+              <div className="flex gap-4">
+                {["public", "private", "select_people"].map(option => (
+                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="visibility" value={option} checked={formData.visibility === option} onChange={handleFormChange} className="text-primary focus:ring-primary" />
+                    <span className="text-sm text-gray-700 capitalize">{option === "select_people" ? "Select People" : option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select name="status" value={formData.status} onChange={handleFormChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white">
+                <option value="">Select</option><option value="Contacted">Contacted</option><option value="Not Contacted">Not Contacted</option><option value="Closed">Closed</option><option value="Lost">Lost</option>
+              </select>
             </div>
           </div>
-        </div>
-      )}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button type="button" onClick={() => { setShowAddLeadModal(false); resetForm(); setSelectedLead(null); }} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all">Cancel</button>
+            <button type="submit" className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-all"><FiPlus className="h-4 w-4" />{modalType === "add" ? "Add Lead" : "Save Changes"}</button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div
-          className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              {/* Header */}
-              <div className="modal-header">
-                <h5 className="modal-title d-flex align-items-center">
-                  Confirm Delete
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowDeleteModal(false)}
-                ></button>
-              </div>
-              {/* Body */}
-              <div className="modal-body">
-                <div className="text-center">
-                  <h5>Are you sure?</h5>
-                  <p className="text-muted">
-                    Do you want to delete the lead "
-                    {leadToDelete?.name || "this lead"}"? This action cannot be
-                    undone.
-                  </p>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="delete-btn"
-                  onClick={() => setShowDeleteModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="cancel-btn"
-                  onClick={confirmDelete}
-                >
-                  Delete Lead
-                </button>
-              </div>
-            </div>
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Confirm Delete" size="md">
+        <div className="text-center py-4">
+          <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiTrash2 className="h-8 w-8 text-rose-600" />
           </div>
+          <h3 className="text-lg font-semibold text-midnight_text mb-2">Are you sure?</h3>
+          <p className="text-sm text-gray-500">Do you want to delete the lead "{leadToDelete?.name || "this lead"}"? This action cannot be undone.</p>
         </div>
-      )}
-
-      {/* Toast Container */}
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={true}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        style={{ top: "38px" }}
-      />
-
-      {/* Footer */}
-      <div
-        className="footer d-sm-flex align-items-center justify-content-between border-top bg-white p-2 mt-3"
-        style={{
-          marginLeft: "-24px",
-          marginRight: "-24px",
-          marginBottom: "-24px",
-        }}
-      >
-        <p className="mb-0" style={{ fontSize: "14px", paddingLeft: "24px" }}>
-          2014 - 2025 © DCM.
-        </p>
-        <p className="mb-0" style={{ fontSize: "14px", paddingRight: "24px" }}>
-          Designed & Developed By{" "}
-          <button
-            type="button"
-            className="btn btn-link text-primary p-0 text-decoration-none"
-            style={{ fontSize: "14px", verticalAlign: "baseline" }}
-          >
-            DCM
-          </button>
-        </p>
-      </div>
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all">Cancel</button>
+          <button onClick={confirmDelete} className="px-4 py-2 text-sm font-medium bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-all">Delete Lead</button>
+        </div>
+      </Modal>
     </div>
   );
 };

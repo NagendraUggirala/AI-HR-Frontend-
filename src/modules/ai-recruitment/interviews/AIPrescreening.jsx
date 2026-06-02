@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import {
-  CheckCircle,
-  XCircle,
-  Users,
-  TrendingUp,
-  AlertTriangle,
-  Filter,
-  Search,
-  Download,
-  X,
-  Send,
-  Video,
-  RefreshCw
-} from 'lucide-react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+  FiCheckCircle,
+  FiXCircle,
+  FiUsers,
+  FiTrendingUp,
+  FiAlertTriangle,
+  FiFilter,
+  FiSearch,
+  FiDownload,
+  FiX,
+  FiSend,
+  FiVideo,
+  FiRefreshCw,
+  FiBarChart2,
+  FiBriefcase,
+  FiUser,
+  FiMail,
+  FiStar,
+  FiEye
+} from 'react-icons/fi';
 import { BASE_URL } from "../../../shared/constants/api.config";
+import Modal from '../../../shared/components/Modal';
+import { FaRobot } from 'react-icons/fa';
 
 const AIPrescreening = () => {
   const [candidates, setCandidates] = useState([]);
@@ -29,7 +36,6 @@ const AIPrescreening = () => {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [templates, setTemplates] = useState([]);
 
-  // Fetch AI interview templates
   const fetchTemplates = async () => {
     try {
       const storedTemplates = localStorage.getItem('aiInterviewTemplates');
@@ -41,7 +47,6 @@ const AIPrescreening = () => {
     }
   };
 
-  // Send AI Interview link via email
   const handleSendAIInterview = async (candidate, templateId = null) => {
     setSendingEmail(true);
     
@@ -93,7 +98,6 @@ Recruitment Team
 
       if (response.ok) {
         alert(`✅ AI Interview link sent successfully to ${candidate.name}!`);
-        // Refresh candidates list to update any status changes
         fetchCandidates();
       } else {
         navigator.clipboard.writeText(emailBody);
@@ -108,37 +112,6 @@ Recruitment Team
     }
   };
 
-  // Assign candidate to Interview stage
-  const handleAssignInterview = async (candidate) => {
-    try {
-      const response = await fetch(`${BASE_URL}/api/resume/candidates/${candidate.id}/stage`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ stage: 'Interview' })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        alert(`✅ ${candidate.name} has been assigned to Interview stage!`);
-        // Refresh candidates list to show updated stage
-        fetchCandidates();
-        // Update selected candidate if it's the same one
-        if (selectedCandidate && selectedCandidate.id === candidate.id) {
-          setSelectedCandidate({ ...selectedCandidate, stage: 'Interview' });
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        alert(`❌ Failed to assign interview: ${errorData.detail || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error assigning interview:', error);
-      alert('❌ Failed to assign interview. Please try again.');
-    }
-  };
-
-  // Send interview link for candidates with "Interview" status
   const handleSendInterviewLink = async (candidate) => {
     if (candidate.stage?.toLowerCase() !== 'interview') {
       alert('⚠️ This candidate is not in Interview stage. Only candidates with "Interview" status can receive interview links.');
@@ -147,12 +120,10 @@ Recruitment Team
     await handleSendAIInterview(candidate);
   };
 
-  // Fetch candidates from candidate_records table who have stage = "Interview"
   const fetchCandidates = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      // Fetch candidate records
       const candidatesRes = await fetch(`${BASE_URL}/api/resume/candidates`, {
         method: 'GET',
         headers: {
@@ -164,35 +135,11 @@ Recruitment Team
       if (candidatesRes.ok) {
         const candidateRecords = await candidatesRes.json();
 
-        // Debug: Log all candidate records and their stages
-        console.log('📊 Total candidate records fetched:', candidateRecords.length);
-        console.log('📊 All candidate stages:', candidateRecords.map(c => ({
-          name: c.candidate_name,
-          email: c.candidate_email,
-          stage: c.stage,
-          stageType: typeof c.stage,
-          stageLower: c.stage?.toLowerCase()
-        })));
-
-        // Filter candidates who have stage = "Interview"
         const interviewCandidates = candidateRecords
           .filter(candidateRecord => {
-            // Get and normalize stage value
             const stage = candidateRecord.stage;
             const stageNormalized = stage ? String(stage).toLowerCase().trim() : '';
-            const isInterviewStage = stageNormalized === 'interview';
-            
-            // Debug: Log all candidates with their stages
-            console.log(`🔍 Candidate: ${candidateRecord.candidate_name || 'Unknown'}`, {
-              email: candidateRecord.candidate_email,
-              stage: stage,
-              stageNormalized: stageNormalized,
-              isInterviewStage: isInterviewStage,
-              id: candidateRecord.id
-            });
-            
-            // Must be in Interview stage (case-insensitive, trimmed)
-            return isInterviewStage;
+            return stageNormalized === 'interview';
           })
           .map(c => ({
             id: c.id,
@@ -218,26 +165,15 @@ Recruitment Team
               ? 'Highly recommended for interview. Strong candidate with excellent qualifications.'
               : c.score >= 60
               ? 'Recommended for consideration. Good potential with solid background.'
-              : 'Consider for interview. Candidate shows promise.',
-            // Keep original data for backward compatibility
-            candidate_name: c.candidate_name,
-            candidate_email: c.candidate_email,
-            role: c.role,
-            experience_level: c.experience_level,
-            candidate_skills: c.candidate_skills,
-            email_sent: c.email_sent,
-            created_at: c.created_at
+              : 'Consider for interview. Candidate shows promise.'
           }));
 
-        console.log(`✅ Found ${interviewCandidates.length} candidates in Interview stage`);
         setCandidates(interviewCandidates);
       } else {
-        const errorText = await candidatesRes.text();
-        console.error('❌ Failed to fetch candidates:', candidatesRes.status, errorText);
         setCandidates([]);
       }
     } catch (error) {
-      console.error('❌ Error fetching candidates:', error);
+      console.error('Error fetching candidates:', error);
       setCandidates([]);
     } finally {
       setLoading(false);
@@ -249,10 +185,8 @@ Recruitment Team
     fetchTemplates();
   }, []);
 
-  // Get unique jobs
   const jobs = ['all', ...new Set(candidates.map(c => c.job))];
 
-  // Filter candidates
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = candidate.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
                          candidate.email?.toLowerCase().includes(filters.search.toLowerCase());
@@ -261,14 +195,11 @@ Recruitment Team
     const matchesScore = candidate.score >= filters.scoreThreshold;
     const matchesStage = filters.stage === 'all' || 
                         candidate.stage?.toLowerCase() === filters.stage?.toLowerCase();
-    
-    // Exclude rejected candidates (already filtered in fetchCandidates, but double-check)
     const notRejected = candidate.stage?.toLowerCase() !== 'rejected';
     
     return matchesSearch && matchesJob && matchesScore && matchesStage && notRejected;
   });
 
-  // Calculate statistics
   const hasData = candidates.length > 0;
   const totalCandidates = candidates.length;
   const avgScore = candidates.length > 0
@@ -277,7 +208,6 @@ Recruitment Team
   const interviewStageCount = candidates.filter(c => c.stage?.toLowerCase() === 'interview').length;
   const highScoreCount = candidates.filter(c => c.score >= 80).length;
 
-  // Export to CSV
   const exportToCSV = () => {
     const headers = ['Name', 'Email', 'Job', 'Score', 'Strengths', 'Weaknesses', 'Recommendation'];
     const rows = filteredCandidates.map(candidate => [
@@ -303,15 +233,13 @@ Recruitment Team
     a.click();
   };
 
-  // Get score color
   const getScoreColor = (score) => {
-    if (score >= 80) return 'bg-success text-white';
-    if (score >= 70) return 'bg-info text-white';
-    if (score >= 60) return 'bg-warning text-dark';
-    return 'bg-danger text-white';
+    if (score >= 80) return 'bg-emerald-500 text-white';
+    if (score >= 70) return 'bg-primary text-white';
+    if (score >= 60) return 'bg-amber-500 text-white';
+    return 'bg-rose-500 text-white';
   };
 
-  // Get score badge text
   const getScoreBadge = (score) => {
     if (score >= 80) return 'Excellent Fit';
     if (score >= 70) return 'Good Fit';
@@ -319,519 +247,398 @@ Recruitment Team
     return 'Poor Fit';
   };
 
-  // Handle shortlist
   const handleShortlist = () => {
     if (selectedCandidate) {
       alert(`✅ ${selectedCandidate.name} has been shortlisted!`);
     }
   };
 
-  // Handle move to interview
-  const handleMoveToInterview = () => {
-    if (selectedCandidate) {
-      handleSendAIInterview(selectedCandidate);
+  const getStageColor = (stage) => {
+    switch (stage?.toLowerCase()) {
+      case 'interview': return 'bg-primary text-white';
+      case 'applied': return 'bg-indigo-50 text-indigo-700';
+      case 'offer': return 'bg-amber-50 text-amber-700';
+      case 'hired': return 'bg-emerald-50 text-emerald-700';
+      default: return 'bg-gray-100 text-gray-600';
     }
   };
 
   return (
-    <div className="container-fluid py-4">
-      {/* Page Header - aligned with JobList/CreateJob */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:sparkles" className="text-black" style={{ fontSize: 28 }} />
-            AI Prescreening
-          </h4>
-          <p className="text-secondary mb-0 mt-1">
-            Review candidates who passed resume screening and are ready for interviews.
-          </p>
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated:{' '}
-            <span className="fw-medium text-body">
-              {new Date().toLocaleDateString()}
-            </span>
-          </span>
-          <div className="d-flex flex-wrap gap-2 justify-content-end">
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FaRobot className="text-gray-600 text-xl sm:text-2xl" />
+              AI Prescreening
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Review candidates who passed resume screening and are ready for interviews</p>
+          </div>
+          <div className="flex gap-2">
             <button
-              className="btn refresh-btn d-inline-flex align-items-center gap-2"
               onClick={fetchCandidates}
               disabled={loading}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
             >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Refreshing...' : 'Refresh'}
             </button>
             <button
-              className="sync-btn d-inline-flex align-items-center gap-2"
               onClick={exportToCSV}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
             >
-              <Download size={16} />
-              <span>Export CSV</span>
+              <FiDownload className="h-4 w-4" />
+              Export CSV
             </button>
           </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+            <p className="text-gray-500 text-sm">Fetching AI prescreening results...</p>
           </div>
-          <p className="text-secondary-light mb-0">Fetching AI prescreening results...</p>
-        </div>
-      ) : !hasData ? (
-        <div className="card border shadow-none">
-          <div className="card-body text-center py-5">
-          
-            <h5 className="mb-2">No AI prescreening data</h5>
-            <p className="text-secondary-light mb-0">
-              Once candidates reach the interview stage they will appear here automatically.
-            </p>
+        ) : !hasData ? (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-8 text-center">
+            <FiUsers className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-midnight_text mb-1">No AI Prescreening Data</h3>
+            <p className="text-sm text-gray-500">Once candidates reach the interview stage they will appear here automatically</p>
           </div>
-        </div>
-      ) : (
-        <>
-          {/* KPI Summary - kpi-row layout */}
-          <div className="kpi-row mb-4">
-            {[
-              {
-                title: 'Total Candidates',
-                value: totalCandidates,
-                sub: 'In Interview stage',
-                icon: 'heroicons:user-group',
-                bg: 'kpi-primary',
-                color: 'kpi-primary-text'
-              },
-              {
-                title: 'Average AI Score',
-                value: `${avgScore}%`,
-                sub: 'Across filtered list',
-                icon: 'heroicons:chart-bar',
-                bg: 'kpi-info',
-                color: 'kpi-info-text'
-              },
-              {
-                title: 'Interview Stage',
-                value: interviewStageCount,
-                sub: 'Currently interviewing',
-                icon: 'heroicons:briefcase',
-                bg: 'kpi-success',
-                color: 'kpi-success-text'
-              },
-              {
-                title: 'High Potential (≥80%)',
-                value: highScoreCount,
-                sub: 'Strong AI matches',
-                icon: 'heroicons:sparkles',
-                bg: 'kpi-warning',
-                color: 'kpi-warning-text'
-              }
-            ].map((item, index) => (
-              <div className="kpi-col" key={index}>
-                <div className="kpi-card">
-                  <div className="kpi-card-body">
-                    <div className={`kpi-icon ${item.bg}`}>
-                      <Icon icon={item.icon} className={`kpi-icon-style ${item.color}`} />
-                    </div>
-                    <div className="kpi-content">
-                      <div className="kpi-title">{item.title}</div>
-                      <div className="kpi-value">{item.value}</div>
-                      {item.sub && <div className="kpi-sub text-muted">{item.sub}</div>}
-                    </div>
+        ) : (
+          <>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Total Candidates</p>
+                    <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{totalCandidates}</p>
+                    <p className="text-xs text-gray-400 mt-1">In Interview stage</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FiUsers className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Filters - structured like JobList */}
-          <div className="card border shadow-none mb-4">
-            <div className="card-header bg-transparent border-bottom py-3">
-              <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-                <Icon icon="heroicons:funnel" style={{ fontSize: 18 }} />
-                Filter & search
-              </h6>
-            </div>
-            <div className="card-body">
-              <div className="row g-3 align-items-end">
-                <div className="col-12 col-md-4 col-lg-3">
-                  <label className="form-label small text-muted mb-1">Search candidate</label>
-                  <div className="position-relative">
-                    <Search
-                      size={16}
-                      className="position-absolute top-50 translate-middle-y ms-3 text-muted"
-                    />
-                    <input
-                      type="text"
-                      className="form-control ps-5"
-                      placeholder="Name or email..."
-                      value={filters.search}
-                      onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    />
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Average AI Score</p>
+                    <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{avgScore}%</p>
+                    <p className="text-xs text-gray-400 mt-1">Across filtered list</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                    <FiBarChart2 className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
                   </div>
                 </div>
-                <div className="col-6 col-md-3 col-lg-3">
-                  <label className="form-label small text-muted mb-1">Job</label>
-                  <select
-                    className="form-select"
-                    value={filters.job}
-                    onChange={(e) => setFilters({ ...filters, job: e.target.value })}
-                  >
-                    {jobs.map((job) => (
-                      <option key={job} value={job}>
-                        {job === 'all' ? 'All Jobs' : job}
-                      </option>
-                    ))}
-                  </select>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Interview Stage</p>
+                    <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{interviewStageCount}</p>
+                    <p className="text-xs text-gray-400 mt-1">Currently interviewing</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <FiBriefcase className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+                  </div>
                 </div>
-                <div className="col-6 col-md-3 col-lg-3">
-                  <label className="form-label small text-muted mb-1">Stage</label>
-                  <select
-                    className="form-select"
-                    value={filters.stage || 'all'}
-                    onChange={(e) => setFilters({ ...filters, stage: e.target.value })}
-                  >
-                    <option value="all">All Stages</option>
-                    <option value="applied">Applied</option>
-                    <option value="interview">Interview</option>
-                    <option value="offer">Offer</option>
-                    <option value="hired">Hired</option>
-                  </select>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">High Potential</p>
+                    <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{highScoreCount}</p>
+                    <p className="text-xs text-gray-400 mt-1">Strong AI matches (≥80%)</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <FiStar className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+                  </div>
                 </div>
-                <div className="col-6 col-md-2 col-lg-2">
-                  <label className="form-label small text-muted mb-1">Score ≥ (%)</label>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
-                    type="number"
-                    className="form-control"
-                    value={filters.scoreThreshold}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        scoreThreshold: parseInt(e.target.value, 10) || 0
-                      })
-                    }
-                    min="0"
-                    max="100"
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                   />
                 </div>
-                <div className="col-12 col-md-2 col-lg-1 d-flex justify-content-md-end">
-                  <button
-                    className="sync-btn d-inline-flex align-items-center gap-2 w-100 justify-content-center"
-                    onClick={fetchCandidates}
-                    disabled={loading}
-                  >
-                    <Filter size={16} />
-                    Apply
-                  </button>
-                </div>
+                <select
+                  value={filters.job}
+                  onChange={(e) => setFilters({ ...filters, job: e.target.value })}
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+                >
+                  {jobs.map((job) => (
+                    <option key={job} value={job}>
+                      {job === 'all' ? 'All Jobs' : job}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={filters.stage || 'all'}
+                  onChange={(e) => setFilters({ ...filters, stage: e.target.value })}
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+                >
+                  <option value="all">All Stages</option>
+                  <option value="applied">Applied</option>
+                  <option value="interview">Interview</option>
+                  <option value="offer">Offer</option>
+                  <option value="hired">Hired</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Score ≥ (%)"
+                  value={filters.scoreThreshold}
+                  onChange={(e) => setFilters({ ...filters, scoreThreshold: parseInt(e.target.value, 10) || 0 })}
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  min="0"
+                  max="100"
+                />
+                <button
+                  onClick={fetchCandidates}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+                >
+                  <FiFilter className="h-4 w-4" />
+                  Apply Filters
+                </button>
               </div>
             </div>
-          </div>
 
-          <div className="row g-4">
-            <div className={`${selectedCandidate ? 'col-lg-7' : 'col-12'}`}>
-              <div className="card border shadow-none">
-                <div className="card-body p-0">
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Candidates Table */}
+              <div className={selectedCandidate ? 'lg:col-span-2' : 'lg:col-span-3'}>
+                <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow overflow-hidden">
                   {filteredCandidates.length === 0 ? (
-                <div className="text-center py-5">
-                  <Users size={48} className="text-muted mb-3" />
-                  <h6 className="text-muted mb-2">No Candidates Found</h6>
-                  <p className="text-muted small mb-0">
-                    {candidates.length === 0
-                      ? 'Start screening resumes to see candidates here'
-                      : 'Try adjusting your filters'}
-                  </p>
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th className="px-4 py-3">Candidate Name</th>
-                        <th className="px-4 py-3">Job Applied</th>
-                        <th className="px-4 py-3">AI Fit Score</th>
-                        <th className="px-4 py-3">Stage</th>
-                        <th className="px-4 py-3">Strengths</th>
-                        <th className="px-4 py-3">Weaknesses</th>
-                        <th className="px-4 py-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredCandidates.map((candidate) => (
-                        <tr key={candidate.id}>
-                          <td className="px-4 py-3">
-                            <div className="fw-medium">{candidate.name}</div>
-                            <div className="text-muted small">{candidate.email}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-muted small">{candidate.job}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`badge ${getScoreColor(candidate.score)}`}>
-                              {candidate.score.toFixed(0)}%
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`badge ${
-                              candidate.stage?.toLowerCase() === 'interview' 
-                                ? 'bg-primary' 
-                                : candidate.stage?.toLowerCase() === 'applied'
-                                ? 'bg-info'
-                                : 'bg-secondary'
-                            } text-white`}>
-                              {candidate.stage || 'Applied'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-muted small">
-                              {candidate.strengths.slice(0, 2).join(', ')}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-muted small">
-                              {candidate.weaknesses.slice(0, 1).join(', ')}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="d-flex gap-2">
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() => setSelectedCandidate(candidate)}
-                              >
-                                View Insights
-                              </button>
-                              <button
-                                className="btn btn-success btn-sm"
-                                onClick={() => handleSendInterviewLink(candidate)}
-                                disabled={sendingEmail}
-                                title="Send Interview Link"
-                              >
-                                {sendingEmail ? (
-                                  <RefreshCw size={14} className="spin" />
-                                ) : (
-                                  <>
-                                    <Send size={14} className="me-1" />
-                                    Send Link
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    <div className="text-center py-12">
+                      <FiUsers className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <h6 className="text-gray-500 mb-1">No Candidates Found</h6>
+                      <p className="text-sm text-gray-400">
+                        {candidates.length === 0 ? 'Start screening resumes to see candidates here' : 'Try adjusting your filters'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-100">
+                          <tr>
+                            <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Candidate Name</th>
+                            <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Job Applied</th>
+                            <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">AI Fit Score</th>
+                            <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Stage</th>
+                            <th className="text-left text-xs font-semibold text-gray-600 px-4 py-3">Strengths</th>
+                            <th className="text-center text-xs font-semibold text-gray-600 px-4 py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {filteredCandidates.map((candidate) => (
+                            <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-xs font-medium text-primary">{candidate.name?.charAt(0) || '?'}</span>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-midnight_text">{candidate.name}</p>
+                                    <p className="text-xs text-gray-500">{candidate.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-sm text-gray-600">{candidate.job}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getScoreColor(candidate.score)}`}>
+                                  {candidate.score.toFixed(0)}%
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getStageColor(candidate.stage)}`}>
+                                  {candidate.stage || 'Applied'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-xs text-gray-500 truncate max-w-[150px]">
+                                  {candidate.strengths.slice(0, 2).join(', ')}
+                                </p>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => setSelectedCandidate(candidate)}
+                                    className="p-1.5 text-gray-500 hover:text-primary rounded-lg hover:bg-primary/10 transition-all"
+                                    title="View Insights"
+                                  >
+                                    <FiEye className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleSendInterviewLink(candidate)}
+                                    disabled={sendingEmail}
+                                    className="p-1.5 text-gray-500 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all disabled:opacity-50"
+                                    title="Send Interview Link"
+                                  >
+                                    <FiSend className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
 
-            {selectedCandidate && (
-          <div className="col-lg-5">
-            <div className="card border shadow-none position-sticky" style={{ top: '20px' }}>
-              {/* Header */}
-              <div className="card-header bg-white border-bottom">
-                <div className="d-flex align-items-start justify-content-between mb-3">
-                  <div>
-                    <h5 className="mb-1">{selectedCandidate.name}</h5>
-                    <p className="text-muted small mb-0">{selectedCandidate.job}</p>
-                  </div>
-                  <button
-                    className="btn btn-sm btn-outline-secondary"
-                    onClick={() => setSelectedCandidate(null)}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="d-flex align-items-center gap-3">
-                  <span
-                    className={`fs-3 fw-bold ${getScoreColor(selectedCandidate.score).split(' ')[0]}`}
-                  >
-                    {selectedCandidate.score.toFixed(0)}%
-                  </span>
-                  <span className={`badge ${getScoreColor(selectedCandidate.score)}`}>
-                    {getScoreBadge(selectedCandidate.score)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="card-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                {/* Strengths */}
-                <div className="mb-4">
-                  <div className="d-flex align-items-center gap-2 mb-3">
-                    <CheckCircle size={18} className="text-success" />
-                    <h6 className="mb-0">💪 Strengths</h6>
-                  </div>
-                  <ul className="list-unstyled">
-                    {selectedCandidate.strengths.map((strength, idx) => (
-                      <li
-                        key={idx}
-                        className="d-flex align-items-start gap-2 small text-muted mb-2"
-                      >
-                        <span className="text-success mt-1">•</span>
-                        <span>{strength}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="small text-muted mt-3">{selectedCandidate.additionalInfo}</p>
-                </div>
-
-                {/* Weaknesses */}
-                <div className="mb-4">
-                  <div className="d-flex align-items-center gap-2 mb-3">
-                    <AlertTriangle size={18} className="text-warning" />
-                    <h6 className="mb-0">⚠ Areas for Improvement</h6>
-                  </div>
-                  <ul className="list-unstyled">
-                    {selectedCandidate.weaknesses.map((weakness, idx) => (
-                      <li
-                        key={idx}
-                        className="d-flex align-items-start gap-2 small text-muted mb-2"
-                      >
-                        <span className="text-warning mt-1">•</span>
-                        <span>{weakness}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Evaluation Metrics */}
-                <div className="mb-4">
-                  <div className="d-flex align-items-center gap-2 mb-3">
-                    <TrendingUp size={18} className="text-primary" />
-                    <h6 className="mb-0">📈 Evaluation Summary</h6>
-                  </div>
-                  <div>
-                    {[
-                      { label: 'Resume Match', value: selectedCandidate.resumeMatch },
-                      { label: 'Skills Match', value: selectedCandidate.skillsMatch },
-                      {
-                        label: 'Experience Relevance',
-                        value: selectedCandidate.experienceRelevance,
-                      },
-                      {
-                        label: 'Culture Fit (AI-based)',
-                        value: selectedCandidate.cultureFit,
-                      },
-                    ].map((metric, idx) => (
-                      <div key={idx} className="mb-3">
-                        <div className="d-flex justify-content-between small mb-1">
-                          <span className="text-muted">{metric.label}</span>
-                          <span className="fw-medium">{metric.value}%</span>
+              {/* Candidate Details Sidebar */}
+              {selectedCandidate && (
+                <div className="lg:col-span-1">
+                  <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow sticky top-4">
+                    <div className="p-4 border-b border-gray-100">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h5 className="font-semibold text-midnight_text">{selectedCandidate.name}</h5>
+                          <p className="text-xs text-gray-500 mt-0.5">{selectedCandidate.job}</p>
                         </div>
-                        <div className="progress" style={{ height: '8px' }}>
-                          <div
-                            className={`progress-bar ${
-                              metric.value >= 80
-                                ? 'bg-success'
-                                : metric.value >= 70
-                                ? 'bg-warning'
-                                : 'bg-danger'
-                            }`}
-                            style={{ width: `${metric.value}%` }}
-                          />
+                        <button
+                          onClick={() => setSelectedCandidate(null)}
+                          className="p-1 text-gray-400 hover:text-gray-600 rounded-lg"
+                        >
+                          <FiX className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-bold text-emerald-600">{selectedCandidate.score.toFixed(0)}%</span>
+                        <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getScoreColor(selectedCandidate.score)}`}>
+                          {getScoreBadge(selectedCandidate.score)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                      {/* Strengths */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FiCheckCircle className="h-4 w-4 text-emerald-500" />
+                          <h6 className="text-sm font-semibold text-midnight_text">Strengths</h6>
+                        </div>
+                        <ul className="space-y-1">
+                          {selectedCandidate.strengths.map((strength, idx) => (
+                            <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                              <span className="text-emerald-500 mt-0.5">•</span>
+                              <span>{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Areas for Improvement */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FiAlertTriangle className="h-4 w-4 text-amber-500" />
+                          <h6 className="text-sm font-semibold text-midnight_text">Areas for Improvement</h6>
+                        </div>
+                        <ul className="space-y-1">
+                          {selectedCandidate.weaknesses.map((weakness, idx) => (
+                            <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                              <span className="text-amber-500 mt-0.5">•</span>
+                              <span>{weakness}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Evaluation Metrics */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <FiTrendingUp className="h-4 w-4 text-primary" />
+                          <h6 className="text-sm font-semibold text-midnight_text">Evaluation Summary</h6>
+                        </div>
+                        <div className="space-y-3">
+                          {[
+                            { label: 'Resume Match', value: selectedCandidate.resumeMatch },
+                            { label: 'Skills Match', value: selectedCandidate.skillsMatch },
+                            { label: 'Experience Relevance', value: selectedCandidate.experienceRelevance },
+                            { label: 'Culture Fit (AI-based)', value: selectedCandidate.cultureFit }
+                          ].map((metric, idx) => (
+                            <div key={idx}>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-gray-500">{metric.label}</span>
+                                <span className="font-medium text-midnight_text">{metric.value}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                <div
+                                  className={`h-1.5 rounded-full ${
+                                    metric.value >= 80 ? 'bg-emerald-500' :
+                                    metric.value >= 70 ? 'bg-primary' :
+                                    metric.value >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${metric.value}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+
+                      {/* AI Recommendations */}
+                      <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
+                        <h6 className="text-sm font-semibold text-midnight_text mb-2">AI Recommendations</h6>
+                        <p className="text-xs text-gray-600">{selectedCandidate.recommendation}</p>
+                      </div>
+
+                      {/* Current Stage */}
+                      <div>
+                        <h6 className="text-sm font-semibold text-midnight_text mb-2">Current Stage</h6>
+                        <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getStageColor(selectedCandidate.stage)}`}>
+                          {selectedCandidate.stage || 'Applied'}
+                        </span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={handleShortlist}
+                          className="flex-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all"
+                        >
+                          Shortlist
+                        </button>
+                        <button
+                          onClick={() => handleSendInterviewLink(selectedCandidate)}
+                          disabled={sendingEmail}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                        >
+                          {sendingEmail ? (
+                            <FiRefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <FiSend className="h-4 w-4" />
+                              Send Link
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                {/* AI Recommendations */}
-                <div className="mb-4">
-                  <h6 className="mb-2">🧠 AI Recommendations</h6>
-                  <div className="alert alert-info">
-                    <p className="small mb-0">{selectedCandidate.recommendation}</p>
-                  </div>
-                </div>
-
-                {/* Current Stage */}
-                <div className="mb-4">
-                  <h6 className="mb-2">📋 Current Stage</h6>
-                  <span className={`badge ${
-                    selectedCandidate.stage?.toLowerCase() === 'interview' 
-                      ? 'bg-primary' 
-                      : selectedCandidate.stage?.toLowerCase() === 'applied'
-                      ? 'bg-info'
-                      : selectedCandidate.stage?.toLowerCase() === 'offer'
-                      ? 'bg-warning'
-                      : selectedCandidate.stage?.toLowerCase() === 'hired'
-                      ? 'bg-success'
-                      : 'bg-secondary'
-                  } text-white fs-6`}>
-                    {selectedCandidate.stage || 'Applied'}
-                  </span>
-                </div>
-
-
-                {/* Action Buttons */}
-                <div className="d-grid gap-2">
-                  <button
-                    className="btn btn-success"
-                    onClick={handleShortlist}
-                    style={{
-                      backgroundColor: '#198754',
-                      borderColor: '#198754',
-                      color: 'white',
-                      padding: '8px 16px',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      border: 'none',
-                    }}
-                  >
-                    Shortlist
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleSendInterviewLink(selectedCandidate)}
-                    disabled={sendingEmail}
-                    style={{
-                      backgroundColor: '#0d6efd',
-                      borderColor: '#0d6efd',
-                      color: 'white',
-                      padding: '8px 16px',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      border: 'none',
-                    }}
-                  >
-                    {sendingEmail ? (
-                      <>
-                        <RefreshCw size={14} className="spin me-2" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={14} className="me-2" />
-                        Send Interview Link
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
-          </div>
+          </>
         )}
-          </div>
-        </>
-      )}
-
-      <style jsx>{`
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
+      </div>
     </div>
   );
 };

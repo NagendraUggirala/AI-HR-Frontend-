@@ -1,45 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Filter,
-  RefreshCw,
-  FileText,
-  Code,
-  MessageSquare,
-  Brain,
-  Save,
-  X
-} from 'lucide-react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiSearch,
+  FiFilter,
+  FiRefreshCw,
+  FiFileText,
+  FiCode,
+  FiMessageSquare,
+  FiSave,
+  FiX,
+  FiGrid,
+  FiSmile,
+  FiSliders,
+  FiZap,
+  FiChevronDown
+} from 'react-icons/fi';
 import { assessmentAPI } from "../../../shared/utils/api";
+import Modal from '../../../shared/components/Modal';
+import { FaBrain } from 'react-icons/fa';
 
 const TEST_TYPE_OPTIONS = [
   {
     key: 'aptitude',
     label: 'Aptitude Test',
     description: 'Reasoning and analytical ability assessment',
-    icon: Brain,
-    route: '/assessment/aptitude',
-    badgeClass: 'bg-purple-100 text-purple-700 border border-purple-300'
+    icon: FaBrain,
+    badgeClass: 'bg-purple-100 text-purple-700'
   },
   {
     key: 'coding',
     label: 'Coding Test',
     description: 'Hands-on coding and problem-solving tasks',
-    icon: Code,
-    route: '/assessment/coding',
-    badgeClass: 'bg-blue-100 text-blue-700 border border-blue-300'
+    icon: FiCode,
+    badgeClass: 'bg-blue-100 text-blue-700'
   },
   {
     key: 'communication',
     label: 'Communication Test',
     description: 'Written, listening, and language proficiency check',
-    icon: MessageSquare,
-    route: '/assessment/communication',
-    badgeClass: 'bg-green-100 text-green-700 border border-green-300'
+    icon: FiMessageSquare,
+    badgeClass: 'bg-green-100 text-green-700'
   }
 ];
 
@@ -78,6 +80,7 @@ const AssessmentLibrary = () => {
   const [filterType, setFilterType] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [selectedAssessments, setSelectedAssessments] = useState([]);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -85,12 +88,11 @@ const AssessmentLibrary = () => {
     difficulty: 'medium',
     role: '',
     question_count: 25,
-    created_by: null  // Made optional - will use current user ID if available
+    created_by: null
   });
 
   const [errors, setErrors] = useState({});
 
-  // Fetch assessments
   const fetchAssessments = async () => {
     setLoading(true);
     try {
@@ -107,7 +109,6 @@ const AssessmentLibrary = () => {
     fetchAssessments();
   }, []);
 
-  // Filter assessments
   const filteredAssessments = assessments.filter(assessment => {
     const matchesSearch = assessment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (assessment.role && assessment.role.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -116,7 +117,6 @@ const AssessmentLibrary = () => {
     return matchesSearch && matchesType && matchesDifficulty;
   });
 
-  // Handle form input changes
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -124,10 +124,9 @@ const AssessmentLibrary = () => {
     }
   };
 
-  // Validate form
   const validateForm = () => {
     const newErrors = {};
-    if (!selectedTestType) newErrors.type = 'Please select an assignment type';
+    if (!editMode && !selectedTestType) newErrors.type = 'Please select an assignment type';
     if (!formData.name.trim()) newErrors.name = 'Assessment name is required';
     if (!formData.role.trim()) newErrors.role = 'Role is required';
     if (formData.question_count < 1) newErrors.question_count = 'Must have at least 1 question';
@@ -145,14 +144,13 @@ const AssessmentLibrary = () => {
       ...defaults
     }));
     setErrors((prev) => ({ ...prev, type: null }));
+    setShowTypeDropdown(false);
   };
 
-  // Create assessment
   const handleCreate = async () => {
     if (!validateForm()) return;
     
     try {
-      // Get current user ID from localStorage or use null
       const userId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null;
       const assessmentData = {
         ...formData,
@@ -164,14 +162,12 @@ const AssessmentLibrary = () => {
       setShowModal(false);
       fetchAssessments();
       resetForm();
-      alert('✅ Assessment created successfully!');
     } catch (error) {
       console.error('Error creating assessment:', error);
-      alert('❌ Failed to create assessment');
+      alert('Failed to create assessment');
     }
   };
 
-  // Update assessment
   const handleUpdate = async () => {
     if (!validateForm()) return;
     
@@ -185,23 +181,20 @@ const AssessmentLibrary = () => {
       setEditMode(false);
       fetchAssessments();
       resetForm();
-      alert('✅ Assessment updated successfully!');
     } catch (error) {
       console.error('Error updating assessment:', error);
-      alert('❌ Failed to update assessment');
+      alert('Failed to update assessment');
     }
   };
 
-  // Delete assessment
   const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
       try {
         await assessmentAPI.delete(id);
         fetchAssessments();
-        alert('✅ Assessment deleted successfully!');
       } catch (error) {
         console.error('Error deleting assessment:', error);
-        alert('❌ Failed to delete assessment');
+        alert('Failed to delete assessment');
       }
     }
   };
@@ -229,14 +222,12 @@ const AssessmentLibrary = () => {
       await Promise.all(selectedAssessments.map(id => assessmentAPI.delete(id)));
       await fetchAssessments();
       setSelectedAssessments([]);
-      alert('✅ Selected assessments deleted successfully!');
     } catch (error) {
       console.error('Error deleting selected assessments:', error);
-      alert('❌ Failed to delete some assessments');
+      alert('Failed to delete some assessments');
     }
   };
 
-  // Edit assessment
   const handleEdit = (assessment) => {
     setSelectedAssessment(assessment);
     setFormData({
@@ -262,555 +253,456 @@ const AssessmentLibrary = () => {
     resetForm();
   };
 
-  // Reset form
   const resetForm = () => {
-      setFormData({
-        name: '',
-        skill: '',
-        difficulty: 'medium',
-        role: '',
-        question_count: 25,
-        created_by: null
-      });
+    setFormData({
+      name: '',
+      skill: '',
+      difficulty: 'medium',
+      role: '',
+      question_count: 25,
+      created_by: null
+    });
     setErrors({});
     setSelectedTestType('');
     setSelectedAssessment(null);
     setEditMode(false);
+    setShowTypeDropdown(false);
   };
 
-  // Get type icon
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'aptitude':
-        return <Brain className="h-5 w-5" />;
-      case 'coding':
-        return <Code className="h-5 w-5" />;
-      case 'communication':
-        return <MessageSquare className="h-5 w-5" />;
-      default:
-        return <FileText className="h-5 w-5" />;
+      case 'aptitude': return <FaBrain className="h-5 w-5" />;
+      case 'coding': return <FiCode className="h-5 w-5" />;
+      case 'communication': return <FiMessageSquare className="h-5 w-5" />;
+      default: return <FiFileText className="h-5 w-5" />;
     }
   };
 
-  // Get type color
   const getTypeColor = (type) => {
     switch (type) {
-      case 'aptitude':
-        return 'bg-purple-100 text-purple-700 border border-purple-300';
-      case 'coding':
-        return 'bg-blue-100 text-blue-700 border border-blue-300';
-      case 'communication':
-        return 'bg-green-100 text-green-700 border border-green-300';
-      default:
-        return 'bg-gray-100 text-gray-700 border border-gray-300';
+      case 'aptitude': return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'coding': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'communication': return 'bg-green-50 text-green-700 border-green-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
-  // Get difficulty badge
-  const getDifficultyBadge = (difficulty) => {
+  const getDifficultyColor = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
-      case 'easy':
-        return 'badge bg-success-subtle text-success';
-      case 'medium':
-        return 'badge bg-warning-subtle text-warning';
-      case 'hard':
-        return 'badge bg-danger-subtle text-danger';
-      default:
-        return 'badge bg-secondary-subtle text-secondary';
+      case 'easy': return 'bg-emerald-50 text-emerald-700';
+      case 'medium': return 'bg-amber-50 text-amber-700';
+      case 'hard': return 'bg-rose-50 text-rose-700';
+      default: return 'bg-gray-50 text-gray-600';
     }
   };
+
+  const totalAssessments = assessments.length;
+  const easyCount = assessments.filter(a => (a.difficulty || '').toLowerCase() === 'easy').length;
+  const mediumCount = assessments.filter(a => (a.difficulty || '').toLowerCase() === 'medium').length;
+  const hardCount = assessments.filter(a => (a.difficulty || '').toLowerCase() === 'hard').length;
 
   return (
-    <div className="container-fluid py-4">
-      {/* Page Header - aligned with JobList/CreateJob */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:clipboard-document-list" className="text-black" style={{ fontSize: 28 }} />
-            Assessment Library
-          </h4>
-          <p className="text-secondary mb-0 mt-1">
-            Create and manage assessment templates for candidate evaluation.
-          </p>
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated:{' '}
-            <span className="fw-medium text-body">
-              {new Date().toLocaleDateString()}
-            </span>
-          </span>
-          <div className="d-flex flex-wrap justify-content-end gap-2">
-            <button
-              className="btn refresh-btn d-inline-flex align-items-center gap-2"
-              onClick={fetchAssessments}
-              disabled={loading}
-            >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
-            <button
-              className="create-assessment-btn"
-              onClick={handleOpenCreateModal}
-            >
-              <Plus />
-              <span>Add Assignment</span>
-            </button>
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiGrid className="text-gray-700 text-xl sm:text-2xl" />
+              Assessment Library
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Create and manage assessment templates for candidate evaluation</p>
           </div>
-        </div>
-      </div>
-
-      {/* KPI Summary - kpi-row like JobList/Candidates */}
-      <div className="kpi-row mb-4">
-        {[
-          {
-            title: 'Total Templates',
-            value: assessments.length,
-            sub: 'All test types',
-            icon: 'heroicons:rectangle-group',
-            bg: 'kpi-primary',
-            color: 'kpi-primary-text'
-          },
-          {
-            title: 'Easy',
-            value: assessments.filter(a => (a.difficulty || '').toLowerCase() === 'easy').length,
-            sub: 'Across all types',
-            icon: 'heroicons:face-smile',
-            bg: 'kpi-success',
-            color: 'kpi-success-text'
-          },
-          {
-            title: 'Medium',
-            value: assessments.filter(a => (a.difficulty || '').toLowerCase() === 'medium').length,
-            sub: 'Across all types',
-            icon: 'heroicons:adjustments-horizontal',
-            bg: 'kpi-info',
-            color: 'kpi-info-text'
-          },
-          {
-            title: 'Hard',
-            value: assessments.filter(a => (a.difficulty || '').toLowerCase() === 'hard').length,
-            sub: 'Across all types',
-            icon: 'heroicons:bolt',
-            bg: 'kpi-warning',
-            color: 'kpi-warning-text'
-          }
-        ].map((item, index) => (
-          <div className="kpi-col" key={index}>
-            <div className="kpi-card">
-              <div className="kpi-card-body">
-                <div className={`kpi-icon ${item.bg}`}>
-                  <Icon icon={item.icon} className={`kpi-icon-style ${item.color}`} />
-                </div>
-                <div className="kpi-content">
-                  <div className="kpi-title">{item.title}</div>
-                  <div className="kpi-value">{item.value}</div>
-                  {item.sub && <div className="kpi-sub text-muted">{item.sub}</div>}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters and Actions - structured like JobList filters */}
-      <div className="card shadow-none border mb-4">
-        <div className="card-header bg-transparent border-bottom py-3">
-          <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-            <Filter size={16} className="text-secondary-light" />
-            Filter & search
-          </h6>
-        </div>
-        <div className="card-body">
-          <div className="row g-3 align-items-end">
-            <div className="col-12 col-md-6 col-lg-5">
-              <label className="form-label small text-muted mb-1">Search</label>
-              <div className="position-relative">
-                <Search className="position-absolute top-50 translate-middle-y ms-3 text-muted" size={18} />
-                <input
-                  type="text"
-                  className="form-control ps-5"
-                  placeholder="Search by name or role..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="col-6 col-md-3 col-lg-2">
-              <label className="form-label small text-muted mb-1">Type</label>
-              <select
-                className="form-select"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-              >
-                <option value="all">All</option>
-                <option value="aptitude">Aptitude</option>
-                <option value="coding">Coding</option>
-                <option value="communication">Communication</option>
-              </select>
-            </div>
-            <div className="col-6 col-md-3 col-lg-2">
-              <label className="form-label small text-muted mb-1">Difficulty</label>
-              <select
-                className="form-select"
-                value={filterDifficulty}
-                onChange={(e) => setFilterDifficulty(e.target.value)}
-              >
-                <option value="all">All</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-            <div className="col-12 col-lg-3 d-flex justify-content-lg-end">
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-2">
               <button
-                type="button"
-                className="sync-btn d-inline-flex align-items-center gap-2 w-100 w-lg-auto justify-content-center"
                 onClick={fetchAssessments}
                 disabled={loading}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
               >
-                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                <span>Reload Library</span>
+                <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Refreshing...' : 'Refresh'}
               </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bulk Actions Bar - similar to JobList/Candidates */}
-      {selectedAssessments.length > 0 && (
-        <div className="alert alert-info d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 rounded-3 py-3">
-          <div className="d-flex align-items-center gap-3 flex-wrap">
-            <span className="fw-semibold">
-              {selectedAssessments.length} assessment{selectedAssessments.length > 1 ? 's' : ''} selected
-            </span>
-            <div className="vr d-none d-sm-block" style={{ height: '1.25rem' }} />
-            <div className="d-flex flex-wrap gap-2">
               <button
-                type="button"
-                className="delete-btn d-inline-flex align-items-center gap-2"
-                onClick={handleBulkDelete}
+                onClick={handleOpenCreateModal}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
               >
-                <Trash2 size={16} />
-                Delete Selected
+                <FiPlus className="h-4 w-4" />
+                Add Assignment
               </button>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleClearSelection}
-            className="btn btn-link p-0 text-decoration-none fw-medium"
-          >
-            Clear selection
-          </button>
         </div>
-      )}
 
-      {/* Assessments Grid */}
-      <div className="row g-3">
-        {loading ? (
-          <div className="col-12 text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Total Templates</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{totalAssessments}</p>
+                <p className="text-xs text-gray-400 mt-1">All test types</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FiGrid className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              </div>
             </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Easy</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{easyCount}</p>
+                <p className="text-xs text-gray-400 mt-1">Across all types</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <FiSmile className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Medium</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{mediumCount}</p>
+                <p className="text-xs text-gray-400 mt-1">Across all types</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                <FiSliders className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-semibold">Hard</p>
+                <p className="text-xl sm:text-2xl font-bold text-midnight_text mt-1">{hardCount}</p>
+                <p className="text-xs text-gray-400 mt-1">Across all types</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+                <FiZap className="h-4 w-4 sm:h-5 sm:w-5 text-rose-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="relative">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name or role..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+            >
+              <option value="all">All Types</option>
+              <option value="aptitude">Aptitude</option>
+              <option value="coding">Coding</option>
+              <option value="communication">Communication</option>
+            </select>
+            <select
+              value={filterDifficulty}
+              onChange={(e) => setFilterDifficulty(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+            >
+              <option value="all">All Difficulties</option>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <button
+              onClick={fetchAssessments}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
+            >
+              <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Reload
+            </button>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {selectedAssessments.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-primary">
+                {selectedAssessments.length} assessment{selectedAssessments.length > 1 ? 's' : ''} selected
+              </span>
+              <button
+                onClick={handleClearSelection}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Clear
+              </button>
+            </div>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-sm font-medium transition-all"
+            >
+              <FiTrash2 className="h-4 w-4" />
+              Delete Selected
+            </button>
+          </div>
+        )}
+
+        {/* Assessments Grid */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+            <p className="text-gray-500 text-sm">Loading assessments...</p>
           </div>
         ) : filteredAssessments.length === 0 ? (
-          <div className="col-12">
-            <div className="card shadow-none border">
-            <div className="card-body text-center py-5">
-              <div className="d-flex gap-2 justify-content-center align-items-center mb-3">
-                <FileText size={48} className="text-secondary-light" />
-                <h6 className="text-secondary-light mb-0">
-                  {searchTerm || filterType !== 'all' || filterDifficulty !== 'all'
-                    ? 'No assessments found matching your filters'
-                    : 'No assessments created yet'}
-                </h6>
-              </div>
-              </div>
-            </div>
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-8 text-center">
+            <FiFileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-midnight_text mb-1">No Assessments Found</h3>
+            <p className="text-sm text-gray-500">
+              {searchTerm || filterType !== 'all' || filterDifficulty !== 'all'
+                ? 'No assessments found matching your filters'
+                : 'No assessments created yet'}
+            </p>
           </div>
         ) : (
-          filteredAssessments.map((assessment) => (
-            <div key={assessment.id} className="col-md-6 col-lg-4">
-              <div className="card shadow-none border h-100 hover-shadow transition">
-                <div className="card-body">
-                  {/* Header with checkbox and type icon */}
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="d-flex align-items-center gap-2">
-                      <label
-                        className={`custom-checkbox mb-0 d-inline-flex align-items-center justify-content-center ${selectedAssessments.includes(assessment.id) ? 'checked' : ''}`}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <input
-                          type="checkbox"
-                          className="d-none"
-                          checked={selectedAssessments.includes(assessment.id)}
-                          onChange={() => handleToggleSelect(assessment.id)}
-                        />
-                        <span className="checkbox-box">
-                          {selectedAssessments.includes(assessment.id) && <span className="checkmark">✓</span>}
-                        </span>
-                      </label>
-                      <div className={`p-2 rounded ${getTypeColor(assessment.type)}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredAssessments.map((assessment) => (
+              <div key={assessment.id} className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow hover:shadow-property transition-all">
+                <div className="p-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedAssessments.includes(assessment.id)}
+                        onChange={() => handleToggleSelect(assessment.id)}
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <div className={`p-2 rounded-lg ${getTypeColor(assessment.type)}`}>
                         {getTypeIcon(assessment.type)}
                       </div>
                     </div>
-                    <div className="d-flex gap-2">
+                    <div className="flex gap-1">
                       <button
-                        className="btn btn-sm btn-outline-primary p-1"
                         onClick={() => handleEdit(assessment)}
+                        className="p-1.5 text-gray-500 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition-all"
                         title="Edit"
                       >
-                        <Edit size={14} />
+                        <FiEdit2 className="h-4 w-4" />
                       </button>
                       <button
-                        className="btn btn-sm btn-outline-danger p-1"
                         onClick={() => handleDelete(assessment.id, assessment.name)}
+                        className="p-1.5 text-gray-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all"
                         title="Delete"
                       >
-                        <Trash2 size={14} />
+                        <FiTrash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
 
                   {/* Title */}
-                  <h6 className="fw-semibold mb-2 text-truncate" title={assessment.name}>
+                  <h3 className="font-semibold text-midnight_text mb-3 line-clamp-1" title={assessment.name}>
                     {assessment.name}
-                  </h6>
+                  </h3>
 
                   {/* Details */}
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="text-secondary-light text-sm">Type:</span>
-                      <span className="badge bg-secondary-subtle text-secondary text-capitalize">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">Type:</span>
+                      <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600 capitalize">
                         {assessment.type}
                       </span>
                     </div>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="text-secondary-light text-sm">Difficulty:</span>
-                      <span className={getDifficultyBadge(assessment.difficulty)}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">Difficulty:</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getDifficultyColor(assessment.difficulty)} capitalize`}>
                         {assessment.difficulty || 'N/A'}
                       </span>
                     </div>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="text-secondary-light text-sm">Questions:</span>
-                      <span className="fw-medium">{assessment.question_count || 0}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">Questions:</span>
+                      <span className="font-semibold text-midnight_text">{assessment.question_count || 0}</span>
                     </div>
                     {assessment.role && (
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <span className="text-secondary-light text-sm">Role:</span>
-                        <span className="text-sm text-truncate" style={{ maxWidth: '150px' }} title={assessment.role}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Role:</span>
+                        <span className="text-gray-700 truncate max-w-[150px]" title={assessment.role}>
                           {assessment.role}
                         </span>
                       </div>
                     )}
                     {assessment.skill && (
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="text-secondary-light text-sm">Skill:</span>
-                        <span className="badge bg-info-subtle text-info">{assessment.skill}</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Skill:</span>
+                        <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
+                          {assessment.skill}
+                        </span>
                       </div>
                     )}
                   </div>
 
                   {/* Footer */}
-                  <div className="border-top pt-3">
-                    <small className="text-secondary-light">
+                  <div className="border-t border-gray-100 mt-3 pt-3">
+                    <p className="text-xs text-gray-400">
                       Updated: {new Date(assessment.last_updated).toLocaleDateString()}
-                    </small>
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editMode ? 'Edit Assessment' : 'Add Assignment'}
-                </h5>
+      <Modal
+        isOpen={showModal}
+        onClose={closeModal}
+        title={editMode ? 'Edit Assessment' : 'Add Assignment'}
+        size="lg"
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+          {!editMode && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Assignment Type <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
                 <button
-                  type="button"
-                  className="btn-close"
-                  onClick={closeModal}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="row g-3">
-                  {!editMode && (
-                    <div className="col-12">
-                      <label className="form-label">Select Assignment Type *</label>
-                      <div className="dropdown w-100">
+                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                  className={`w-full px-3 py-2 text-left text-sm border rounded-lg flex items-center justify-between bg-white ${
+                    errors.type ? 'border-rose-500' : 'border-gray-200'
+                  } focus:outline-none focus:border-primary`}
+                >
+                  <span>
+                    {TEST_TYPE_OPTIONS.find((option) => option.key === selectedTestType)?.label || 'Choose assignment type'}
+                  </span>
+                  <FiChevronDown className="h-4 w-4 text-gray-400" />
+                </button>
+                {showTypeDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    {TEST_TYPE_OPTIONS.map((option) => {
+                      const OptionIcon = option.icon;
+                      return (
                         <button
-                          type="button"
-                          className={`btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between ${
-                            errors.type ? 'is-invalid' : ''
-                          }`}
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
+                          key={option.key}
+                          onClick={() => handleSelectAssignmentType(option.key)}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3 first:rounded-t-lg last:rounded-b-lg"
                         >
-                          <span>
-                            {TEST_TYPE_OPTIONS.find((option) => option.key === selectedTestType)?.label || 'Choose assignment type'}
-                          </span>
+                          <div className={`p-1 rounded ${option.badgeClass}`}>
+                            <OptionIcon size={14} />
+                          </div>
+                          <span>{option.label}</span>
                         </button>
-                        <ul className="dropdown-menu w-100">
-                          {TEST_TYPE_OPTIONS.map((option) => {
-                            const OptionIcon = option.icon;
-                            const selected = selectedTestType === option.key;
-                            return (
-                              <li key={option.key}>
-                                <button
-                                  type="button"
-                                  className={`dropdown-item d-flex align-items-start gap-2 ${selected ? 'active' : ''}`}
-                                  onClick={() => handleSelectAssignmentType(option.key)}
-                                >
-                                  <span className={`p-1 rounded ${option.badgeClass}`}>
-                                    <OptionIcon size={14} />
-                                  </span>
-                                  <span>{option.label}</span>
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                      {errors.type && <div className="invalid-feedback d-block">{errors.type}</div>}
-                    </div>
-                  )}
-
-                  {/* Assessment Name */}
-                  <div className="col-12">
-                    <label className="form-label">Assessment Name *</label>
-                    <input
-                      type="text"
-                      className={`form-control ${errors.name ? 'is-invalid' : ''}`}
-                      placeholder="e.g., Python Developer Assessment"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                    />
-                    {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                      );
+                    })}
                   </div>
-
-                  {/* Difficulty */}
-                  <div className="col-md-6">
-                    <label className="form-label">Difficulty</label>
-                    <select
-                      className="form-select"
-                      value={formData.difficulty}
-                      onChange={(e) => handleInputChange('difficulty', e.target.value)}
-                    >
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
-                    </select>
-                  </div>
-
-                  {/* Role */}
-                  <div className="col-md-6">
-                    <label className="form-label">Target Role *</label>
-                    <input
-                      type="text"
-                      className={`form-control ${errors.role ? 'is-invalid' : ''}`}
-                      placeholder="e.g., Backend Developer"
-                      value={formData.role}
-                      onChange={(e) => handleInputChange('role', e.target.value)}
-                    />
-                    {errors.role && <div className="invalid-feedback">{errors.role}</div>}
-                  </div>
-
-                  {/* Skill */}
-                  <div className="col-md-6">
-                    <label className="form-label">Skill (Optional)</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="e.g., Python, JavaScript"
-                      value={formData.skill}
-                      onChange={(e) => handleInputChange('skill', e.target.value)}
-                    />
-                  </div>
-
-                  {/* Question Count */}
-                  <div className="col-md-12">
-                    <label className="form-label">Number of Questions</label>
-                    <input
-                      type="number"
-                      className={`form-control ${errors.question_count ? 'is-invalid' : ''}`}
-                      min="1"
-                      value={formData.question_count}
-                      onChange={(e) => handleInputChange('question_count', parseInt(e.target.value))}
-                    />
-                    {errors.question_count && <div className="invalid-feedback">{errors.question_count}</div>}
-                    <small className="text-secondary-light">
-                      Number of questions for this assessment (default: 25)
-                    </small>
-                  </div>
-                </div>
+                )}
               </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary d-inline-flex align-items-center"
-                  onClick={closeModal}
-                >
-                  <X size={18} className="me-2" />
-                  <span>Cancel</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary d-inline-flex align-items-center"
-                  onClick={editMode ? handleUpdate : handleCreate}
-                >
-                  <Save size={18} className="me-2" />
-                  <span>{editMode ? 'Update' : 'Create'}</span>
-                </button>
-              </div>
+              {errors.type && <p className="text-xs text-rose-600 mt-1">{errors.type}</p>}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Assessment Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Python Developer Assessment"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-primary ${
+                errors.name ? 'border-rose-500' : 'border-gray-200'
+              }`}
+            />
+            {errors.name && <p className="text-xs text-rose-600 mt-1">{errors.name}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+              <select
+                value={formData.difficulty}
+                onChange={(e) => handleInputChange('difficulty', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Target Role <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., Backend Developer"
+                value={formData.role}
+                onChange={(e) => handleInputChange('role', e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-primary ${
+                  errors.role ? 'border-rose-500' : 'border-gray-200'
+                }`}
+              />
+              {errors.role && <p className="text-xs text-rose-600 mt-1">{errors.role}</p>}
             </div>
           </div>
-        </div>
-      )}
 
-      <style jsx>{`
-        .hover-shadow {
-          transition: box-shadow 0.3s ease;
-        }
-        .hover-shadow:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-        }
-        .transition {
-          transition: all 0.3s ease;
-        }
-        .test-type-card {
-          border: 1px solid #dee2e6;
-          background: #ffffff;
-          transition: all 0.2s ease;
-        }
-        .test-type-card:hover {
-          border-color: #0d6efd;
-          box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
-          transform: translateY(-1px);
-        }
-        .test-type-card.active {
-          border-color: #0d6efd;
-          background: #e7f1ff;
-          box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-        }
-        .spinner {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Skill (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g., Python, JavaScript"
+              value={formData.skill}
+              onChange={(e) => handleInputChange('skill', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Number of Questions</label>
+            <input
+              type="number"
+              min="1"
+              value={formData.question_count}
+              onChange={(e) => handleInputChange('question_count', parseInt(e.target.value))}
+              className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-primary ${
+                errors.question_count ? 'border-rose-500' : 'border-gray-200'
+              }`}
+            />
+            {errors.question_count && <p className="text-xs text-rose-600 mt-1">{errors.question_count}</p>}
+            <p className="text-xs text-gray-400 mt-1">Number of questions for this assessment</p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button
+              onClick={closeModal}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={editMode ? handleUpdate : handleCreate}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-all"
+            >
+              <FiSave className="h-4 w-4" />
+              {editMode ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export default AssessmentLibrary;
-

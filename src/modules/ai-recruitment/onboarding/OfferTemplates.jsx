@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Save,
-  X,
-  FileText,
-  DollarSign,
-  Briefcase,
-  AlertCircle,
-  CheckCircle,
-  RefreshCw
-} from 'lucide-react';
-import { Icon } from '@iconify/react/dist/iconify.js';
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiSave,
+  FiX,
+  FiFileText,
+  FiDollarSign,
+  FiBriefcase,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiRefreshCw,
+  FiFilter,
+  FiSearch,
+  FiClock
+} from 'react-icons/fi';
 import { BASE_URL } from "../../../shared/constants/api.config";
+import Modal from '../../../shared/components/Modal';
 
 const OfferTemplates = () => {
   const [templates, setTemplates] = useState([]);
@@ -37,14 +40,12 @@ const OfferTemplates = () => {
     department: ''
   });
 
-  // Fetch all templates
   const fetchTemplates = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.error('❌ No authentication token found for fetching offer templates');
         showAlert('Authentication required. Please log in again.', 'error');
         setLoading(false);
         return;
@@ -55,7 +56,6 @@ const OfferTemplates = () => {
       if (filters.department) params.append('department', filters.department);
       
       const url = `${BASE_URL}/api/offers/offer-templates/?${params.toString()}`;
-      console.log('📥 Fetching offer templates from:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -65,44 +65,14 @@ const OfferTemplates = () => {
         }
       });
       
-      console.log('📊 Offer templates response status:', response.status, response.statusText);
-      
       if (response.ok) {
         const data = await response.json();
         setTemplates(data);
-        console.log(`📊 Total offer templates received: ${data.length}`);
       } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to fetch offer templates. Status:', response.status);
-        console.error('❌ Error response:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { detail: errorText || 'Failed to fetch offer templates' };
-        }
-        
-        // Handle Pydantic validation errors (array of error objects)
-        let errorMessage = 'Error fetching templates';
-        if (errorData.detail) {
-          if (Array.isArray(errorData.detail)) {
-            errorMessage = errorData.detail.map(err => {
-              if (typeof err === 'object' && err.msg) {
-                const field = err.loc ? err.loc.join('.') : 'field';
-                return `${field}: ${err.msg}`;
-              }
-              return String(err);
-            }).join(', ');
-          } else {
-            errorMessage = String(errorData.detail);
-          }
-        }
-        
-        showAlert(errorMessage, 'error');
+        showAlert('Error fetching templates', 'error');
       }
     } catch (error) {
-      console.error('❌ Error fetching templates:', error);
+      console.error('Error fetching templates:', error);
       showAlert('Error fetching templates', 'error');
     } finally {
       setLoading(false);
@@ -113,18 +83,15 @@ const OfferTemplates = () => {
     fetchTemplates();
   }, [filters]);
 
-  // Show alert
   const showAlert = (message, type = 'success') => {
     setAlert({ message, type });
     setTimeout(() => setAlert(null), 5000);
   };
 
-  // Handle form input
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Add benefit
   const addBenefit = () => {
     if (newBenefit.trim()) {
       setFormData(prev => ({
@@ -135,7 +102,6 @@ const OfferTemplates = () => {
     }
   };
 
-  // Remove benefit
   const removeBenefit = (index) => {
     setFormData(prev => ({
       ...prev,
@@ -143,7 +109,6 @@ const OfferTemplates = () => {
     }));
   };
 
-  // Open create modal
   const openCreateModal = () => {
     setEditingTemplate(null);
     setFormData({
@@ -159,7 +124,6 @@ const OfferTemplates = () => {
     setShowModal(true);
   };
 
-  // Open edit modal
   const openEditModal = (template) => {
     setEditingTemplate(template);
     setFormData({
@@ -175,7 +139,6 @@ const OfferTemplates = () => {
     setShowModal(true);
   };
 
-  // Save template
   const saveTemplate = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -191,9 +154,6 @@ const OfferTemplates = () => {
       
       const method = editingTemplate ? 'PUT' : 'POST';
       
-      console.log(`📤 ${method} offer template to:`, url);
-      console.log('📤 Template data:', formData);
-      
       const response = await fetch(url, {
         method,
         headers: {
@@ -202,12 +162,8 @@ const OfferTemplates = () => {
         },
         body: JSON.stringify(formData)
       });
-      
-      console.log('📊 Save template response status:', response.status, response.statusText);
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Template saved successfully:', data);
         showAlert(
           editingTemplate
             ? 'Template updated successfully'
@@ -217,42 +173,14 @@ const OfferTemplates = () => {
         setShowModal(false);
         fetchTemplates();
       } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to save template. Status:', response.status);
-        console.error('❌ Error response:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { detail: errorText || 'Error saving template' };
-        }
-        
-        // Handle Pydantic validation errors (array of error objects)
-        let errorMessage = 'Error saving template';
-        if (errorData.detail) {
-          if (Array.isArray(errorData.detail)) {
-            errorMessage = errorData.detail.map(err => {
-              if (typeof err === 'object' && err.msg) {
-                const field = err.loc ? err.loc.join('.') : 'field';
-                return `${field}: ${err.msg}`;
-              }
-              return String(err);
-            }).join(', ');
-          } else {
-            errorMessage = String(errorData.detail);
-          }
-        }
-        
-        showAlert(errorMessage, 'error');
+        showAlert('Error saving template', 'error');
       }
     } catch (error) {
-      console.error('❌ Error saving template:', error);
+      console.error('Error saving template:', error);
       showAlert('Error saving template', 'error');
     }
   };
 
-  // Delete template
   const deleteTemplate = async (id) => {
     if (!window.confirm('Are you sure you want to delete this template?')) return;
 
@@ -263,8 +191,6 @@ const OfferTemplates = () => {
         showAlert('Authentication required. Please log in again.', 'error');
         return;
       }
-
-      console.log(`🗑️ Deleting offer template: ${id}`);
       
       const response = await fetch(`${BASE_URL}/api/offers/offer-templates/${id}`, {
         method: 'DELETE',
@@ -274,40 +200,11 @@ const OfferTemplates = () => {
         }
       });
 
-      console.log('📊 Delete template response status:', response.status, response.statusText);
-
       if (response.ok) {
         showAlert('Template deleted successfully', 'success');
         fetchTemplates();
       } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to delete template. Status:', response.status);
-        console.error('❌ Error response:', errorText);
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { detail: errorText || 'Error deleting template' };
-        }
-        
-        // Handle Pydantic validation errors (array of error objects)
-        let errorMessage = 'Error deleting template';
-        if (errorData.detail) {
-          if (Array.isArray(errorData.detail)) {
-            errorMessage = errorData.detail.map(err => {
-              if (typeof err === 'object' && err.msg) {
-                const field = err.loc ? err.loc.join('.') : 'field';
-                return `${field}: ${err.msg}`;
-              }
-              return String(err);
-            }).join(', ');
-          } else {
-            errorMessage = String(errorData.detail);
-          }
-        }
-        
-        showAlert(errorMessage, 'error');
+        showAlert('Error deleting template', 'error');
       }
     } catch (error) {
       console.error('Error deleting template:', error);
@@ -316,344 +213,313 @@ const OfferTemplates = () => {
   };
 
   return (
-    <div className="container-fluid py-4">
-      {/* Alert */}
-      {alert && (
-        <div
-          className={`alert alert-${alert.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show mb-4`}
-          role="alert"
-        >
-          <div className="d-flex align-items-center">
-            {alert.type === 'success' ? (
-              <CheckCircle size={20} className="me-2" />
-            ) : (
-              <AlertCircle size={20} className="me-2" />
-            )}
-            {alert.message}
+    <div className="">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Alert */}
+        {alert && (
+          <div className={`flex items-center justify-between gap-3 p-3 rounded-lg ${
+            alert.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-rose-50 border border-rose-200 text-rose-700'
+          }`}>
+            <div className="flex items-center gap-2">
+              {alert.type === 'success' ? <FiCheckCircle className="h-5 w-5" /> : <FiAlertCircle className="h-5 w-5" />}
+              <span className="text-sm">{alert.message}</span>
+            </div>
+            <button onClick={() => setAlert(null)} className="text-gray-400 hover:text-gray-600">
+              <FiX className="h-4 w-4" />
+            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Header - aligned with JobList/CreateJob */}
-      <div className="mb-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold h4 d-flex align-items-center gap-2 mb-0">
-            <Icon icon="heroicons:document-text" className="text-black" style={{ fontSize: 28 }} />
-            Offer Templates
-          </h4>
-          <p className="text-secondary mb-0 mt-1">
-            Create and manage offer letter templates.
-          </p>
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span className="text-muted small">
-            Last updated:{' '}
-            <span className="fw-medium text-body">
-              {new Date().toLocaleDateString()}
-            </span>
-          </span>
-          <div className="d-flex flex-wrap align-items-center gap-2 justify-content-end">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-midnight_text flex items-center gap-2">
+              <FiFileText className="text-gray-600 text-xl sm:text-2xl" />
+              Offer Templates
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Create and manage offer letter templates</p>
+          </div>
+          <div className="flex gap-2">
             <button
-              className="btn refresh-btn d-inline-flex align-items-center gap-2"
               onClick={fetchTemplates}
               disabled={loading}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:text-primary hover:border-primary transition-all"
             >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Refreshing...' : 'Refresh'}
             </button>
             <button
-              className="create-job-btn d-inline-flex align-items-center gap-2"
               onClick={openCreateModal}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
             >
-              <Icon icon="heroicons:plus" style={{ width: 16, height: 16 }} />
+              <FiPlus className="h-4 w-4" />
               Create Template
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Filters - structured like JobList filters */}
-      <div className="card border shadow-none mb-4">
-        <div className="card-header bg-transparent border-bottom py-3">
-          <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2">
-            <Icon icon="heroicons:funnel" style={{ fontSize: 18 }} />
-            Filter templates
-          </h6>
-        </div>
-        <div className="card-body">
-          <div className="row g-3 align-items-end">
-            <div className="col-12 col-md-6">
-              <label className="form-label small text-muted mb-1">Position</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Filter by position..."
-                value={filters.position}
-                onChange={(e) => setFilters((prev) => ({ ...prev, position: e.target.value }))}
-              />
+        {/* Filters */}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Position</label>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Filter by position..."
+                  value={filters.position}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, position: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+                />
+              </div>
             </div>
-            <div className="col-12 col-md-6">
-              <label className="form-label small text-muted mb-1">Department</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Filter by department..."
-                value={filters.department}
-                onChange={(e) => setFilters((prev) => ({ ...prev, department: e.target.value }))}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Templates List */}
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      ) : templates.length === 0 ? (
-        <div className="card border shadow-none">
-          <div className="card-body text-center py-5">
-            <div className="d-flex justify-content-center align-items-center gap-2 mb-3">
-              <FileText size={48} className="text-muted" />
-              <div>
-                <h5 className="text-muted mb-1">No templates found</h5>
-                <p className="text-muted mb-0">Create your first offer template to get started</p>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 font-semibold mb-1">Department</label>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Filter by department..."
+                  value={filters.department}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, department: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+                />
               </div>
             </div>
           </div>
         </div>
-      ) : (
-        <div className="row">
-          {templates.map((template) => (
-            <div key={template.id} className="col-md-6 col-lg-4 mb-4">
-              <div className="card border shadow-none h-100">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <h6 className="card-title mb-0 text-truncate" title={template.name}>
+
+        {/* Templates List */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
+            <p className="text-gray-500 text-sm">Loading templates...</p>
+          </div>
+        ) : templates.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow p-8 text-center">
+            <FiFileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-midnight_text mb-1">No templates found</h3>
+            <p className="text-sm text-gray-500 mb-4">Create your first offer template to get started</p>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
+            >
+              <FiPlus className="h-4 w-4" />
+              Create Template
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {templates.map((template) => (
+              <div key={template.id} className="bg-white rounded-lg border border-gray-100 shadow-deatail_shadow hover:shadow-property transition-all">
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-midnight_text truncate flex-1" title={template.name}>
                       {template.name}
-                    </h6>
-                    <div className="d-flex gap-2">
+                    </h3>
+                    <div className="flex gap-1 ml-2">
                       <button
-                        type="button"
-                        className="w-32-px h-32-px d-inline-flex justify-content-center align-items-center bg-warning-100 text-warning-600 bg-hover-warning-600 text-hover-white text-md rounded-circle border-0"
                         onClick={() => openEditModal(template)}
+                        className="p-1.5 text-gray-500 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition-all"
                         title="Edit"
                       >
-                        <Edit size={16} />
+                        <FiEdit2 className="h-4 w-4" />
                       </button>
                       <button
-                        type="button"
-                        className="w-32-px h-32-px d-inline-flex justify-content-center align-items-center bg-danger-100 text-danger-600 bg-hover-danger-600 text-hover-white text-md rounded-circle border-0"
                         onClick={() => deleteTemplate(template.id)}
+                        className="p-1.5 text-gray-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all"
                         title="Delete"
                       >
-                        <Trash2 size={16} />
+                        <FiTrash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="mb-2 d-flex align-items-center">
-                    <Briefcase size={16} className="me-2 text-muted" />
-                    <span className="text-muted small text-truncate">
-                      {template.position || 'Not specified'}
-                      {template.department && ` • ${template.department}`}
-                    </span>
-                  </div>
-
-                  {template.salary_range_min && template.salary_range_max && (
-                    <div className="mb-2 d-flex align-items-center">
-                      <DollarSign size={16} className="me-2 text-muted" />
-                      <span className="text-muted small">
-                        ${template.salary_range_min.toLocaleString()} - $
-                        {template.salary_range_max.toLocaleString()}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <FiBriefcase className="h-4 w-4 text-gray-400" />
+                      <span className="truncate">
+                        {template.position || 'Not specified'}
+                        {template.department && ` • ${template.department}`}
                       </span>
                     </div>
-                  )}
+
+                    {template.salary_range_min && template.salary_range_max && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <FiDollarSign className="h-4 w-4 text-gray-400" />
+                        <span>
+                          ${template.salary_range_min.toLocaleString()} - ${template.salary_range_max.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <FiClock className="h-4 w-4 text-gray-400" />
+                      <span>Validity: {template.validity_days} days</span>
+                    </div>
+                  </div>
 
                   {template.benefits && template.benefits.length > 0 && (
-                    <div className="mb-2">
-                      <small className="text-muted">Benefits:</small>
-                      <div className="d-flex flex-wrap gap-1 mt-1">
+                    <div className="border-t border-gray-100 pt-3 mt-2">
+                      <p className="text-xs text-gray-500 mb-2">Benefits:</p>
+                      <div className="flex flex-wrap gap-1">
                         {template.benefits.slice(0, 3).map((benefit, idx) => (
-                          <span key={idx} className="badge bg-secondary">
+                          <span key={idx} className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
                             {benefit}
                           </span>
                         ))}
                         {template.benefits.length > 3 && (
-                          <span className="badge bg-secondary">
+                          <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
                             +{template.benefits.length - 3} more
                           </span>
                         )}
                       </div>
                     </div>
                   )}
-
-                  <div className="mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
-                    <small className="text-muted">
-                      Validity: {template.validity_days} days
-                    </small>
-                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Create/Edit Modal */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingTemplate ? 'Edit Template' : 'Create Template'}
+        size="lg"
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Template Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="e.g., Senior Developer Offer"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
+              <input
+                type="text"
+                value={formData.position}
+                onChange={(e) => handleInputChange('position', e.target.value)}
+                placeholder="e.g., Senior Software Engineer"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal */}
-      {showModal && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editingTemplate ? 'Edit Template' : 'Create Template'}
-                </h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Template Name *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="e.g., Senior Developer Offer"
-                  />
-                </div>
-
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Position</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.position}
-                      onChange={(e) => handleInputChange('position', e.target.value)}
-                      placeholder="e.g., Senior Software Engineer"
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Department</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.department}
-                      onChange={(e) => handleInputChange('department', e.target.value)}
-                      placeholder="e.g., Engineering"
-                    />
-                  </div>
-                </div>
-
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Minimum Salary</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={formData.salary_range_min}
-                      onChange={(e) => handleInputChange('salary_range_min', parseFloat(e.target.value))}
-                      placeholder="e.g., 80000"
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Maximum Salary</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={formData.salary_range_max}
-                      onChange={(e) => handleInputChange('salary_range_max', parseFloat(e.target.value))}
-                      placeholder="e.g., 120000"
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Template Content *</label>
-                  <textarea
-                    className="form-control"
-                    rows="8"
-                    value={formData.template_content}
-                    onChange={(e) => handleInputChange('template_content', e.target.value)}
-                    placeholder="Dear [Candidate Name],&#10;&#10;We are pleased to offer you the position of [Position] at [Company Name]...&#10;&#10;Use placeholders like [Candidate Name], [Position], [Salary], etc."
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Benefits</label>
-                  <div className="input-group mb-2">
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={newBenefit}
-                      onChange={(e) => setNewBenefit(e.target.value)}
-                      placeholder="e.g., Health Insurance"
-                      onKeyPress={(e) => e.key === 'Enter' && addBenefit()}
-                    />
-                    <button className="btn btn-outline-primary d-flex align-items-center" onClick={addBenefit}>
-                      <Plus size={16} className="me-1" />
-                      Add
-                    </button>
-                  </div>
-                  <div className="d-flex flex-wrap gap-2">
-                    {formData.benefits.map((benefit, index) => (
-                      <span key={index} className="badge bg-primary">
-                        {benefit}
-                        <X
-                          size={14}
-                          className="ms-1"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => removeBenefit(index)}
-                        />
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Validity (Days)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.validity_days}
-                    onChange={(e) => handleInputChange('validity_days', parseInt(e.target.value))}
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button className="btn btn-primary d-flex align-items-center" onClick={saveTemplate}>
-                  <Save size={16} className="me-2" />
-                  {editingTemplate ? 'Update' : 'Create'}
-                </button>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => handleInputChange('department', e.target.value)}
+                placeholder="e.g., Engineering"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
             </div>
           </div>
-        </div>
-      )}
 
-      <style jsx>{`
-        .spinner {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Salary</label>
+              <input
+                type="number"
+                value={formData.salary_range_min}
+                onChange={(e) => handleInputChange('salary_range_min', parseFloat(e.target.value))}
+                placeholder="e.g., 80000"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Salary</label>
+              <input
+                type="number"
+                value={formData.salary_range_max}
+                onChange={(e) => handleInputChange('salary_range_max', parseFloat(e.target.value))}
+                placeholder="e.g., 120000"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Template Content <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              rows="6"
+              value={formData.template_content}
+              onChange={(e) => handleInputChange('template_content', e.target.value)}
+              placeholder="Dear [Candidate Name],\n\nWe are pleased to offer you the position of [Position] at [Company Name]...\n\nUse placeholders like [Candidate Name], [Position], [Salary], etc."
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Benefits</label>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={newBenefit}
+                onChange={(e) => setNewBenefit(e.target.value)}
+                placeholder="e.g., Health Insurance"
+                onKeyPress={(e) => e.key === 'Enter' && addBenefit()}
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+              />
+              <button onClick={addBenefit} className="px-3 py-2 bg-white border border-gray-200 hover:border-primary/50 text-gray-600 hover:text-primary rounded-lg text-sm font-medium transition-all">
+                <FiPlus className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.benefits.map((benefit, index) => (
+                <span key={index} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
+                  {benefit}
+                  <button onClick={() => removeBenefit(index)} className="hover:text-rose-500">
+                    <FiX className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Validity (Days)</label>
+            <input
+              type="number"
+              value={formData.validity_days}
+              onChange={(e) => handleInputChange('validity_days', parseInt(e.target.value))}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveTemplate}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-lg transition-all"
+            >
+              <FiSave className="h-4 w-4" />
+              {editingTemplate ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export default OfferTemplates;
-

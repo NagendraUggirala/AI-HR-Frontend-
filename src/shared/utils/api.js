@@ -1163,7 +1163,262 @@ const apiServices = {
   companiesAPI,
   crmPipelinesAPI,
   adminAPI
+  employeesAPI,
+  hrOpsAPI,
 };
 
+// ==========================================
+// EMPLOYEE MANAGEMENT APIs
+// ==========================================
+export const employeesAPI = {
+
+  // All Employees  →  GET/PATCH /api/employees/
+  list: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.is_active !== undefined) params.append('is_active', filters.is_active);
+    if (filters.department) params.append('department', filters.department);
+    if (filters.search) params.append('search', filters.search);
+    const q = params.toString();
+    return apiCall(`/api/employees/${q ? '?' + q : ''}`);
+  },
+  getById: (id) => apiCall(`/api/employees/${id}`),
+  activate: (id) => apiCall(`/api/employees/${id}/activate`, { method: 'PATCH' }),
+  deactivate: (id) => apiCall(`/api/employees/${id}/deactivate`, { method: 'PATCH' }),
+
+  // Employee Master  →  CRUD /api/employees/master/
+  // Fields: employee_id(int), employment_type, probation_end_date, confirmed_date,
+  //         reporting_manager_id, work_location, employment_status, notice_period_days
+  master: {
+    list: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.employment_status) params.append('employment_status', filters.employment_status);
+      const q = params.toString();
+      return apiCall(`/api/employees/master/${q ? '?' + q : ''}`);
+    },
+    getById: (employeeId) => apiCall(`/api/employees/master/${employeeId}`),
+    create: (data) => apiCall('/api/employees/master/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (employeeId, data) => apiCall(`/api/employees/master/${employeeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (employeeId) => apiCall(`/api/employees/master/${employeeId}`, { method: 'DELETE' }),
+  },
+
+  // Document Vault  →  CRUD /api/employees/documents/
+  // Fields: employee_id(int), document_type, document_name, file_path, is_verified, verified_by, notes
+  documents: {
+    listByEmployee: (employeeId) => apiCall(`/api/employees/documents/${employeeId}`),
+    getById: (docId) => apiCall(`/api/employees/documents/detail/${docId}`),
+    create: (data) => apiCall('/api/employees/documents/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (docId, data) => apiCall(`/api/employees/documents/${docId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    verify: (docId, verifiedBy) => apiCall(`/api/employees/documents/${docId}/verify`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verified_by: verifiedBy }),
+    }),
+    delete: (docId) => apiCall(`/api/employees/documents/${docId}`, { method: 'DELETE' }),
+  },
+
+  // Organization Hierarchy / Departments  →  CRUD /api/employees/departments/
+  // Fields: name, code, parent_department_id, head_employee_id, description, is_active
+  departments: {
+    list: () => apiCall('/api/employees/departments/'),
+    tree: () => apiCall('/api/employees/departments/tree'),
+    getById: (id) => apiCall(`/api/employees/departments/${id}`),
+    create: (data) => apiCall('/api/employees/departments/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/employees/departments/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/employees/departments/${id}`, { method: 'DELETE' }),
+  },
+
+  // Employee Lifecycle  →  /api/employees/lifecycle/
+  // Fields: employee_id(int), event_type, event_date, from_value, to_value, remarks
+  // event_type options: Promotion | Transfer | Confirmation | Resignation | Termination
+  lifecycle: {
+    listByEmployee: (employeeId) => apiCall(`/api/employees/lifecycle/${employeeId}`),
+    getEvent: (eventId) => apiCall(`/api/employees/lifecycle/event/${eventId}`),
+    create: (data) => apiCall('/api/employees/lifecycle/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    deleteEvent: (eventId) => apiCall(`/api/employees/lifecycle/event/${eventId}`, { method: 'DELETE' }),
+  },
+
+  // Employee Self-Service  →  read-only /api/employees/self-service/
+  selfService: {
+    getProfile: (employeeId) => apiCall(`/api/employees/self-service/${employeeId}/profile`),
+    getDocuments: (employeeId) => apiCall(`/api/employees/self-service/${employeeId}/documents`),
+    getLifecycle: (employeeId) => apiCall(`/api/employees/self-service/${employeeId}/lifecycle`),
+  },
+};
+// ==========================================
+// HR OPERATIONS APIs
+// ==========================================
+export const hrOpsAPI = {
+
+  // Exit Management  →  CRUD /api/hr-ops/exit-management/
+  // CREATE fields: employee_id(int), resignation_date, exit_type, last_working_date, reason, remarks
+  // exit_type options: RESIGNATION | TERMINATION | RETIREMENT | ABSCONDING
+  // UPDATE fields: last_working_date, status, exit_interview_done, clearance_status, remarks
+  exitManagement: {
+    list: () => apiCall('/api/hr-ops/exit-management/'),
+    getById: (id) => apiCall(`/api/hr-ops/exit-management/${id}`),
+    create: (data) => apiCall('/api/hr-ops/exit-management/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/hr-ops/exit-management/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/hr-ops/exit-management/${id}`, { method: 'DELETE' }),
+  },
+
+  // Letter Generation  →  CRUD /api/hr-ops/letter-generation/
+  // CREATE fields: employee_id(int), letter_type, letter_date, subject, body, generated_by
+  // letter_type options: OFFER | APPOINTMENT | CONFIRMATION | RELIEVING | EXPERIENCE | SALARY | WARNING | TERMINATION
+  // UPDATE fields: subject, body, status
+  letters: {
+    list: () => apiCall('/api/hr-ops/letter-generation/'),
+    getById: (id) => apiCall(`/api/hr-ops/letter-generation/${id}`),
+    create: (data) => apiCall('/api/hr-ops/letter-generation/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/hr-ops/letter-generation/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/hr-ops/letter-generation/${id}`, { method: 'DELETE' }),
+  },
+
+  // Notice Period  →  CRUD /api/hr-ops/notice-period/
+  // CREATE fields: employee_id(int), notice_start_date, notice_end_date, notice_period_days,
+  //                waiver_requested("YES"/"NO"), buyout_amount, remarks
+  // UPDATE fields: last_working_date, serving_days, waiver_requested, waiver_approved,
+  //                buyout_amount, status, remarks
+  noticePeriod: {
+    list: () => apiCall('/api/hr-ops/notice-period/'),
+    getById: (id) => apiCall(`/api/hr-ops/notice-period/${id}`),
+    create: (data) => apiCall('/api/hr-ops/notice-period/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/hr-ops/notice-period/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/hr-ops/notice-period/${id}`, { method: 'DELETE' }),
+  },
+
+  // HR Helpdesk  →  CRUD /api/hr-ops/helpdesk/
+  // CREATE fields: employee_id(int), category, subject, description, priority("LOW"/"MEDIUM"/"HIGH")
+  // category options: PAYROLL | LEAVE | POLICY | ONBOARDING | OTHER
+  // UPDATE fields: priority, status, assigned_to, resolution
+  helpdesk: {
+    list: () => apiCall('/api/hr-ops/helpdesk/'),
+    getById: (id) => apiCall(`/api/hr-ops/helpdesk/${id}`),
+    create: (data) => apiCall('/api/hr-ops/helpdesk/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/hr-ops/helpdesk/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/hr-ops/helpdesk/${id}`, { method: 'DELETE' }),
+  },
+
+  // Employee Confirmation  →  CRUD /api/hr-ops/confirmations/
+  // CREATE fields: employee_id(int), probation_start_date, probation_end_date, reviewed_by, remarks
+  // UPDATE fields: confirmation_date, performance_rating, status, extended_till, reviewed_by, remarks
+  // status options: PENDING | CONFIRMED | EXTENDED | TERMINATED
+  // performance_rating options: EXCELLENT | GOOD | SATISFACTORY | POOR
+  confirmations: {
+    list: () => apiCall('/api/hr-ops/confirmations/'),
+    getById: (id) => apiCall(`/api/hr-ops/confirmations/${id}`),
+    create: (data) => apiCall('/api/hr-ops/confirmations/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/hr-ops/confirmations/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/hr-ops/confirmations/${id}`, { method: 'DELETE' }),
+  },
+
+  // Transfers  →  CRUD /api/hr-ops/transfers/
+  // CREATE fields: employee_id(int), from_department, to_department, from_location,
+  //                to_location, transfer_type, effective_date, reason
+  // transfer_type options: INTER_DEPARTMENT | INTER_LOCATION | INTER_COMPANY
+  // UPDATE fields: status("PENDING"|"APPROVED"|"REJECTED"|"COMPLETED"), approved_by, remarks
+  transfers: {
+    list: () => apiCall('/api/hr-ops/transfers/'),
+    getById: (id) => apiCall(`/api/hr-ops/transfers/${id}`),
+    create: (data) => apiCall('/api/hr-ops/transfers/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/hr-ops/transfers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/hr-ops/transfers/${id}`, { method: 'DELETE' }),
+  },
+
+  // Promotions  →  CRUD /api/hr-ops/promotions/
+  // CREATE fields: employee_id(int), from_designation, to_designation, from_grade,
+  //                to_grade, effective_date, revised_salary, reason
+  // UPDATE fields: status("PENDING"|"APPROVED"|"REJECTED"), approved_by, revised_salary, remarks
+  promotions: {
+    list: () => apiCall('/api/hr-ops/promotions/'),
+    getById: (id) => apiCall(`/api/hr-ops/promotions/${id}`),
+    create: (data) => apiCall('/api/hr-ops/promotions/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    update: (id, data) => apiCall(`/api/hr-ops/promotions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+    delete: (id) => apiCall(`/api/hr-ops/promotions/${id}`, { method: 'DELETE' }),
+  },
+};
 export default apiServices;
 

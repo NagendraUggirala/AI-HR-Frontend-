@@ -1,3 +1,4 @@
+import { employeesAPI } from '../../../shared/utils/api';
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 
@@ -102,15 +103,7 @@ const OrganizationHierarchy = () => {
   });
 
   // Departments data
-  const [departments, setDepartments] = useState([
-    { id: 'dept001', name: 'Technology', employees: 245, location: 'San Francisco', head: 'Michael Chen' },
-    { id: 'dept002', name: 'Product', employees: 85, location: 'New York', head: 'Emma Rodriguez' },
-    { id: 'dept003', name: 'Finance', employees: 65, location: 'Chicago', head: 'Robert Davis' },
-    { id: 'dept004', name: 'Operations', employees: 120, location: 'Austin', head: 'Jennifer Lee' },
-    { id: 'dept005', name: 'Marketing', employees: 75, location: 'New York', head: 'Amanda Scott' },
-    { id: 'dept006', name: 'Sales', employees: 95, location: 'Chicago', head: 'Kevin Brown' },
-    { id: 'dept007', name: 'HR', employees: 35, location: 'Austin', head: 'Lisa Wilson' }
-  ]);
+  const [departments, setDepartments] = useState([]);
 
   // Locations data
   const [locations, setLocations] = useState([
@@ -213,10 +206,15 @@ const OrganizationHierarchy = () => {
   }, []);
 
   const loadInitialData = () => {
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    employeesAPI.departments.list()
+      .then(data => {
+        setDepartments(data || []);
+        setIsLoading(false);
+      })S
+      .catch(err => {
+        console.error('Failed to load departments:', err.message);
+        setIsLoading(false);
+      });
   };
 
   const toggleAccordion = (section) => {

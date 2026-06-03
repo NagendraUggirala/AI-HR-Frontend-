@@ -172,6 +172,25 @@ const EmployeeSelfService = () => {
   }, []);
 
   const loadInitialData = () => {
+
+    const employeeId = 1; // replace with real logged-in user's employee id later
+
+    // Real API calls
+    employeesAPI.selfService.getProfile(employeeId)
+      .then(data => {
+        if (data) setProfileForm(prev => ({ ...prev, ...data }));
+      })
+      .catch(err => console.error('Profile load failed:', err));
+
+    employeesAPI.selfService.getDocuments(employeeId)
+      .then(data => { if (data?.length) setDocuments(data); })
+      .catch(err => console.error('Documents load failed:', err));
+
+    employeesAPI.selfService.getLifecycle(employeeId)
+      .then(data => { if (data?.length) setJobHistory(data); })
+      .catch(err => console.error('Lifecycle load failed:', err));
+
+
     // Leave requests data
     setLeaveRequests([
       { id: 1, type: 'Annual Leave', startDate: '2024-03-10', endDate: '2024-03-12', status: 'approved', days: 3 },

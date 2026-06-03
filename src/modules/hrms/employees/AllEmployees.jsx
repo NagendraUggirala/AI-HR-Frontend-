@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { employeesAPI } from '../../../shared/utils/api';
 import { Icon } from '@iconify/react/dist/iconify.js';
 
 
@@ -177,759 +178,39 @@ const AllEmployees = () => {
     };
   };
 
-const [employees, setEmployees] = useState([
-  createEmployeeObject({
-    id: 1,
-    employeeId: 'EMP001',
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@company.com',
-    phone: '+1 (555) 123-4567',
-    department: 'Engineering',
-    designation: 'Senior Developer',
-    location: 'New York',
-    employmentType: 'Full-time',
-    status: 'Active',
-    joinDate: '2020-05-15',
-    salary: 75000,
-    personalInfo: {
-      dateOfBirth: '1990-05-20',
-      gender: 'Female',
-      bloodGroup: 'O+',
-      maritalStatus: 'Married',
-      nationality: 'US',
-      languages: ['English', 'Spanish', 'French'],
-      personalEmail: 'sarah.personal@email.com',
-      phonePrimary: '+1 (555) 123-4567',
-      phoneSecondary: '+1 (555) 123-4568',
-      phoneEmergency: '+1 (555) 123-4569',
-      currentAddress: {
-        line1: '123 Main St',
-        line2: 'Apt 4B',
-        city: 'New York',
-        state: 'NY',
-        pincode: '10001',
-        country: 'USA'
-      },
-      permanentAddress: {
-        line1: '123 Main St',
-        line2: 'Apt 4B',
-        city: 'New York',
-        state: 'NY',
-        pincode: '10001',
-        country: 'USA'
-      },
-      emergencyContacts: [
-        { 
-          name: 'John Johnson', 
-          relation: 'Spouse', 
-          phone: '+1 (555) 123-4569', 
-          priority: 'Primary' 
-        },
-        { 
-          name: 'Mary Johnson', 
-          relation: 'Mother', 
-          phone: '+1 (555) 987-6543', 
-          priority: 'Secondary' 
-        }
-      ],
-      familyMembers: [
-        { 
-          name: 'John Johnson', 
-          relation: 'Spouse', 
-          dob: '1988-03-15' 
-        },
-        { 
-          name: 'Emma Johnson', 
-          relation: 'Daughter', 
-          dob: '2018-07-22' 
-        }
-      ],
-      nominees: [
-        { 
-          name: 'John Johnson', 
-          relation: 'Spouse', 
-          phone: '+1 (555) 123-4569',
-          percentage: 70 
-        },
-        { 
-          name: 'Emma Johnson', 
-          relation: 'Daughter', 
-          phone: '+1 (555) 987-6543',
-          percentage: 30 
-        }
-      ],
-      profilePhoto: '',
-      identification: {
-        aadhaar: { 
-          number: '1234 5678 9012', 
-          verified: true,
-          verifiedDate: '2020-05-20',
-          document: ''
-        },
-        pan: { 
-          number: 'ABCDE1234F', 
-          verified: true,
-          verifiedDate: '2020-05-20',
-          document: ''
-        },
-        passport: { 
-          number: 'P12345678', 
-          expiryDate: '2030-05-20', 
-          verified: true,
-          verifiedDate: '2020-05-20',
-          document: ''
-        },
-        voterId: { 
-          number: 'VOT12345678', 
-          verified: false,
-          document: ''
-        }
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+  // Load employees from backend
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        setLoading(true);
+        setApiError(null);
+        const data = await employeesAPI.list();
+        const mapped = (data || []).map(emp =>
+          createEmployeeObject({
+            id: emp.id,
+            name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+            email: emp.official_email,
+            phone: emp.mobile_number,
+            department: emp.department || '',
+            designation: emp.designation || '',
+            location: emp.location || '',
+            joinDate: emp.joining_date || '',
+            status: emp.is_active ? 'Active' : 'Inactive',
+            employeeId: emp.employee_code || '',
+          })
+        );
+        setEmployees(mapped);
+      } catch (err) {
+        setApiError(err.message);
+      } finally {
+        setLoading(false);
       }
-    },
-    employmentInfo: {
-      employeeId: 'EMP001',
-      dateOfJoining: '2020-05-15',
-      confirmationDate: '2020-11-15',
-      probationPeriod: 6,
-      employmentType: 'Permanent',
-      employmentStatus: 'Active',
-      department: 'Engineering',
-      subDepartment: 'Software Development',
-      costCenter: 'ENG-001',
-      designation: 'Senior Developer',
-      grade: 'G5',
-      level: 'L3',
-      location: 'New York',
-      workplaceType: 'Hybrid',
-      workEmail: 'sarah.johnson@company.com',
-      extensionNumber: '1234',
-      deskLocation: 'Floor 5, Desk 12',
-      employeeCategory: 'Staff',
-      noticePeriod: 30,
-      reportingManager: {
-        direct: 'Michael Smith',
-        functional: 'Michael Smith'
-      },
-      hrBusinessPartner: 'Lisa Anderson'
-    },
-    
-    jobHistory: [
-      {
-        id: 1,
-        type: 'Joining',
-        date: '2020-05-15',
-        organisation: 'TechCorp Inc.',
-        department: 'Engineering',
-        designation: 'Developer',
-        location: 'New York',
-        manager: 'Michael Smith',
-        notes: 'Joined as Junior Developer at TechCorp',
-        salaryChange: 60000,
-        endDate: 'Present',
-        reasonForLeaving: 'N/A',
-        achievements: 'Built multiple scalable microservices'
-      },
-      {
-        id: 2,
-        type: 'Previous Experience',
-        date: '2018-06-01',
-        organisation: 'Digital Solutions Ltd.',
-        department: 'Software Development',
-        designation: 'Software Engineer',
-        location: 'Boston',
-        manager: 'Robert Chen',
-        notes: 'Worked on enterprise applications',
-        salaryChange: 55000,
-        endDate: '2020-04-30',
-        reasonForLeaving: 'Better career opportunity',
-        achievements: 'Led migration from monolith to microservices'
-      },
-      {
-        id: 3,
-        type: 'Previous Experience',
-        date: '2016-07-15',
-        organisation: 'Innovate Tech',
-        department: 'IT',
-        designation: 'Junior Developer',
-        location: 'Chicago',
-        manager: 'Lisa Wang',
-        notes: 'First professional role after graduation',
-        salaryChange: 45000,
-        endDate: '2018-05-31',
-        reasonForLeaving: 'Career growth',
-        achievements: 'Developed 3 client projects successfully'
-      },
-      {
-        id: 4,
-        type: 'Promotion',
-        date: '2022-06-01',
-        organisation: 'TechCorp Inc.',
-        department: 'Engineering',
-        designation: 'Senior Developer',
-        location: 'New York',
-        manager: 'Michael Smith',
-        notes: 'Promoted to Senior Developer for outstanding performance',
-        salaryChange: 75000,
-        endDate: 'Present',
-        reasonForLeaving: 'N/A',
-        achievements: 'Mentored 3 junior developers, reduced system latency by 40%'
-      }
-    ],
-    salaryInfo: {
-      currentCTC: 75000,
-      ctcBreakdown: {
-        basic: 45000,
-        hra: 22500,
-        specialAllowance: 5000,
-        transportAllowance: 1000,
-        medicalAllowance: 1500,
-        otherAllowances: 0,
-        providentFund: 5400,
-        gratuity: 1000,
-        otherDeductions: 500
-      },
-      salaryStructure: 'Standard',
-      bankAccounts: {
-        primary: {
-          accountNumber: '1234567890',
-          ifscCode: 'BANK0001234',
-          bankName: 'Chase Bank',
-          branch: 'New York Downtown',
-          accountType: 'Savings'
-        },
-        secondary: {
-          accountNumber: '0987654321',
-          ifscCode: 'BANK0005678',
-          bankName: 'Bank of America',
-          branch: 'New York Midtown',
-          accountType: 'Savings'
-        }
-      },
-      paymentMode: 'Bank Transfer',
-      pfAccountNumber: 'PF123456',
-      uan: 'UAN123456789',
-      esiNumber: 'ESI123456',
-      esiMedicalNominee: 'John Johnson',
-      taxDeclaration: {
-        regime: 'New',
-        declared: true
-      },
-      variablePay: {
-        eligible: true,
-        percentage: 15
-      },
-      bonusEligibility: {
-        eligible: true,
-        amount: 5000
-      },
-      salaryRevisionHistory: [
-        {
-          effectiveDate: '2022-06-01',
-          previousCTC: 60000,
-          newCTC: 75000,
-          percentageIncrease: 25,
-          approvedBy: 'Michael Smith',
-          status: 'Approved'
-        }
-      ]
-    },
-    statutoryInfo: {
-      pan: {
-        number: 'ABCDE1234F',
-        verified: true,
-        verifiedDate: '2020-05-15'
-      },
-      aadhaar: {
-        number: '1234 5678 9012',
-        verified: true,
-        verifiedDate: '2020-05-15'
-      },
-      pfMembership: {
-        enrolled: true,
-        accountNumber: 'PF123456',
-        uan: 'UAN123456789',
-        enrollmentDate: '2020-05-15'
-      },
-      esiRegistration: {
-        enrolled: true,
-        number: 'ESI123456',
-        enrollmentDate: '2020-05-15'
-      },
-      professionalTax: {
-        applicable: true,
-        state: 'New York',
-        ptNumber: 'PTNY123456'
-      },
-      labourWelfareFund: {
-        enrolled: true,
-        enrollmentDate: '2020-05-15'
-      },
-      gratuity: {
-        eligible: true,
-        eligibilityDate: '2021-05-15'
-      },
-      bonusAct: {
-        applicable: true
-      },
-      shopsAndEstablishment: {
-        registered: true,
-        registrationNumber: 'SE123456',
-        registrationDate: '2020-05-15'
-      }
-    }
-  }),
-  createEmployeeObject({
-    id: 2,
-    employeeId: 'EMP002',
-    name: 'Mike Chen',
-    email: 'mike.chen@company.com',
-    phone: '+1 (555) 234-5678',
-    department: 'Marketing',
-    designation: 'Marketing Manager',
-    location: 'San Francisco',
-    employmentType: 'Full-time',
-    status: 'Active',
-    joinDate: '2019-08-20',
-    salary: 68000,
-    personalInfo: {
-      dateOfBirth: '1988-07-12',
-      gender: 'Male',
-      bloodGroup: 'A+',
-      maritalStatus: 'Single',
-      nationality: 'US',
-      languages: ['English', 'Mandarin'],
-      personalEmail: 'mike.chen.personal@email.com',
-      phonePrimary: '+1 (555) 234-5678',
-      phoneSecondary: '+1 (555) 234-5679',
-      phoneEmergency: '+1 (555) 234-5680',
-      currentAddress: {
-        line1: '456 Market St',
-        line2: 'Suite 1200',
-        city: 'San Francisco',
-        state: 'CA',
-        pincode: '94105',
-        country: 'USA'
-      },
-      permanentAddress: {
-        line1: '123 Oak Ave',
-        line2: '',
-        city: 'Los Angeles',
-        state: 'CA',
-        pincode: '90001',
-        country: 'USA'
-      },
-      emergencyContacts: [
-        { 
-          name: 'Susan Chen', 
-          relation: 'Sister', 
-          phone: '+1 (555) 234-5680', 
-          priority: 'Primary' 
-        }
-      ],
-      familyMembers: [
-        { 
-          name: 'Susan Chen', 
-          relation: 'Sister', 
-          dob: '1990-02-14' 
-        }
-      ],
-      nominees: [
-        { 
-          name: 'Susan Chen', 
-          relation: 'Sister', 
-          phone: '+1 (555) 234-5680',
-          percentage: 100 
-        }
-      ],
-      profilePhoto: '',
-      identification: {
-        aadhaar: { 
-          number: '2345 6789 0123', 
-          verified: true,
-          document: ''
-        },
-        pan: { 
-          number: 'BCDEF2345G', 
-          verified: true,
-          document: ''
-        },
-        passport: { 
-          number: 'P23456789', 
-          expiryDate: '2028-12-31', 
-          verified: true,
-          document: ''
-        },
-        voterId: { 
-          number: 'VOT23456789', 
-          verified: true,
-          document: ''
-        }
-      }
-    },
-    employmentInfo: {
-      employeeId: 'EMP002',
-      dateOfJoining: '2019-08-20',
-      confirmationDate: '2020-02-20',
-      probationPeriod: 6,
-      employmentType: 'Permanent',
-      employmentStatus: 'Active',
-      department: 'Marketing',
-      subDepartment: 'Digital Marketing',
-      costCenter: 'MKT-001',
-      designation: 'Marketing Manager',
-      grade: 'G6',
-      level: 'L4',
-      location: 'San Francisco',
-      workplaceType: 'Hybrid',
-      workEmail: 'mike.chen@company.com',
-      extensionNumber: '2345',
-      deskLocation: 'Floor 3, Desk 8',
-      employeeCategory: 'Management',
-      noticePeriod: 60,
-      reportingManager: {
-        direct: 'Jennifer Lee',
-        functional: 'Jennifer Lee'
-      },
-      hrBusinessPartner: 'Lisa Anderson'
-    },
-    jobHistory: [
-      {
-        id: 1,
-        type: 'Previous Experience',
-        date: '2017-01-15',
-        organisation: 'BrandMakers Agency',
-        department: 'Digital Marketing',
-        designation: 'Marketing Analyst',
-        location: 'Los Angeles',
-        manager: 'David Miller',
-        notes: 'Started as marketing intern, promoted to analyst',
-        salaryChange: 45000,
-        endDate: '2019-07-31',
-        reasonForLeaving: 'Relocation to San Francisco',
-        achievements: 'Increased client social media engagement by 300%'
-      },
-      {
-        id: 2,
-        type: 'Joining',
-        date: '2019-08-20',
-        organisation: 'TechCorp Inc.',
-        department: 'Marketing',
-        designation: 'Marketing Specialist',
-        location: 'San Francisco',
-        manager: 'Jennifer Lee',
-        notes: 'Joined as Marketing Specialist focusing on B2B campaigns',
-        salaryChange: 55000,
-        endDate: '2021-06-14',
-        reasonForLeaving: 'N/A',
-        achievements: 'Generated $2M in qualified leads in first year'
-      },
-      {
-        id: 3,
-        type: 'Promotion',
-        date: '2021-06-15',
-        organisation: 'TechCorp Inc.',
-        department: 'Marketing',
-        designation: 'Marketing Manager',
-        location: 'San Francisco',
-        manager: 'Jennifer Lee',
-        notes: 'Promoted to Marketing Manager leading 5-member team',
-        salaryChange: 68000,
-        endDate: 'Present',
-        reasonForLeaving: 'N/A',
-        achievements: 'Expanded market share by 15% in tech sector'
-      }
-    ],
-    salaryInfo: {
-      currentCTC: 68000,
-      ctcBreakdown: {
-        basic: 40800,
-        hra: 20400,
-        specialAllowance: 4500,
-        transportAllowance: 800,
-        medicalAllowance: 1200,
-        otherAllowances: 300,
-        providentFund: 4896,
-        gratuity: 850,
-        otherDeductions: 400
-      },
-      salaryStructure: 'Standard',
-      bankAccounts: {
-        primary: {
-          accountNumber: '2345678901',
-          ifscCode: 'BANK0002345',
-          bankName: 'Wells Fargo',
-          branch: 'San Francisco Downtown',
-          accountType: 'Savings'
-        }
-      },
-      paymentMode: 'Bank Transfer',
-      pfAccountNumber: 'PF234567',
-      uan: 'UAN234567890',
-      esiNumber: 'ESI234567',
-      esiMedicalNominee: 'Susan Chen',
-      taxDeclaration: {
-        regime: 'Old',
-        declared: true
-      },
-      variablePay: {
-        eligible: true,
-        percentage: 12
-      },
-      bonusEligibility: {
-        eligible: true,
-        amount: 4000
-      }
-    },
-    statutoryInfo: {
-      pan: {
-        number: 'BCDEF2345G',
-        verified: true,
-        verifiedDate: '2019-08-20'
-      },
-      aadhaar: {
-        number: '2345 6789 0123',
-        verified: true,
-        verifiedDate: '2019-08-20'
-      },
-      pfMembership: {
-        enrolled: true,
-        accountNumber: 'PF234567',
-        uan: 'UAN234567890',
-        enrollmentDate: '2019-08-20'
-      },
-      esiRegistration: {
-        enrolled: true,
-        number: 'ESI234567',
-        enrollmentDate: '2019-08-20'
-      },
-      professionalTax: {
-        applicable: true,
-        state: 'California',
-        ptNumber: 'PTCA234567'
-      }
-    }
-  }),
-  createEmployeeObject({
-    id: 3,
-    employeeId: 'EMP003',
-    name: 'Alex Rivera',
-    email: 'alex.rivera@company.com',
-    phone: '+1 (555) 345-6789',
-    department: 'HR',
-    designation: 'HR Specialist',
-    location: 'Chicago',
-    employmentType: 'Full-time',
-    status: 'On Leave',
-    joinDate: '2021-01-10',
-    salary: 58000,
-    personalInfo: {
-      dateOfBirth: '1992-11-05',
-      gender: 'Male',
-      bloodGroup: 'B+',
-      maritalStatus: 'Married',
-      nationality: 'US',
-      languages: ['English', 'Spanish'],
-      personalEmail: 'alex.rivera.personal@email.com',
-      phonePrimary: '+1 (555) 345-6789',
-      phoneSecondary: '+1 (555) 345-6790',
-      phoneEmergency: '+1 (555) 345-6791',
-      currentAddress: {
-        line1: '789 Michigan Ave',
-        line2: 'Apt 7C',
-        city: 'Chicago',
-        state: 'IL',
-        pincode: '60611',
-        country: 'USA'
-      },
-      permanentAddress: {
-        line1: '456 Oak St',
-        line2: '',
-        city: 'Miami',
-        state: 'FL',
-        pincode: '33101',
-        country: 'USA'
-      },
-      emergencyContacts: [
-        { 
-          name: 'Maria Rivera', 
-          relation: 'Spouse', 
-          phone: '+1 (555) 345-6791', 
-          priority: 'Primary' 
-        }
-      ],
-      familyMembers: [
-        { 
-          name: 'Maria Rivera', 
-          relation: 'Spouse', 
-          dob: '1993-03-22' 
-        },
-        { 
-          name: 'Carlos Rivera', 
-          relation: 'Son', 
-          dob: '2020-08-15' 
-        }
-      ],
-      nominees: [
-        { 
-          name: 'Maria Rivera',
-          phone: '+1 (555) 345-6791',
-          relation: 'Spouse', 
-          percentage: 100 
-        }
-      ],
-      profilePhoto: '',
-      identification: {
-        aadhaar: { 
-          number: '3456 7890 1234', 
-          verified: true,
-          document: ''
-        },
-        pan: { 
-          number: 'CDEFG3456H', 
-          verified: true,
-          document: ''
-        },
-        passport: { 
-          number: 'P34567890', 
-          expiryDate: '2029-06-30', 
-          verified: true,
-          document: ''
-        },
-        voterId: { 
-          number: 'VOT34567890', 
-          verified: false,
-          document: ''
-        }
-      }
-    },
-    employmentInfo: {
-      employeeId: 'EMP003',
-      dateOfJoining: '2021-01-10',
-      confirmationDate: '2021-07-10',
-      probationPeriod: 6,
-      employmentType: 'Permanent',
-      employmentStatus: 'On Leave',
-      department: 'HR',
-      subDepartment: 'Recruitment',
-      costCenter: 'HR-001',
-      designation: 'HR Specialist',
-      grade: 'G4',
-      level: 'L2',
-      location: 'Chicago',
-      workplaceType: 'Office',
-      workEmail: 'alex.rivera@company.com',
-      extensionNumber: '3456',
-      deskLocation: 'Floor 2, Desk 15',
-      employeeCategory: 'Staff',
-      noticePeriod: 30,
-      reportingManager: {
-        direct: 'David Wilson',
-        functional: 'David Wilson'
-      },
-      hrBusinessPartner: 'Lisa Anderson'
-    },
-
-    jobHistory: [
-      {
-        id: 1,
-        type: 'Previous Experience',
-        date: '2018-03-01',
-        organisation: 'PeopleFirst Consultancy',
-        department: 'HR Operations',
-        designation: 'HR Coordinator',
-        location: 'Miami',
-        manager: 'Susan Baker',
-        notes: 'Managed recruitment for entry-level positions',
-        salaryChange: 40000,
-        endDate: '2020-12-31',
-        reasonForLeaving: 'Moved to Chicago for family reasons',
-        achievements: 'Reduced hiring time by 25%'
-      },
-      {
-        id: 2,
-        type: 'Joining',
-        date: '2021-01-10',
-        organisation: 'TechCorp Inc.',
-        department: 'HR',
-        designation: 'HR Specialist',
-        location: 'Chicago',
-        manager: 'David Wilson',
-        notes: 'Joined as HR Specialist focusing on tech recruitment',
-        salaryChange: 58000,
-        endDate: 'Present',
-        reasonForLeaving: 'N/A',
-        achievements: 'Hired 50+ engineers in first year'
-      }
-    ],
-    salaryInfo: {
-      currentCTC: 58000,
-      ctcBreakdown: {
-        basic: 34800,
-        hra: 17400,
-        specialAllowance: 3800,
-        transportAllowance: 700,
-        medicalAllowance: 1000,
-        otherAllowances: 300,
-        providentFund: 4176,
-        gratuity: 725,
-        otherDeductions: 350
-      },
-      salaryStructure: 'Standard',
-      bankAccounts: {
-        primary: {
-          accountNumber: '3456789012',
-          ifscCode: 'BANK0003456',
-          bankName: 'Bank of America',
-          branch: 'Chicago Loop',
-          accountType: 'Savings'
-        }
-      },
-      paymentMode: 'Bank Transfer',
-      pfAccountNumber: 'PF345678',
-      uan: 'UAN345678901',
-      esiNumber: 'ESI345678',
-      esiMedicalNominee: 'Maria Rivera',
-      taxDeclaration: {
-        regime: 'New',
-        declared: true
-      },
-      variablePay: {
-        eligible: false,
-        percentage: 0
-      },
-      bonusEligibility: {
-        eligible: true,
-        amount: 3000
-      }
-    },
-
-    statutoryInfo: {
-      pan: {
-        number: 'CDEFG3456H',
-        verified: true,
-        verifiedDate: '2021-01-10'
-      },
-      aadhaar: {
-        number: '3456 7890 1234',
-        verified: true,
-        verifiedDate: '2021-01-10'
-      },
-      pfMembership: {
-        enrolled: true,
-        accountNumber: 'PF345678',
-        uan: 'UAN345678901',
-        enrollmentDate: '2021-01-10'
-      },
-      esiRegistration: {
-        enrolled: true,
-        number: 'ESI345678',
-        enrollmentDate: '2021-01-10'
-      }
-    }
-  }),
-  
- 
-]);
+    };
+    loadEmployees();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -937,11 +218,11 @@ const [employees, setEmployees] = useState([
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showDetailView, setShowDetailView] = useState(false);
-   const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [editEmployeeData, setEditEmployeeData] = useState(null);
   const [activeEditTab, setActiveEditTab] = useState('personal');
-    const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
@@ -1209,11 +490,16 @@ const filteredData = useMemo(() => {
     setActiveDetailTab('personal');
   };
 
-  const handleDeleteEmployee = (id) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
-      setEmployees(employees.filter(emp => emp.id !== id));
-      if (selectedEmployee?.id === id) {
-        handleBackToList();
+  const handleDeleteEmployee = async (id) => {
+    if (window.confirm('Are you sure you want to deactivate this employee?')) {
+      try {
+        await employeesAPI.deactivate(id);
+        setEmployees(prev => prev.map(emp =>
+          emp.id === id ? { ...emp, status: 'Inactive' } : emp
+        ));
+        if (selectedEmployee?.id === id) handleBackToList();
+      } catch (err) {
+        alert('Failed: ' + err.message);
       }
     }
   };
@@ -1510,8 +796,16 @@ const handleAddEmployee = () => {
       }
     }
   });
-  
   // Add the new employee
+  // Save to backend (non-blocking — shows locally even if backend fails)
+  employeesAPI.master.create({
+    employee_id: newEmp.id,
+    employment_type: newEmp.employmentInfo?.employmentType || 'Full-Time',
+    work_location: newEmp.employmentInfo?.location || '',
+    employment_status: newEmp.status || 'Active',
+    notice_period_days: newEmp.employmentInfo?.noticePeriod || 30,
+  }).catch(err => console.warn('Backend sync failed:', err.message));
+
   setEmployees([...employees, newEmp]);
   
   // Close modal and reset
@@ -2005,8 +1299,16 @@ const handleEditEmployee = (employee) => {
   setActiveEditTab('personal');
 };
 
-
-
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-gray-500 text-lg">Loading employees...</div>
+    </div>
+  );
+  if (apiError) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-red-500 text-lg">Error: {apiError}</div>
+    </div>
+  );
   return (
 
     <div className="container-fluid">

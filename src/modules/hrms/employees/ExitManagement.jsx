@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { hrOpsAPI } from '../../../shared/utils/api';
+import React, { useState, useEffect } from 'react';S
 import {
   Search,
   Download,
@@ -326,16 +327,7 @@ const ExitManagement = () => {
   });
 
   // Sample data with enhanced clearance structure
-  const [exitCasesData, setExitCasesData] = useState([
-    { id: 1, employeeId: 'EMP001', employeeName: 'Rahul Sharma', department: 'Engineering', role: 'Senior Software Engineer', resignationDate: '2024-03-01', lastWorkingDay: '2024-04-15', noticePeriod: '45 days', exitType: 'Resignation', exitReason: 'Better opportunity', clearanceProgress: 40, pendingClearances: ['IT', 'Finance', 'HR'], status: 'In Progress', escalationLevel: 0, knowledgeTransfer: 'In Progress', exitInterview: 'Scheduled', settlement: 'Pending', clearanceDetails: { ...getDefaultClearanceStructure(), IT: { ...getDefaultClearanceStructure().IT, status: 'Pending' }, Finance: { ...getDefaultClearanceStructure().Finance, status: 'Pending' }, HR: { ...getDefaultClearanceStructure().HR, status: 'Pending' }, Admin: { ...getDefaultClearanceStructure().Admin, status: 'Completed' }, Department: { ...getDefaultClearanceStructure().Department, status: 'Completed' } } },
-    { id: 2, employeeId: 'EMP002', employeeName: 'Priya Patel', department: 'Marketing', role: 'Marketing Manager', resignationDate: '2024-02-15', lastWorkingDay: '2024-03-30', noticePeriod: '45 days', exitType: 'Resignation', exitReason: 'Career growth', clearanceProgress: 75, pendingClearances: ['Admin'], status: 'In Progress', escalationLevel: 0, knowledgeTransfer: 'Completed', exitInterview: 'Completed', settlement: 'In Progress', clearanceDetails: { ...getDefaultClearanceStructure(), Admin: { ...getDefaultClearanceStructure().Admin, status: 'Pending' } } },
-    { id: 3, employeeId: 'EMP003', employeeName: 'Amit Kumar', department: 'Sales', role: 'Sales Executive', resignationDate: '2024-01-20', lastWorkingDay: '2024-02-29', noticePeriod: '30 days', exitType: 'Termination', exitReason: 'Performance', clearanceProgress: 100, pendingClearances: [], status: 'Completed', escalationLevel: 0, knowledgeTransfer: 'Completed', exitInterview: 'Completed', settlement: 'Completed', clearanceDetails: getDefaultClearanceStructure() },
-    { id: 4, employeeId: 'EMP004', employeeName: 'Sneha Reddy', department: 'HR', role: 'HR Executive', resignationDate: '2024-03-10', lastWorkingDay: '2024-04-25', noticePeriod: '45 days', exitType: 'Resignation', exitReason: 'Higher studies', clearanceProgress: 25, pendingClearances: ['IT', 'Admin', 'Finance', 'HR', 'Department'], status: 'Pending', escalationLevel: 1, knowledgeTransfer: 'Pending', exitInterview: 'Pending', settlement: 'Pending', clearanceDetails: getDefaultClearanceStructure() },
-    { id: 5, employeeId: 'EMP005', employeeName: 'Rajesh Verma', department: 'Finance', role: 'Finance Analyst', resignationDate: '2024-02-28', lastWorkingDay: '2024-04-12', noticePeriod: '45 days', exitType: 'Retirement', exitReason: 'Retirement', clearanceProgress: 90, pendingClearances: ['IT'], status: 'In Progress', escalationLevel: 0, knowledgeTransfer: 'In Progress', exitInterview: 'Scheduled', settlement: 'In Progress', clearanceDetails: { ...getDefaultClearanceStructure(), IT: { ...getDefaultClearanceStructure().IT, status: 'Pending' } } },
-    { id: 6, employeeId: 'EMP006', employeeName: 'Meera Joshi', department: 'Engineering', role: 'Frontend Developer', resignationDate: '2024-03-05', lastWorkingDay: '2024-04-19', noticePeriod: '45 days', exitType: 'Resignation', exitReason: 'Relocation', clearanceProgress: 60, pendingClearances: ['Finance', 'Admin'], status: 'In Progress', escalationLevel: 0, knowledgeTransfer: 'In Progress', exitInterview: 'Scheduled', settlement: 'Pending', clearanceDetails: { ...getDefaultClearanceStructure(), Finance: { ...getDefaultClearanceStructure().Finance, status: 'Pending' }, Admin: { ...getDefaultClearanceStructure().Admin, status: 'Pending' } } },
-    { id: 7, employeeId: 'EMP007', employeeName: 'Vikram Singh', department: 'Operations', role: 'Operations Manager', resignationDate: '2024-01-15', lastWorkingDay: '2024-01-31', noticePeriod: 'Immediate', exitType: 'Termination', exitReason: 'Policy violation', clearanceProgress: 100, pendingClearances: [], status: 'Completed', escalationLevel: 2, knowledgeTransfer: 'Not Required', exitInterview: 'Not Conducted', settlement: 'Completed', clearanceDetails: getDefaultClearanceStructure() },
-    { id: 8, employeeId: 'EMP008', employeeName: 'Anjali Gupta', department: 'Marketing', role: 'Content Writer', resignationDate: '2024-03-12', lastWorkingDay: '2024-04-26', noticePeriod: '45 days', exitType: 'Resignation', exitReason: 'Better opportunity', clearanceProgress: 30, pendingClearances: ['IT', 'Admin', 'HR'], status: 'Pending', escalationLevel: 0, knowledgeTransfer: 'Pending', exitInterview: 'Pending', settlement: 'Pending', clearanceDetails: { ...getDefaultClearanceStructure(), IT: { ...getDefaultClearanceStructure().IT, status: 'Pending' }, Admin: { ...getDefaultClearanceStructure().Admin, status: 'Pending' }, HR: { ...getDefaultClearanceStructure().HR, status: 'Pending' } } }
-  ]);
+  const [exitCasesData, setExitCasesData] = useState([]);
 
   const exitCases = exitCasesData;
 
@@ -619,6 +611,14 @@ const ExitManagement = () => {
     };
 
     // Add to exit cases
+    hrOpsAPI.exitManagement.create({
+      employee_id: parseInt(newExitForm.employeeId.replace('EMP', '')) || 1,
+      resignation_date: newExitForm.resignationDate,
+      last_working_date: newExitForm.lastWorkingDay,
+      exit_type: newExitForm.exitType.toUpperCase(),
+      reason: newExitForm.exitReason,
+    }).catch(err => console.warn('Backend sync failed:', err.message));
+
     setExitCasesData(prev => [newExitCase, ...prev]);
     
     // Reset form and close modal
@@ -754,6 +754,12 @@ const ExitManagement = () => {
   const currentItemsPage = currentItems.slice(startIndex, endIndex);
 
   // Reset to page 1 when filters/search/view changes
+  useEffect(() => {
+    hrOpsAPI.exitManagement.list()
+      .then(data => setExitCasesData(data || []))
+      .catch(err => console.error('Failed to load exit cases:', err));
+  }, []);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filters, viewMode, employeeExitsFilters]);

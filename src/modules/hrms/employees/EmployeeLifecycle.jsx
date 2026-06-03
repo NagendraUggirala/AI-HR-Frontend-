@@ -1,5 +1,5 @@
 // EmployeeLifecycleManagement.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 
 
@@ -118,6 +118,16 @@ const EmployeeLifecycle = () => {
     { id: 'EX002', employeeId: 'EMP010', employeeName: 'Brian Taylor', lastWorkingDay: '2024-03-20', status: 'completed', exitStatus: 'Processed' },
     { id: 'EX003', employeeId: 'EMP011', employeeName: 'Amanda Scott', noticePeriodStart: '2024-04-15', lastWorkingDay: '2024-07-15', status: 'initiated', clearancePending: 4 }
   ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    employeesAPI.lifecycle.listByEmployee('all')
+      .then(() => setLoading(false))
+      .catch(err => {
+        console.error('Failed to load lifecycle data:', err);
+        setLoading(false);
+      });
+  }, []);
 
   // Contracts
   const contractRenewals = [
